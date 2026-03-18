@@ -1,0 +1,240 @@
+{
+  "schema_version": 1,
+  "categories": {
+    "agent_cli": "Terminal-first coding agents and CLIs that consume repository instruction files.",
+    "ide_based": "IDE-native assistants that consume workspace rules or project-specific guidance files.",
+    "tool_editor": "Supporting tools, editors, and VCS integrations that use shared repository files."
+  },
+  "platforms": [
+    {
+      "key": "git",
+      "display_name": "Git version control",
+      "category": "tool_editor",
+      "path_strategy": "shared_support",
+      "output_files": [
+        ".gitignore"
+      ]
+    },
+    {
+      "key": "copilot",
+      "display_name": "GitHub Copilot",
+      "category": "ide_based",
+      "path_strategy": "official",
+      "output_files": [
+        ".github/copilot-instructions.md",
+        "AGENTS.md"
+      ]
+    },
+    {
+      "key": "claude",
+      "display_name": "Claude Code",
+      "category": "agent_cli",
+      "path_strategy": "systematize_supported",
+      "output_files": [
+        "CLAUDE.md"
+      ]
+    },
+    {
+      "key": "gemini",
+      "display_name": "Gemini CLI",
+      "category": "agent_cli",
+      "path_strategy": "systematize_supported",
+      "output_files": [
+        "GEMINI.md"
+      ]
+    },
+    {
+      "key": "cursor-agent",
+      "display_name": "Cursor",
+      "category": "ide_based",
+      "path_strategy": "official",
+      "output_files": [
+        ".cursor/rules/syskit-rules.mdc"
+      ]
+    },
+    {
+      "key": "qwen",
+      "display_name": "Qwen Code",
+      "category": "agent_cli",
+      "path_strategy": "systematize_supported",
+      "output_files": [
+        "QWEN.md"
+      ]
+    },
+    {
+      "key": "opencode",
+      "display_name": "opencode",
+      "category": "agent_cli",
+      "path_strategy": "shared_standard",
+      "output_files": [
+        "AGENTS.md"
+      ]
+    },
+    {
+      "key": "codex",
+      "display_name": "Codex CLI",
+      "category": "agent_cli",
+      "path_strategy": "shared_standard",
+      "output_files": [
+        "AGENTS.md"
+      ]
+    },
+    {
+      "key": "windsurf",
+      "display_name": "Windsurf",
+      "category": "ide_based",
+      "path_strategy": "systematize_supported",
+      "output_files": [
+        ".windsurf/rules/syskit-rules.md"
+      ]
+    },
+    {
+      "key": "kilocode",
+      "display_name": "Kilo Code",
+      "category": "ide_based",
+      "path_strategy": "systematize_supported",
+      "output_files": [
+        ".kilocode/rules/syskit-rules.md"
+      ]
+    },
+    {
+      "key": "auggie",
+      "display_name": "Auggie CLI",
+      "category": "agent_cli",
+      "path_strategy": "systematize_supported",
+      "output_files": [
+        ".augment/rules/syskit-rules.md"
+      ]
+    },
+    {
+      "key": "codebuddy",
+      "display_name": "CodeBuddy",
+      "category": "agent_cli",
+      "path_strategy": "systematize_supported",
+      "output_files": [
+        "CODEBUDDY.md"
+      ]
+    },
+    {
+      "key": "qodercli",
+      "display_name": "Qoder CLI",
+      "category": "agent_cli",
+      "path_strategy": "systematize_supported",
+      "output_files": [
+        "QODER.md"
+      ]
+    },
+    {
+      "key": "roo",
+      "display_name": "Roo Code",
+      "category": "ide_based",
+      "path_strategy": "systematize_supported",
+      "output_files": [
+        ".roo/rules/syskit-rules.md"
+      ]
+    },
+    {
+      "key": "kiro-cli",
+      "display_name": "Kiro CLI",
+      "category": "agent_cli",
+      "path_strategy": "shared_standard",
+      "output_files": [
+        "AGENTS.md"
+      ]
+    },
+    {
+      "key": "amp",
+      "display_name": "Amp",
+      "category": "agent_cli",
+      "path_strategy": "shared_standard",
+      "output_files": [
+        "AGENTS.md"
+      ]
+    },
+    {
+      "key": "shai",
+      "display_name": "SHAI",
+      "category": "agent_cli",
+      "path_strategy": "systematize_supported",
+      "output_files": [
+        "SHAI.md"
+      ]
+    },
+    {
+      "key": "agy",
+      "display_name": "Antigravity",
+      "category": "ide_based",
+      "path_strategy": "systematize_supported",
+      "output_files": [
+        ".agent/rules/syskit-rules.md"
+      ]
+    },
+    {
+      "key": "bob",
+      "display_name": "IBM Bob",
+      "category": "ide_based",
+      "path_strategy": "shared_standard",
+      "output_files": [
+        "AGENTS.md"
+      ]
+    },
+    {
+      "key": "vs-code",
+      "display_name": "Visual Studio Code",
+      "category": "tool_editor",
+      "path_strategy": "shared_support",
+      "output_files": [
+        ".vscode/tasks.json",
+        ".vscode/settings.json",
+        ".vscode/extensions.json"
+      ]
+    },
+    {
+      "key": "vs-code-insiders",
+      "display_name": "Visual Studio Code Insiders",
+      "category": "tool_editor",
+      "path_strategy": "shared_support",
+      "output_files": [
+        ".vscode/tasks.json",
+        ".vscode/settings.json",
+        ".vscode/extensions.json"
+      ]
+    },
+    {
+      "key": "aider",
+      "display_name": "Aider",
+      "category": "agent_cli",
+      "path_strategy": "official_common",
+      "output_files": [
+        "CONVENTIONS.md"
+      ]
+    },
+    {
+      "key": "cline",
+      "display_name": "Cline",
+      "category": "ide_based",
+      "path_strategy": "official",
+      "output_files": [
+        ".clinerules/syskit-rules.md"
+      ]
+    },
+    {
+      "key": "continue",
+      "display_name": "Continue",
+      "category": "ide_based",
+      "path_strategy": "official",
+      "output_files": [
+        ".continue/rules/syskit-rules.md"
+      ]
+    },
+    {
+      "key": "amazonq",
+      "display_name": "Amazon Q Developer",
+      "category": "ide_based",
+      "path_strategy": "official",
+      "output_files": [
+        ".amazonq/rules/syskit-rules.md"
+      ]
+    }
+  ]
+}

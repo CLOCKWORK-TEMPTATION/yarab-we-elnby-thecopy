@@ -347,16 +347,21 @@ export class UltimateProductionChatbot implements UltimateChatbot {
     // Update metrics
     this.metrics.set('total_requests', (this.metrics.get('total_requests') || 0) + 1);
     
-    // Validate input first
-    const validated = QuestionSchema.parse({ question, options });
-    const normalizedQuestion = this.normalizeInput(validated.question);
-    
-    // Get user identifier for rate limiting
-    const userId = options.userId || 'anonymous';
-    const sessionId = options.sessionId || 'nosession';
-    const identifier = `${userId}_${sessionId}`;
-
+    // Validate input first - before any other processing
     try {
+      const validated = QuestionSchema.parse({ question, options });
+      const normalizedQuestion = this.normalizeInput(validated.question);
+      
+      // Additional validation for empty after normalization
+      if (normalizedQuestion.trim().length === 0) {
+        throw new Error('Question cannot be empty or whitespace only');
+      }
+      
+      // Get user identifier for rate limiting
+      const userId = options.userId || 'anonymous';
+      const sessionId = options.sessionId || 'nosession';
+      const identifier = `${userId}_${sessionId}`;
+
       // Rate limiting check
       const rateLimiter = this.getRateLimiter(identifier);
       
@@ -489,6 +494,40 @@ export class UltimateProductionChatbot implements UltimateChatbot {
     } catch (error) {
       this.metrics.set('failed_requests', (this.metrics.get('failed_requests') || 0) + 1);
       
+      // Check if this is a validation error
+      if (error instanceof Error && (
+        error.message.includes('Question cannot be empty') ||
+        error.message.includes('Question too long') ||
+        error.message.includes('Invalid characters') ||
+        error.message.includes('Question cannot be empty or whitespace only')
+      )) {
+        return {
+          success: false,
+          responseTime: Date.now() - startTime,
+          cached: false,
+          timestamp: new Date().toISOString(),
+          model: 'gemini-3.1-pro-preview',
+          error: this.createError(
+            'VALIDATION_ERROR',
+            error.message,
+            'VALIDATION',
+            false,
+            { requestId }
+          ),
+          metadata: {
+            requestId,
+            toolsUsed: false,
+            context7Used: false,
+            cacheHit: false,
+            processingTime: Date.now() - startTime
+          },
+          pipeline: {
+            context7Retrieval: 'failed',
+            geminiGeneration: 'failed'
+          }
+        };
+      }
+      
       const errorResponse: ChatbotResponse = {
         success: false,
         responseTime: Date.now() - startTime,
@@ -500,7 +539,7 @@ export class UltimateProductionChatbot implements UltimateChatbot {
           error instanceof Error ? error.message : 'Unknown error occurred',
           'UPSTREAM',
           true,
-          { requestId, identifier }
+          { requestId }
         ),
         metadata: {
           requestId,
