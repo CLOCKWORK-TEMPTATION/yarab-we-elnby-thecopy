@@ -123,11 +123,23 @@ function buildHelpText(version, customCommands) {
   return lines.join('\n');
 }
 
-async function executeModule(commandName, commandArgs) {
+async function executeModule(commandName, commandArgs, options = {}) {
   const originalExit = process.exit;
+  const originalConsole = {
+    log: console.log,
+    warn: console.warn,
+    error: console.error
+  };
+
   process.exit = (code = 0) => {
     throw new CommandExitError(code);
   };
+
+  if (options.quiet) {
+    console.log = () => {};
+    console.warn = () => {};
+    console.error = () => {};
+  }
 
   try {
     const moduleRef = await COMMANDS[commandName]();
@@ -138,6 +150,9 @@ async function executeModule(commandName, commandArgs) {
     throw error;
   } finally {
     process.exit = originalExit;
+    console.log = originalConsole.log;
+    console.warn = originalConsole.warn;
+    console.error = originalConsole.error;
   }
 }
 
@@ -150,7 +165,7 @@ async function recordAnalyticsEvent(commandName, status, branch, details) {
     ...details
   });
 
-  await executeModule('record-analytics', ['--branch', branch, '--event', 'command_lifecycle', '--data', payload, '--json']);
+  await executeModule('record-analytics', ['--branch', branch, '--event', 'command_lifecycle', '--data', payload, '--json'], { quiet: true });
 }
 
 async function recordAnalyticsPayload(eventType, branch, details = {}) {
@@ -159,7 +174,7 @@ async function recordAnalyticsPayload(eventType, branch, details = {}) {
     args.push('--data', JSON.stringify(details));
   }
   args.push('--json');
-  await executeModule('record-analytics', args);
+  await executeModule('record-analytics', args, { quiet: true });
 }
 
 async function runAutoCommit(commandName, branch, jsonMode) {

@@ -217,6 +217,16 @@ export interface InputNormalization {
   casingPolicy: 'preserve' | 'lower' | 'upper'  // casing policy
 }
 
-// ===== EXPORTS =====
+// ===== METRICS OBSERVER INTERFACE =====
+
+export interface MetricsEvent {
+  type: 'request_started' | 'request_completed' | 'request_failed' | 'cache_hit' | 'cache_miss' | 'rate_limit_hit' | 'token_usage';
+  data: Record<string, unknown>;
+  timestamp: number;
+}
+
+export interface MetricsObserver {
+  onMetricsEvent(event: MetricsEvent): void;
+}
 
 export default UltimateChatbot;

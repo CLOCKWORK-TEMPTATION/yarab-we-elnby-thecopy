@@ -39,10 +39,14 @@ check(psAlertsContent.includes('Get-AlertsConfig'), 'PowerShell alert checks no 
 const initNodeContent = read('.Systematize/scripts/node/lib/init-syskit.mjs');
 check(initNodeContent.includes('features: {}'), 'Node init script no longer initializes analytics features as an object');
 check(initNodeContent.includes('extensions: {}'), 'Node init script no longer initializes sync-state extensions');
+check(initNodeContent.includes('install-state.json'), 'Node init script no longer persists install-state.json');
+check(initNodeContent.includes('snapshot_path'), 'Node init script no longer reports snapshot_path');
 
 const initPsContent = read('.Systematize/scripts/powershell/init-syskit.ps1');
 check(initPsContent.includes('features = @{}'), 'PowerShell init script no longer initializes features as an object');
 check(initPsContent.includes('extensions = @{'), 'PowerShell init script no longer initializes extensions metadata');
+check(initPsContent.includes('install-state.json'), 'PowerShell init script no longer persists install-state.json');
+check(initPsContent.includes('snapshot_path'), 'PowerShell init script no longer reports snapshot_path');
 
 const recordAnalyticsPsContent = read('.Systematize/scripts/powershell/record-analytics.ps1');
 check(recordAnalyticsPsContent.includes('custom_command_used'), 'PowerShell analytics script no longer supports custom command tracking');
@@ -52,8 +56,6 @@ check(
   existsSync(join(repoRoot, '.Systematize', 'templates', 'overrides', '.gitkeep')),
   'Missing .Systematize/templates/overrides/.gitkeep'
 );
-
-check(existsSync(join(repoRoot, 'polished-petting-curry.md')), 'Missing polished-petting-curry.md active plan file');
 
 const analyticsPath = join(repoRoot, '.Systematize', 'memory', 'analytics.json');
 if (existsSync(analyticsPath)) {

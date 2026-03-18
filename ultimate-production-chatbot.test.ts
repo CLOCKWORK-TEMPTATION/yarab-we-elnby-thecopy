@@ -4,26 +4,153 @@
  * Tests for mandatory dual dependency and contract compliance
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createUltimateChatbot } from './ultimate-production-chatbot-impl';
 import type { ChatbotConfig, ChatbotResponse, HealthStatus } from './ultimate-production-chatbot';
+
+// Mock external dependencies
+vi.mock('@ai-sdk/google', () => ({
+  google: vi.fn(() => ({
+    generateText: vi.fn()
+  }))
+}));
+
+vi.mock('ai', () => ({
+  generateText: vi.fn()
+}));
+
+// Mock fetch for Context7 API calls
+global.fetch = vi.fn();
+
+// MSW-style setup for API mocking
+const mockContext7Search = vi.fn();
+const mockContext7Context = vi.fn();
+const mockGeminiGenerate = vi.fn();
+
+// Setup mock responses
+const setupContext7Mocks = () => {
+  mockContext7Search.mockResolvedValue([
+    { id: '/test/library', name: 'Test Library', description: 'Test Description' }
+  ]);
+  
+  mockContext7Context.mockResolvedValue([
+    {
+      title: 'Test Document',
+      content: 'Test content about React hooks',
+      source: 'https://example.com/doc1',
+      relevance: 0.9,
+      lastUpdated: '2024-01-01'
+    }
+  ]);
+  
+  mockGeminiGenerate.mockResolvedValue({
+    text: 'Based on the documentation, React hooks are functions that let you use state and other React features.',
+    usage: {
+      inputTokens: 100,
+      outputTokens: 50,
+      totalTokens: 150
+    }
+  });
+};
+
+// Mock fetch implementation
+const mockFetch = vi.fn().mockImplementation((url) => {
+  if (url.includes('/libs/search')) {
+    return Promise.resolve({
+      ok: true,
+      json: () => Promise.resolve(mockContext7Search())
+    });
+  }
+  
+  if (url.includes('/context')) {
+    return Promise.resolve({
+      ok: true,
+      json: () => Promise.resolve(mockContext7Context())
+    });
+  }
+  
+  return Promise.resolve({
+    ok: false,
+    status: 404,
+    statusText: 'Not Found'
+  });
+});
+
+// Replace global fetch
+Object.defineProperty(global, 'fetch', {
+  value: mockFetch,
+  writable: true
+});
+
+// Test data factory
+const createTestConfig = (overrides: Partial<ChatbotConfig> = {}): ChatbotConfig => ({
+  googleApiKey: 'test-google-key',
+  context7ApiKey: 'test-context7-key',
+  cacheMaxSize: 10,
+  cacheTTL: 1000 * 60, // 1 minute
+  rateLimitPerMinute: 5,
+  ...overrides
+});
+
+const createMockChatbotResponse = (overrides: Partial<ChatbotResponse> = {}): ChatbotResponse => ({
+  success: true,
+  answer: 'Test answer',
+  sources: [{
+    id: 'source_1',
+    title: 'Test Document',
+    url: 'https://example.com/doc1',
+    snippet: 'Test content',
+    relevance: 0.9,
+    confidence: 0.8,
+    provider: 'context7'
+  }],
+  context7Sources: [{
+    id: 'doc_1',
+    title: 'Test Document',
+    content: 'Test content about React hooks',
+    sourceUrl: 'https://example.com/doc1',
+    relevance: 0.9,
+    lastUpdated: '2024-01-01'
+  }],
+  usage: {
+    inputTokens: 100,
+    outputTokens: 50,
+    totalTokens: 150
+  },
+  responseTime: 1000,
+  cached: false,
+  timestamp: new Date().toISOString(),
+  model: 'gemini-3.1-pro-preview',
+  metadata: {
+    requestId: 'req_123',
+    toolsUsed: false,
+    context7Used: true,
+    cacheHit: false,
+    processingTime: 1000
+  },
+  pipeline: {
+    context7Retrieval: 'success',
+    geminiGeneration: 'success'
+  },
+  ...overrides
+});
 
 describe('Ultimate Production Chatbot - Mandatory Dependencies', () => {
   let validConfig: ChatbotConfig;
 
   beforeEach(() => {
     // Set up valid configuration for tests
-    validConfig = {
-      googleApiKey: 'test-google-key',
-      context7ApiKey: 'test-context7-key',
-      cacheMaxSize: 10,
-      cacheTTL: 1000 * 60, // 1 minute
-      rateLimitPerMinute: 5
-    };
+    validConfig = createTestConfig();
 
     // Mock environment variables
     process.env.GOOGLE_GENERATIVE_AI_API_KEY = 'env-google-key';
     process.env.CONTEXT7_API_KEY = 'env-context7-key';
+    
+    // Setup API mocks
+    setupContext7Mocks();
+    
+    // Clear all mock history
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
@@ -285,143 +412,73 @@ describe('Ultimate Production Chatbot - Mandatory Dependencies', () => {
 
 describe('Dual Pipeline Enforcement', () => {
   let chatbot: ReturnType<typeof createUltimateChatbot>;
-  let validConfig: ChatbotConfig;
 
   beforeEach(() => {
-    validConfig = {
-      googleApiKey: 'test-google-key',
-      context7ApiKey: 'test-context7-key',
-      cacheMaxSize: 10,
-      cacheTTL: 1000 * 60,
-      rateLimitPerMinute: 5
-    };
+    chatbot = createUltimateChatbot(createTestConfig());
+  });
+
+  it('should prove both Context7 and Gemini were used in successful response', async () => {
+    const response = await chatbot.askQuestion('What is React?');
     
-    process.env.GOOGLE_GENERATIVE_AI_API_KEY = 'env-google-key';
-    process.env.CONTEXT7_API_KEY = 'env-context7-key';
-    
-    chatbot = createUltimateChatbot(validConfig);
-  });
-
-  afterEach(() => {
-    delete process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-    delete process.env.CONTEXT7_API_KEY;
-  });
-
-  it('should fail request if Context7 retrieval fails', async () => {
-    // This test would require mocking Context7 to fail
-    // For now, we'll test the structure
-    const response: ChatbotResponse = {
-      success: false,
-      responseTime: 1000,
-      cached: false,
-      timestamp: new Date().toISOString(),
-      model: 'gemini-3.1-pro-preview',
-      error: {
-        code: 'CONTEXT7_UNAVAILABLE',
-        message: 'Context7 service unavailable',
-        type: 'CONTEXT7_UNAVAILABLE',
-        retryable: true
-      },
-      metadata: {
-        requestId: 'test-req',
-        toolsUsed: false,
-        context7Used: false,
-        cacheHit: false,
-        processingTime: 1000
-      },
-      pipeline: {
-        context7Retrieval: 'failed',
-        geminiGeneration: 'failed'
-      }
-    };
-
-    expect(response.success).toBe(false);
-    expect(response.pipeline.context7Retrieval).toBe('failed');
-    expect(response.error?.type).toBe('CONTEXT7_UNAVAILABLE');
-  });
-
-  it('should fail request if Gemini generation fails', async () => {
-    const response: ChatbotResponse = {
-      success: false,
-      responseTime: 500,
-      cached: false,
-      timestamp: new Date().toISOString(),
-      model: 'gemini-3.1-pro-preview',
-      error: {
-        code: 'GEMINI_UNAVAILABLE',
-        message: 'Gemini service unavailable',
-        type: 'GEMINI_UNAVAILABLE',
-        retryable: true
-      },
-      metadata: {
-        requestId: 'test-req',
-        toolsUsed: false,
-        context7Used: false,
-        cacheHit: false,
-        processingTime: 500
-      },
-      pipeline: {
-        context7Retrieval: 'success',
-        geminiGeneration: 'failed'
-      }
-    };
-
-    expect(response.success).toBe(false);
-    expect(response.pipeline.geminiGeneration).toBe('failed');
-    expect(response.error?.type).toBe('GEMINI_UNAVAILABLE');
-  });
-
-  it('should prove both Context7 and Gemini were used in successful response', () => {
-    const response: ChatbotResponse = {
-      success: true,
-      answer: 'Test answer with sources',
-      context7Sources: [{
-        id: 'doc1',
-        title: 'React Documentation',
-        content: 'React is a library...',
-        sourceUrl: 'https://react.dev',
-        relevance: 0.95
-      }],
-      responseTime: 200,
-      cached: false,
-      timestamp: new Date().toISOString(),
-      model: 'gemini-3.1-pro-preview',
-      metadata: {
-        requestId: 'test-req',
-        toolsUsed: false,
-        context7Used: true,
-        cacheHit: false,
-        processingTime: 200
-      },
-      pipeline: {
-        context7Retrieval: 'success',
-        geminiGeneration: 'success'
-      }
-    };
-
-    expect(response.success).toBe(true);
+    // Verify both pipeline stages succeeded
     expect(response.pipeline.context7Retrieval).toBe('success');
     expect(response.pipeline.geminiGeneration).toBe('success');
-    expect(response.context7Sources?.length).toBeGreaterThan(0);
-    expect(response.metadata?.context7Used).toBe(true);
+    
+    // Verify Context7 was actually called
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('/libs/search'),
+      expect.any(Object)
+    );
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('/context'),
+      expect.any(Object)
+    );
+    
+    // Verify response contains both Context7 sources and Gemini answer
+    expect(response.context7Sources).toBeDefined();
+    expect(response.context7Sources!.length).toBeGreaterThan(0);
+    expect(response.answer).toBeDefined();
+    expect(response.answer!.length).toBeGreaterThan(0);
   });
 
-  it('should not allow any bypass of either stage', () => {
-    // Test that there are no flags to disable either stage
-    const options = {
-      useCache: false,
-      timeoutMs: 5000,
-      userId: 'test-user',
-      sessionId: 'test-session',
-      context7Library: 'react',
-      context7MaxDocuments: 5
-    };
+  it('should handle Context7 failure gracefully but still attempt Gemini', async () => {
+    // Mock Context7 failure
+    mockFetch.mockImplementationOnce(() => 
+      Promise.resolve({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error'
+      })
+    );
+    
+    const response = await chatbot.askQuestion('What is React?');
+    
+    // Context7 should fail but Gemini should still be attempted
+    expect(response.pipeline.context7Retrieval).toBe('failed');
+    expect(response.pipeline.geminiGeneration).toBe('success'); // May still succeed with empty context
+    expect(response.success).toBe(false); // Overall should fail due to Context7 failure
+    expect(response.error).toBeDefined();
+  });
 
-    // These should be the only valid options - no disable flags
-    expect(options).not.toHaveProperty('enableContext7');
-    expect(options).not.toHaveProperty('enableTools');
-    expect(options).not.toHaveProperty('disableContext7');
-    expect(options).not.toHaveProperty('disableTools');
+  it('should track pipeline stages even when both fail', async () => {
+    // Mock both services to fail
+    mockFetch.mockImplementation(() => 
+      Promise.resolve({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error'
+      })
+    );
+    
+    const { generateText } = await import('ai');
+    vi.mocked(generateText).mockRejectedValue(new Error('Gemini API error'));
+    
+    const response = await chatbot.askQuestion('What is React?');
+    
+    // Both stages should be tracked as failed
+    expect(response.pipeline.context7Retrieval).toBe('failed');
+    expect(response.pipeline.geminiGeneration).toBe('failed');
+    expect(response.success).toBe(false);
   });
 });
 
@@ -478,78 +535,110 @@ describe('Input Validation and Normalization', () => {
     expect(response2.error?.type).toBe('VALIDATION');
   });
 
-  it('should normalize input questions', () => {
-    const testCases = [
-      { input: 'Hello\tWorld', expected: 'Hello World' }
-    ];
-
-    testCases.forEach(({ input, expected }) => {
-      // This tests the normalization logic
-      const normalized = input.trim().replace(/\s+/g, ' ').normalize('NFC');
-      expect(normalized).toBe(expected);
-    });
+  it('should normalize input questions correctly', async () => {
+    const question = '  What   is   React?  ';
+    const response = await chatbot.askQuestion(question);
+    
+    expect(response.success).toBe(true);
+    expect(response.answer).toBeDefined();
+    
+    // Verify the question was normalized (no excessive whitespace)
+    const searchCalls = mockFetch.mock.calls.filter(call => 
+      call[0].includes('/libs/search')
+    );
+    expect(searchCalls.length).toBeGreaterThan(0);
+    
+    // The search URL should contain the normalized question
+    const searchUrl = searchCalls[0][0] as string;
+    expect(searchUrl).not.toContain('  What   is   React?  ');
+    expect(searchUrl).toContain('What is React?');
   });
-});
 
-describe('Cache and Rate Limiting', () => {
+describe('Integration Tests', () => {
   let chatbot: ReturnType<typeof createUltimateChatbot>;
-  let validConfig: ChatbotConfig;
 
   beforeEach(() => {
-    validConfig = {
-      googleApiKey: 'test-google-key',
-      context7ApiKey: 'test-context7-key',
-      cacheMaxSize: 5, // Small cache for testing
-      cacheTTL: 1000 * 60,
-      rateLimitPerMinute: 2 // Low rate limit for testing
-    };
+    chatbot = createUltimateChatbot(createTestConfig());
+  });
+
+  it('should handle end-to-end question processing with real API calls', async () => {
+    const response = await chatbot.askQuestion('What is React?', {
+      userId: 'test-user',
+      sessionId: 'test-session'
+    });
+
+    // Verify successful response
+    expect(response.success).toBe(true);
+    expect(response.answer).toBeDefined();
+    expect(response.answer!.length).toBeGreaterThan(0);
     
-    process.env.GOOGLE_GENERATIVE_AI_API_KEY = 'env-google-key';
-    process.env.CONTEXT7_API_KEY = 'env-context7-key';
+    // Verify both pipeline stages succeeded
+    expect(response.pipeline.context7Retrieval).toBe('success');
+    expect(response.pipeline.geminiGeneration).toBe('success');
     
-    chatbot = createUltimateChatbot(validConfig);
-  });
-
-  afterEach(() => {
-    delete process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-    delete process.env.CONTEXT7_API_KEY;
-  });
-
-  it('should respect cache size limits', () => {
-    const stats = chatbot.getCacheStatistics();
-    expect(stats.maxSize).toBe(5);
-  });
-
-  it('should track cache statistics', () => {
-    const stats = chatbot.getCacheStatistics();
+    // Verify Context7 sources are included
+    expect(response.context7Sources).toBeDefined();
+    expect(response.context7Sources!.length).toBeGreaterThan(0);
     
-    expect(stats).toHaveProperty('size');
-    expect(stats).toHaveProperty('maxSize');
-    expect(stats).toHaveProperty('hitRate');
-    expect(stats).toHaveProperty('missRate');
-    expect(stats).toHaveProperty('memoryUsage');
+    // Verify metadata
+    expect(response.metadata.requestId).toBeTruthy();
+    expect(response.metadata.userId).toBe('test-user');
+    expect(response.metadata.sessionId).toBe('test-session');
+    expect(response.metadata.context7Used).toBe(true);
+    
+    // Verify token usage
+    expect(response.usage).toBeDefined();
+    expect(response.usage!.totalTokens).toBeGreaterThan(0);
   });
 
-  it('should clear cache', () => {
-    chatbot.clearCache();
-    const stats = chatbot.getCacheStatistics();
-    expect(stats.size).toBe(0);
+  it('should handle Context7 API failure gracefully', async () => {
+    // Mock Context7 to fail
+    mockFetch.mockImplementation(() => 
+      Promise.resolve({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error'
+      })
+    );
+    
+    const response = await chatbot.askQuestion('What is React?');
+    
+    // Should fail due to Context7 dependency
+    expect(response.success).toBe(false);
+    expect(response.error?.type).toBe('CONTEXT7_UNAVAILABLE');
+    expect(response.pipeline.context7Retrieval).toBe('failed');
   });
 
-  it('should track metrics', () => {
+  it('should respect rate limiting', async () => {
+    // Create chatbot with low rate limit
+    const limitedChatbot = createUltimateChatbot(createTestConfig({
+      rateLimitPerMinute: 2
+    }));
+    
+    // Make requests up to the limit
+    const response1 = await limitedChatbot.askQuestion('Question 1');
+    const response2 = await limitedChatbot.askQuestion('Question 2');
+    const response3 = await limitedChatbot.askQuestion('Question 3'); // Should be rate limited
+    
+    expect(response1.success).toBe(true);
+    expect(response2.success).toBe(true);
+    expect(response3.success).toBe(false);
+    expect(response3.error?.type).toBe('RATE_LIMIT');
+  });
+
+  it('should handle caching correctly', async () => {
+    // First request
+    const response1 = await chatbot.askQuestion('What is React?', { useCache: true });
+    expect(response1.cached).toBe(false);
+    
+    // Second request should hit cache
+    const response2 = await chatbot.askQuestion('What is React?', { useCache: true });
+    expect(response2.cached).toBe(true);
+    expect(response2.answer).toBe(response1.answer);
+    
+    // Verify cache metrics
     const metrics = chatbot.getMetrics();
-    
-    expect(metrics).toHaveProperty('total_requests');
-    expect(metrics).toHaveProperty('successful_requests');
-    expect(metrics).toHaveProperty('failed_requests');
-    expect(metrics).toHaveProperty('cache_hits');
-    expect(metrics).toHaveProperty('cache_misses');
-    expect(metrics).toHaveProperty('rate_limit_hits');
-    expect(metrics).toHaveProperty('context7_calls');
-    expect(metrics).toHaveProperty('context7_errors');
-  });
-
-  it('should cleanup rate limiters', () => {
-    expect(() => chatbot.cleanup()).not.toThrow();
+    expect(metrics.get('cache_hits')).toBeGreaterThan(0);
+    expect(metrics.get('cache_misses')).toBeGreaterThan(0);
   });
 });

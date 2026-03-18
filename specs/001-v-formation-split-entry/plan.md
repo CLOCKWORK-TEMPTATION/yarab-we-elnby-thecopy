@@ -15,7 +15,7 @@
 | **Branch** | `001-v-formation-split-entry` |
 | **Date** | 2026-03-18 |
 | **Sys** | [sys.md](sys.md) |
-| **Plan Version** | 1.0 |
+| **Plan Version** | 1.1 |
 | **Status** | ☑ Draft |
 | **Readiness** | ☐ Not Ready ☐ Preliminary ☑ Ready for Execution |
 | **Product Manager** | Mohamed Aimen Raed |
@@ -79,6 +79,7 @@
 │  │  │   ├── Group B [0,1,2]: fromTo            │    │
 │  │  │   │   from: {x:-vw, y:-vh} (top-left)    │    │
 │  │  │   │   to:   {x:0, y:0}    (gather point) │    │
+│  │  │   │   duration: 0.82s (equalized end)     │    │
 │  │  │   └── position: 0 (synchronized)         │    │
 │  │  └── Phase 4: V-Formation positioning       │    │
 │  └─────────────────────────────────────────────┘    │
@@ -120,7 +121,7 @@
 |-------|-----------|----------|-------------|-------------------|
 | **Phase 0: Research** | التحقق من جدوى GSAP | ✅ مكتمل | [research.md](research.md) — Verdict: PROCEED | ☑ 3 فرضيات محققة بثقة عالية |
 | **Phase 1: Design** | خطة التنفيذ + عقود | ✅ مكتمل | plan.md + AGENTS.md + quickstart.md | ☑ Readiness Gate |
-| **Phase 2: Build** | تعديل Phase 3 في use-hero-animation.ts | ≤ 2 ساعات | كود معدّل — حلقتا fromTo بدل forEach واحدة | AC-001..AC-005 pass |
+| **Phase 2: Build** | تعديل Phase 3 في use-hero-animation.ts | ≤ 2.5 ساعة | كود معدّل — حلقتا fromTo بدل forEach واحدة (Group B duration=0.82s للتزامن) | AC-001..AC-005 pass |
 | **Phase 3: Verify** | فحص بصري + أداء + responsive | ≤ 1 ساعة | تقرير اختبار | AC-006, AC-007 pass + ≥60fps |
 | **Phase 4: Launch** | دمج في main | ≤ 30 دقيقة | merge + tag | مراجعة المالك |
 
@@ -129,7 +130,7 @@
 | Milestone | Target Date | Deliverable | Owner |
 |-----------|------------|-------------|-------|
 | Plan approved | 2026-03-18 | Approved plan.md | Mohamed Aimen Raed |
-| Code modified | 2026-03-19 | use-hero-animation.ts updated | Mohamed Aimen Raed |
+| Code modified | 2026-03-19 | use-hero-animation.ts updated (Group B duration=0.82s) | Mohamed Aimen Raed |
 | Verified | 2026-03-19 | All ACs pass | Mohamed Aimen Raed |
 | Merged | 2026-03-20 | PR merged to main | Mohamed Aimen Raed |
 
@@ -260,6 +261,7 @@ Every change to this plan must answer:
 | Version | Date | Change | Reason | Approved By |
 |---------|------|--------|--------|-------------|
 | 1.0 | 2026-03-18 | Initial version | — | Mohamed Aimen Raed |
+| 1.1 | 2026-03-18 | سد فجوات التحليل: حل تزامن QL-01 (Group B duration=0.82s)، تحديث المراحل والتقديرات | Mohamed Aimen Raed |
 
 ---
 
@@ -322,3 +324,4 @@ Every change to this plan must answer:
 | التاريخ | الإصدار | التغيير | المؤلف |
 |---------|---------|--------|--------|
 | 2026-03-18 | 1.0 | إنشاء خطة التنفيذ الكاملة | Claude |
+| 2026-03-18 | 1.1 | سد فجوات التحليل: حل تزامن QL-01، تحديث العمارة والمراحل | Claude |

@@ -30,6 +30,9 @@
       "display_name": "Claude Code",
       "category": "agent_cli",
       "path_strategy": "systematize_supported",
+      "mirror_directories": [
+        ".claude"
+      ],
       "output_files": [
         "CLAUDE.md"
       ]
@@ -39,6 +42,9 @@
       "display_name": "Gemini CLI",
       "category": "agent_cli",
       "path_strategy": "systematize_supported",
+      "mirror_directories": [
+        ".gemini"
+      ],
       "output_files": [
         "GEMINI.md"
       ]
@@ -57,6 +63,9 @@
       "display_name": "Qwen Code",
       "category": "agent_cli",
       "path_strategy": "systematize_supported",
+      "mirror_directories": [
+        ".qwen"
+      ],
       "output_files": [
         "QWEN.md"
       ]
@@ -66,6 +75,9 @@
       "display_name": "opencode",
       "category": "agent_cli",
       "path_strategy": "shared_standard",
+      "mirror_directories": [
+        ".opencode"
+      ],
       "output_files": [
         "AGENTS.md"
       ]
@@ -75,6 +87,9 @@
       "display_name": "Codex CLI",
       "category": "agent_cli",
       "path_strategy": "shared_standard",
+      "mirror_directories": [
+        ".codex"
+      ],
       "output_files": [
         "AGENTS.md"
       ]
@@ -111,6 +126,9 @@
       "display_name": "CodeBuddy",
       "category": "agent_cli",
       "path_strategy": "systematize_supported",
+      "mirror_directories": [
+        ".codebuddy"
+      ],
       "output_files": [
         "CODEBUDDY.md"
       ]
@@ -120,6 +138,10 @@
       "display_name": "Qoder CLI",
       "category": "agent_cli",
       "path_strategy": "systematize_supported",
+      "mirror_directories": [
+        ".qodercli",
+        ".qoder"
+      ],
       "output_files": [
         "QODER.md"
       ]
@@ -138,6 +160,10 @@
       "display_name": "Kiro CLI",
       "category": "agent_cli",
       "path_strategy": "shared_standard",
+      "mirror_directories": [
+        ".kiro-cli",
+        ".kiro"
+      ],
       "output_files": [
         "AGENTS.md"
       ]
@@ -147,6 +173,9 @@
       "display_name": "Amp",
       "category": "agent_cli",
       "path_strategy": "shared_standard",
+      "mirror_directories": [
+        ".amp"
+      ],
       "output_files": [
         "AGENTS.md"
       ]
@@ -156,6 +185,9 @@
       "display_name": "SHAI",
       "category": "agent_cli",
       "path_strategy": "systematize_supported",
+      "mirror_directories": [
+        ".shai"
+      ],
       "output_files": [
         "SHAI.md"
       ]
@@ -174,6 +206,9 @@
       "display_name": "IBM Bob",
       "category": "ide_based",
       "path_strategy": "shared_standard",
+      "mirror_directories": [
+        ".bob"
+      ],
       "output_files": [
         "AGENTS.md"
       ]
@@ -205,6 +240,9 @@
       "display_name": "Aider",
       "category": "agent_cli",
       "path_strategy": "official_common",
+      "mirror_directories": [
+        ".aider"
+      ],
       "output_files": [
         "CONVENTIONS.md"
       ]
