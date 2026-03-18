@@ -1,0 +1,52 @@
+name: "Trivy Container Security"
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  schedule:
+    - cron: '35 11 * * 4' # فحص أسبوعي يوم الخميس
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-scan:
+    permissions:
+      contents: read # لقراءة الكود
+      security-events: write # لرفع تقارير الأمان
+      actions: read # لقراءة حالة الـ Action
+    
+    name: Build & Scan Container
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # خطوة بناء الصورة - مخصصة للباك إند
+      - name: Build Backend Docker Image
+        # -f apps/backend/Dockerfile: تحديد ملف الدوكر بدقة
+        # .: تحديد الـ Context من الروت (مهم جداً في الـ Monorepo)
+        run: |
+          docker build -t clockwork-backend:${{ github.sha }} -f apps/backend/Dockerfile .
+
+      # تشغيل فحص Trivy
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'clockwork-backend:${{ github.sha }}'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          # الخيار ده مهم: ignore-unfixed بيخلينا نركز بس على المشاكل اللي ليها حل
+          ignore-unfixed: true
+          # 0 تعني التقرير فقط، 1 تعني كسر الـ Build لو فيه مشاكل
+          exit-code: '0'
+
+      # رفع النتائج
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'

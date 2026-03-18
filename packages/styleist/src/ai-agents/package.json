@@ -1,0 +1,38 @@
+{
+  "name": "ai-agents-orchestration-system",
+  "version": "1.0.0",
+  "description": "AI Agents Orchestration System for Film Production - نظام تنسيق الوكلاء الذكيين للإنتاج السينمائي",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "demo": "ts-node demo.ts",
+    "demo:phase1": "ts-node examples/phase1-demo.ts",
+    "dev": "ts-node index.ts",
+    "test": "echo 'Tests will be added in future iterations'",
+    "clean": "rm -rf dist",
+    "watch": "tsc --watch"
+  },
+  "keywords": [
+    "ai",
+    "agents",
+    "orchestration",
+    "film-production",
+    "cinema",
+    "artificial-intelligence",
+    "typescript"
+  ],
+  "author": "Cinema Maestro Team",
+  "license": "PROPRIETARY",
+  "dependencies": {
+    "@types/node": "^20.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "ts-node": "^10.9.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

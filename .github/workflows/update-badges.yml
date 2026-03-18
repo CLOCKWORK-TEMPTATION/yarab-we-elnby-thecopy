@@ -1,0 +1,132 @@
+name: Update Coverage Badges
+
+on:
+  workflow_run:
+    workflows: [Coverage Verification]
+    types: [completed]
+  push:
+    branches: [main, develop]
+    paths:
+      - 'apps/web/coverage/coverage-summary.json'
+      - 'apps/backend/coverage/coverage-summary.json'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-badges:
+    name: 🎨 Update Coverage Badges
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event.workflow_run.conclusion == 'success'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: Generate coverage badges
+        run: |
+          node scripts/generate-coverage-badges.js
+        continue-on-error: true
+
+      - name: Update README with badge references
+        run: |
+          if [ -f .github/badges/frontend-coverage.svg ] && [ -f .github/badges/backend-coverage.svg ]; then
+            echo "✅ Badges generated successfully"
+          else
+            echo "⚠️  Some badges may not have been generated"
+          fi
+
+      - name: Commit badges if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          if [ -n "$(git status .github/badges/ --porcelain)" ]; then
+            git add .github/badges/
+            git commit -m "chore: update coverage badges [skip ci]"
+            git push origin main
+            echo "✅ Badges committed and pushed"
+          else
+            echo "ℹ️  No changes in badges"
+          fi
+
+      - name: Create badge status artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-badges
+          path: .github/badges/
+          retention-days: 7
+
+  sync-coverage-stats:
+    name: 📊 Sync Coverage Statistics
+    runs-on: ubuntu-latest
+    needs: update-badges
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Download badges
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-badges
+          path: .github/badges/
+
+      - name: Generate coverage summary
+        run: |
+          mkdir -p .github/reports
+          
+          cat > .github/reports/coverage-summary.md << 'EOF'
+          # 📊 Coverage Summary
+          
+          Last updated: $(date -u +'%Y-%m-%d %H:%M:%S UTC')
+          
+          ## Frontend
+          
+          ![Frontend Coverage](../.github/badges/frontend-coverage.svg)
+          
+          - **Lines:** See badge above
+          - **Functions:** See badge above
+          - **Branches:** See badge above
+          - **Statements:** See badge above
+          
+          ## Backend
+          
+          ![Backend Coverage](../.github/badges/backend-coverage.svg)
+          
+          - **Lines:** See badge above
+          - **Functions:** See badge above
+          - **Branches:** See badge above
+          - **Statements:** See badge above
+          
+          ## Thresholds
+          
+          All metrics must meet the following targets:
+          
+          - **Lines:** 85% minimum
+          - **Functions:** 85% minimum
+          - **Branches:** 80% minimum
+          - **Statements:** 85% minimum
+          EOF
+        continue-on-error: true
+
+      - name: Commit summary if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          if [ -n "$(git status .github/reports/ --porcelain)" ]; then
+            git add .github/reports/
+            git commit -m "chore: update coverage summary [skip ci]"
+            git push origin main
+            echo "✅ Summary committed and pushed"
+          fi
+        continue-on-error: true

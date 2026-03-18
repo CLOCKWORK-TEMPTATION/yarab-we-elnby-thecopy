@@ -1,0 +1,38 @@
+version: "3.9"
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    env_file: .env
+    environment:
+      NEXT_PUBLIC_FILE_IMPORT_BACKEND_URL: http://file-import:8787/api/file-extract
+      NEXT_PUBLIC_FINAL_REVIEW_BACKEND_URL: http://file-import:8787/api/final-review
+    depends_on:
+      file-import:
+        condition: service_healthy
+
+  file-import:
+    build:
+      context: .
+      dockerfile: Dockerfile.file-import
+    ports:
+      - "8787:8787"
+    env_file: .env
+    environment:
+      FILE_IMPORT_HOST: "0.0.0.0"
+      FILE_IMPORT_PORT: "8787"
+      ANTIWORD_PATH: /usr/bin/antiword
+      ANTIWORDHOME: /usr/share/antiword
+      PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium
+      PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
+      PYTHONUTF8: "1"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:8787/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s

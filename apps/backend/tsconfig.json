@@ -1,0 +1,75 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "lib": [
+      "ES2022"
+    ],
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "removeComments": true,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "strictFunctionTypes": false,
+    "noImplicitReturns": false,
+    "noFallthroughCasesInSwitch": false,
+    "noUncheckedIndexedAccess": false,
+    "types": [
+      "node"
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "src/*"
+      ],
+      "@core/*": [
+        "src/services/agents/core/*"
+      ],
+      "@/types/*": [
+        "src/types/*"
+      ],
+      "@/services/*": [
+        "src/services/*"
+      ],
+      "@/controllers/*": [
+        "src/controllers/*"
+      ],
+      "@/middleware/*": [
+        "src/middleware/*"
+      ],
+      "@/utils/*": [
+        "src/utils/*"
+      ],
+      "@/lib/*": [
+        "src/lib/*"
+      ],
+      "@the-copy/shared": [
+        "../../packages/shared/src"
+      ],
+      "@the-copy/shared/*": [
+        "../../packages/shared/src/*"
+      ]
+    }
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "db-performance-analysis/**",
+    "scripts/**",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "src/test/**"
+  ]
+}

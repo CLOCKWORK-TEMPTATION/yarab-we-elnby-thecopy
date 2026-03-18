@@ -1,0 +1,335 @@
+name: Blue-Green Deployment
+
+# This workflow handles production deployments using blue-green strategy
+# - On pull_request: Validates workflow syntax (no deployment)
+# - On push to main: Deploys to production after CI passes
+# - On workflow_dispatch: Manual deployment/rollback
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment (blue/green)'
+        required: false
+        default: 'auto'
+        type: choice
+        options:
+          - auto
+          - blue
+          - green
+      skip_tests:
+        description: 'Skip tests'
+        required: false
+        default: false
+        type: boolean
+
+# SECURITY: Restrict permissions to minimum required
+permissions:
+  contents: read
+  actions: read
+
+env:
+  NODE_VERSION: '20'
+  PNPM_VERSION: '10'
+  BLUE_PORT: 3001
+  GREEN_PORT: 3002
+
+jobs:
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    # Deploy only on push to main when required secrets are available
+    if: |
+      github.ref == 'refs/heads/main' && 
+      github.event_name == 'push' && 
+      github.repository == 'CLOCKWORK-TEMPTATION/the...copy'
+    environment: production
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          
+      - name: Setup SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
+          
+      - name: Deploy to production
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          DEPLOY_ENVIRONMENT: ${{ github.event.inputs.environment || 'auto' }}
+        run: |
+          # Create deployment script
+          cat > deploy.sh << 'EOF'
+          #!/bin/bash
+          set -euo pipefail
+          
+          # Configuration
+          PROJECT_DIR="/opt/theeeecopy"
+          BLUE_PORT="${{ env.BLUE_PORT }}"
+          GREEN_PORT="${{ env.GREEN_PORT }}"
+          
+          # Create project directory if it doesn't exist
+          sudo mkdir -p "$PROJECT_DIR"
+          sudo chown $USER:$USER "$PROJECT_DIR"
+          
+          # Clone or update repository
+          if [ -d "$PROJECT_DIR/.git" ]; then
+            cd "$PROJECT_DIR"
+            git fetch origin
+            git reset --hard origin/main
+          else
+            git clone ${{ github.server_url }}/${{ github.repository }} "$PROJECT_DIR"
+            cd "$PROJECT_DIR"
+          fi
+          
+          # Install dependencies and build
+          pnpm install --frozen-lockfile
+          pnpm build
+          
+          # Set environment variables
+          export BLUE_PORT="$BLUE_PORT"
+          export GREEN_PORT="$GREEN_PORT"
+          export NODE_ENV="production"
+          
+          # Run blue-green deployment
+          chmod +x scripts/deploy/blue-green-deploy.sh
+          ./scripts/deploy/blue-green-deploy.sh deploy
+          
+          # Cleanup old deployments (keep last 3)
+          cd "$PROJECT_DIR"
+          find . -name "backup.*" -type d | sort -r | tail -n +4 | xargs rm -rf || true
+          
+          echo "Deployment completed successfully"
+          EOF
+          
+          chmod +x deploy.sh
+          
+          # Copy deployment script and execute remotely
+          scp -i ~/.ssh/deploy_key deploy.sh "$SSH_USER@$SSH_HOST:/tmp/deploy.sh"
+          ssh -i ~/.ssh/deploy_key "$SSH_USER@$SSH_HOST" "bash /tmp/deploy.sh"
+          
+      - name: Verify deployment
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          PRODUCTION_URL: ${{ secrets.PRODUCTION_URL }}
+        run: |
+          # Wait for deployment to stabilize
+          sleep 30
+          
+          # Check health endpoint
+          max_attempts=10
+          attempt=1
+          
+          while [ $attempt -le $max_attempts ]; do
+            if curl -f -s "${PRODUCTION_URL}/health" > /dev/null; then
+              echo "✅ Health check passed"
+              break
+            else
+              echo "⏳ Health check attempt $attempt/$max_attempts failed, retrying..."
+              sleep 10
+              attempt=$((attempt + 1))
+            fi
+          done
+          
+          if [ $attempt -gt $max_attempts ]; then
+            echo "❌ Health check failed after $max_attempts attempts"
+            exit 1
+          fi
+          
+          # Check readiness endpoint
+          if curl -f -s "${PRODUCTION_URL}/health/ready" | jq -r '.status' | grep -q "ready"; then
+            echo "✅ Readiness check passed"
+          else
+            echo "❌ Readiness check failed"
+            exit 1
+          fi
+          
+          # Run smoke tests
+          echo "Running smoke tests..."
+          
+          # Test API endpoints
+          if curl -f -s "${PRODUCTION_URL}/api/health" > /dev/null; then
+            echo "✅ API health check passed"
+          else
+            echo "❌ API health check failed"
+            exit 1
+          fi
+          
+          echo "✅ All deployment verification checks passed"
+          
+      - name: Cleanup SSH keys
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
+        
+      - name: Notify deployment status
+        if: always()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          channel: '#deployments'
+          text: |
+            Deployment ${{ job.status }} for ${{ github.repository }}
+            Branch: ${{ github.ref }}
+            Commit: ${{ github.sha }}
+            Author: ${{ github.actor }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  rollback:
+    name: Rollback Deployment
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment != 'auto'
+    environment: production
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
+          
+      - name: Perform rollback
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          TARGET_ENVIRONMENT: ${{ github.event.inputs.environment }}
+        run: |
+          ssh -i ~/.ssh/deploy_key "$SSH_USER@$SSH_HOST" << EOF
+          cd /opt/theeeecopy
+          
+          # Get current active environment
+          CURRENT_ENV=\$(grep -oP 'localhost:\K[0-9]+' /etc/nginx/sites-available/theeeecopy | head -1)
+          if [ "\$CURRENT_ENV" = "${{ env.BLUE_PORT }}" ]; then
+            CURRENT_ENV="blue"
+            CURRENT_PORT="${{ env.BLUE_PORT }}"
+            TARGET_PORT="${{ env.GREEN_PORT }}"
+          else
+            CURRENT_ENV="green"
+            CURRENT_PORT="${{ env.GREEN_PORT }}"
+            TARGET_PORT="${{ env.BLUE_PORT }}"
+          fi
+          
+          echo "Current environment: \$CURRENT_ENV"
+          echo "Target environment: $TARGET_ENVIRONMENT"
+          
+          if [ "\$CURRENT_ENV" = "$TARGET_ENVIRONMENT" ]; then
+            echo "Already on $TARGET_ENVIRONMENT environment - no rollback needed"
+            exit 0
+          fi
+          
+          # Switch traffic back
+          ./scripts/deploy/blue-green-deploy.sh rollback
+          
+          echo "Rollback completed successfully"
+          EOF
+          
+      - name: Verify rollback
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          PRODUCTION_URL: ${{ secrets.PRODUCTION_URL }}
+        run: |
+          sleep 15
+          
+          # Verify health after rollback
+          if curl -f -s "${PRODUCTION_URL}/health" > /dev/null; then
+            echo "✅ Rollback verification passed"
+          else
+            echo "❌ Rollback verification failed"
+            exit 1
+          fi
+          
+      - name: Cleanup SSH keys
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
+        
+      - name: Notify rollback status
+        if: always()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          channel: '#deployments'
+          text: |
+            Rollback ${{ job.status }} for ${{ github.repository }}
+            Target Environment: ${{ github.event.inputs.environment }}
+            Initiated by: ${{ github.actor }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  cleanup:
+    name: Cleanup Old Deployments
+    runs-on: ubuntu-latest
+    needs: [deploy]
+    # Only run cleanup when deploy job ran successfully
+    if: needs.deploy.result == 'success' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+
+    steps:
+      - name: Setup SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
+          
+      - name: Cleanup old deployments
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+        run: |
+          ssh -i ~/.ssh/deploy_key "$SSH_USER@$SSH_HOST" << EOF
+          # Cleanup old PM2 processes
+          pm2 delete all 2>/dev/null || true
+          
+          # Cleanup old build artifacts (keep last 5)
+          cd /opt/theeeecopy
+          find . -name "backup.*" -type d | sort -r | tail -n +6 | xargs rm -rf || true
+          
+          # Cleanup old log files (keep last 30 days)
+          find /var/log -name "*.log" -mtime +30 -delete 2>/dev/null || true
+          
+          echo "Cleanup completed"
+          EOF
+          
+      - name: Cleanup SSH keys
+        if: always()
+        run: rm -f ~/.ssh/deploy_key

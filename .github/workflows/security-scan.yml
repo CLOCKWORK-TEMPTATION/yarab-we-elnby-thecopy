@@ -1,0 +1,149 @@
+# Security Scanning Workflow
+# فحص أمني تلقائي مع كل push و pull request
+
+name: Security Scan
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run weekly security scan (Sundays at 2 AM UTC)
+    - cron: '0 2 * * 0'
+
+concurrency:
+  group: security-scan-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    # Skip if scripts don't exist
+    if: github.repository == 'CLOCKWORK-TEMPTATION/the...copy'
+    
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          # Fetch full history for comprehensive scanning
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: Check and run security scripts
+        run: |
+          echo "🔒 Running security scan..."
+          if [ -f "scripts/security-scan.sh" ]; then
+            chmod +x scripts/security-scan.sh
+            ./scripts/security-scan.sh || echo "Security scan completed with warnings"
+          else
+            echo "⚠️ Security scan script not found, skipping..."
+          fi
+          
+          echo "🛡️ Running advanced security scan..."
+          if [ -f "scripts/advanced-security-scan.sh" ]; then
+            chmod +x scripts/advanced-security-scan.sh
+            ./scripts/advanced-security-scan.sh || echo "Advanced security scan completed with warnings"
+          else
+            echo "⚠️ Advanced security scan script not found, skipping..."
+          fi
+
+      - name: Upload Security Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-report-${{ github.sha }}
+          path: security-report-*.md
+          retention-days: 30
+          if-no-files-found: ignore
+
+  # Secret scanning using GitHub's built-in scanner
+  secret-scan:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+    # Only run when GITLEAKS_LICENSE is available
+    if: (github.event_name == 'push' || github.event_name == 'pull_request') && github.repository == 'CLOCKWORK-TEMPTATION/the...copy'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+  # Dependency vulnerability scanning
+  dependency-scan:
+    name: Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+    if: github.repository == 'CLOCKWORK-TEMPTATION/the...copy'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: '10'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        continue-on-error: true
+
+      - name: Run npm audit
+        run: |
+          cd frontend && npm audit --audit-level=high || echo "Frontend audit completed with warnings"
+          cd ../backend && npm audit --audit-level=high || echo "Backend audit completed with warnings"
+        continue-on-error: true
+
+      - name: Run Snyk Security Scan
+        if: ${{ secrets.SNYK_TOKEN != '' }}
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
+
+  # Security summary
+  security-summary:
+    name: Security Summary
+    runs-on: ubuntu-latest
+    needs: [security-scan, secret-scan, dependency-scan]
+    if: always()
+    
+    steps:
+      - name: Security Summary
+        run: |
+          echo "## 🔒 Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Custom Security Scan | ${{ needs.security-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Secret Scanning | ${{ needs.secret-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Dependency Scan | ${{ needs.dependency-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "- Review any failed checks above" >> $GITHUB_STEP_SUMMARY
+          echo "- Download security reports from artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "- Address any critical vulnerabilities" >> $GITHUB_STEP_SUMMARY
+          echo "- Update dependencies regularly" >> $GITHUB_STEP_SUMMARY

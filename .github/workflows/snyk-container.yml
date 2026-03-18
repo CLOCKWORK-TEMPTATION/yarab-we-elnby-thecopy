@@ -1,0 +1,47 @@
+name: "Snyk Container Security"
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  schedule:
+    - cron: '17 1 * * 6' # فحص أسبوعي يوم السبت
+
+permissions:
+  contents: read
+
+jobs:
+  snyk:
+    permissions:
+      contents: read 
+      security-events: write 
+      actions: read 
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    # خطوة بناء الصورة - تم التعديل لتناسب الـ Monorepo
+    - name: Build Backend Docker image
+      # -f apps/backend/Dockerfile: بحدد مكان ملف الدوكر
+      # .: بحدد الـ Context من الروت عشان يشوف ملفات الـ pnpm المشتركة
+      run: docker build -t clockwork-backend -f apps/backend/Dockerfile .
+
+    - name: Run Snyk to check Docker image for vulnerabilities
+      # عدم إيقاف الـ Build عند وجود ثغرات (عشان التقرير يترفع الأول)
+      continue-on-error: true
+      uses: snyk/actions/docker@master
+      env:
+        # تأكد من إضافة SNYK_TOKEN في إعدادات الـ Secrets في GitHub
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      with:
+        image: clockwork-backend
+        # توجيه الأداة لملف الدوكر الصحيح داخل مجلد الباك إند
+        args: --file=apps/backend/Dockerfile
+
+    - name: Upload result to GitHub Code Scanning
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: snyk.sarif

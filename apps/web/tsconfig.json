@@ -1,0 +1,237 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "noUncheckedIndexedAccess": false,
+    "exactOptionalPropertyTypes": false,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "useUnknownInCatchVariables": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noPropertyAccessFromIndexSignature": false,
+    "allowUnusedLabels": false,
+    "allowUnreachableCode": false,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "incremental": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+      "~/*": [
+        "./src/*"
+      ],
+      "@editor/*": [
+        "./src/app/(main)/editor/src/*"
+      ],
+      "@core/*": [
+        "./src/lib/drama-analyst/*"
+      ],
+      "@agents/*": [
+        "./src/lib/drama-analyst/agents/*"
+      ],
+      "@services/*": [
+        "./src/lib/drama-analyst/services/*"
+      ],
+      "@orchestration/*": [
+        "./src/lib/drama-analyst/orchestration/*"
+      ],
+      "@shared/*": [
+        "./src/app/(main)/directors-studio/shared/*"
+      ],
+      "@the-copy/shared": [
+        "../../packages/shared/src"
+      ],
+      "@the-copy/shared/*": [
+        "../../packages/shared/src/*"
+      ],
+      "@the-copy/ui": [
+        "../../packages/ui/src"
+      ],
+      "@the-copy/ui/*": [
+        "../../packages/ui/src/*"
+      ],
+      "@the-copy/brain-storm-ai": [
+        "../../packages/brain-storm-ai/src"
+      ],
+      "@the-copy/brain-storm-ai/*": [
+        "../../packages/brain-storm-ai/src/*"
+      ],
+      "@the-copy/styleist": [
+        "../../packages/styleist/src"
+      ],
+      "@the-copy/styleist/*": [
+        "../../packages/styleist/src/*"
+      ],
+      "@the-copy/breakdown": [
+        "../../packages/breakdown/src"
+      ],
+      "@the-copy/breakdown/*": [
+        "../../packages/breakdown/src/*"
+      ],
+      "@the-copy/art-director": [
+        "../../packages/art-director/src"
+      ],
+      "@the-copy/art-director/*": [
+        "../../packages/art-director/src/*"
+      ],
+      "@the-copy/cinefit": [
+        "../../packages/cinefit/src"
+      ],
+      "@the-copy/cinefit/*": [
+        "../../packages/cinefit/src/*"
+      ],
+      "@the-copy/budget": [
+        "../../packages/budget/src"
+      ],
+      "@the-copy/budget/*": [
+        "../../packages/budget/src/*"
+      ],
+      "@the-copy/directors-studio": [
+        "../../packages/directors-studio/src"
+      ],
+      "@the-copy/directors-studio/*": [
+        "../../packages/directors-studio/src/*"
+      ],
+      "@the-copy/editor": [
+        "../../packages/editor/src"
+      ],
+      "@the-copy/editor/*": [
+        "../../packages/editor/src/*"
+      ],
+      "@the-copy/breakapp": [
+        "../../packages/breakapp/src"
+      ],
+      "@the-copy/breakapp/*": [
+        "../../packages/breakapp/src/*"
+      ],
+      "@the-copy/prompt-engineering": [
+        "../../packages/prompt-engineering/src"
+      ],
+      "@the-copy/prompt-engineering/*": [
+        "../../packages/prompt-engineering/src/*"
+      ],
+      "@the-copy/creative-writing": [
+        "../../packages/creative-writing/src"
+      ],
+      "@the-copy/creative-writing/*": [
+        "../../packages/creative-writing/src/*"
+      ],
+      "@the-copy/actorai": [
+        "../../packages/actorai/src"
+      ],
+      "@the-copy/actorai/*": [
+        "../../packages/actorai/src/*"
+      ],
+      "@the-copy/cinematography": [
+        "../../packages/cinematography/src"
+      ],
+      "@the-copy/cinematography/*": [
+        "../../packages/cinematography/src/*"
+      ]
+    },
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "types": [
+      "node",
+      "react",
+      "react-dom",
+      "vitest/globals"
+    ]
+  },
+  "include": [
+    "next-env.d.ts",
+    "src/env.d.ts",
+    "src/global.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    ".next",
+    "out",
+    "dist",
+    "build",
+    "coverage",
+    "jest.setup.ts",
+    "vitest.config.ts",
+    "vite.config.ts",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "**/*.backup.*",
+    "**/*.legacy.backup.*",
+    "tests/**",
+    "_archive/**",
+    "_analysis/**",
+    "**/__tests__/**",
+    "**/__mocks__/**",
+    "src/workers/**",
+    "src/app/(main)/development/**",
+    "src/app/(main)/BREAKAPP/**",
+    "src/app/(main)/BUDGET/**",
+    "src/app/(main)/breakdown/**",
+    "src/app/(main)/art-director/App.tsx",
+    "src/app/(main)/art-director/components/Layout.tsx",
+    "src/app/(main)/art-director/pages/**",
+    "src/app/(main)/art-director/api/**",
+    "src/app/(main)/art-director/index.ts",
+    "src/app/(main)/art-director/plugins/**",
+    "src/app/(main)/editor/app/**",
+    "src/app/(main)/editor/src/**",
+    "src/app/(main)/editor/server/**",
+    "src/app/(main)/editor/tests/**",
+    "src/app/(main)/editor/bench/**",
+    "src/app/(main)/editor/pipeline/**",
+    "src/app/(main)/editor/scripts/**",
+    "src/app/(main)/editor/specs/**",
+    "src/app/(main)/editor/controllers/**",
+    "src/app/(main)/editor/extensions/**",
+    "src/app/(main)/editor/hooks/**",
+    "src/app/(main)/editor/lib/**",
+    "src/app/(main)/editor/providers/**",
+    "src/app/(main)/editor/utils/**",
+    "src/app/(main)/editor/types/**",
+    "src/app/(main)/editor/constants/**",
+    "src/app/(main)/editor/components/**",
+    "src/app/(main)/editor/styles/**",
+    "src/app/(main)/editor/fonts/**",
+    "src/app/(main)/editor/docs/**",
+    "src/app/(main)/editor/App.tsx",
+    "src/app/(main)/editor/main.tsx",
+    "src/app/(main)/editor/editor.ts",
+    "src/app/(main)/editor/cli.ts",
+    "src/app/(main)/editor/*.config.*",
+    "src/app/(main)/editor/vitest.*.ts",
+    "src/app/(main)/New folder/**"
+  ]
+}

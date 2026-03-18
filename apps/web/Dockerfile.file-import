@@ -1,0 +1,49 @@
+# ── Base: python:3.12-slim
+# يحل مشكلتين في karank-bridge.mjs دفعة واحدة:
+#   1. Python 3.12 موجود بالفطرة (node:22-slim يأتي بـ 3.11 فقط)
+#   2. نضيف symlink python→python3 لأن الكود يستدعي "python" وليس "python3"
+FROM python:3.12-slim
+
+# ── Node.js 22 + System dependencies (single layer) ─────────────────────────
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates \
+    antiword \
+    chromium \
+    chromium-sandbox \
+    fonts-noto \
+    fonts-noto-cjk \
+    poppler-utils \
+    && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
+    && rm -rf /var/lib/apt/lists/* \
+    # symlink "python" → "python3"
+    # karank-bridge.mjs يستدعي spawn("python",...) لكن Linux يعرف "python3" فقط
+    && ln -sf /usr/bin/python3 /usr/bin/python
+
+# ── Puppeteer: system chromium ───────────────────────────────────────────────
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+
+# ── Antiword: القيم الافتراضية في doc-converter-flow.mjs ─────────────────────
+ENV ANTIWORD_PATH=/usr/bin/antiword
+ENV ANTIWORDHOME=/usr/share/antiword
+
+# ── Python UTF-8 (مطلوب للـ karank subprocess) ───────────────────────────────
+ENV PYTHONUTF8=1
+
+# ── App ──────────────────────────────────────────────────────────────────────
+WORKDIR /app
+
+COPY package.json pnpm-lock.yaml ./
+RUN npm install -g pnpm && pnpm install --frozen-lockfile --prod
+
+# نسخ ملفات الـ server (بما فيها karank_engine/engine/*.py)
+COPY src/app/\(main\)/editor/server ./server
+
+EXPOSE 8787
+
+ENV FILE_IMPORT_HOST=0.0.0.0
+ENV FILE_IMPORT_PORT=8787
+
+CMD ["node", "server/file-import-server.mjs"]

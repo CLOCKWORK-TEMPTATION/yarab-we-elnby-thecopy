@@ -1,0 +1,46 @@
+{
+  "name": "the-copy-monorepo",
+  "private": true,
+  "packageManager": "pnpm@10.32.1",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  },
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev --filter=@the-copy/web --filter=@the-copy/backend",
+    "dev:web": "turbo dev --filter=@the-copy/web",
+    "dev:backend": "turbo dev --filter=@the-copy/backend",
+    "test": "turbo test",
+    "lint": "turbo lint",
+    "type-check": "turbo type-check",
+    "clean": "turbo clean && rm -rf node_modules",
+    "ci": "turbo lint type-check test build",
+    "start": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/start-app.ps1",
+    "start:fresh": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/start-app.ps1 -Fresh",
+    "stop": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/kill-ports.ps1",
+    "start:redis": "powershell -Command \"Start-Process -FilePath '.\\redis\\redis-server.exe' -WindowStyle Minimized\"",
+    "check:exports": "node scripts/check-duplicate-exports.mjs",
+    "audit:code": "npx tsx scripts/code-auditor.ts",
+    "sentry:setup": "npx @sentry/wizard@latest -i nextjs --saas --org me-gj0 --project the-copy"
+  },
+  "devDependencies": {
+    "cypress": "^15.8.0",
+    "sharp": "^0.34.5",
+    "turbo": "^2.5.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.6"
+  },
+  "overrides": {
+    "@types/d3-array": "^3.2.1",
+    "@types/d3-scale": "^4.0.8",
+    "@types/d3-shape": "^3.1.6",
+    "@types/babel__traverse": "^7.20.5",
+    "@types/eslint": "^8.56.10",
+    "esbuild": "^0.25.0"
+  },
+  "dependencies": {
+    "@sentry/nextjs": "^10.32.1"
+  }
+}

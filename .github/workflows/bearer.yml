@@ -1,0 +1,56 @@
+name: "Bearer Data Security"
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  schedule:
+    - cron: '33 21 * * 6' # فحص أسبوعي
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  bearer:
+    name: Bearer SAST Scan
+    runs-on: ubuntu-latest
+    steps:
+      # سحب الكود بالكامل (ضروري لتحليل الـ Monorepo)
+      - uses: actions/checkout@v4
+
+      # تشغيل فحص Bearer
+      - name: Run Bearer Security Report
+        id: report
+        uses: bearer/bearer-action@v2
+        with:
+          # تأكد من إضافة BEARER_TOKEN في GitHub Secrets
+          api-key: ${{ secrets.BEARER_TOKEN }}
+          format: sarif
+          output: results.sarif
+          # 0 تعني عدم كسر الـ Build حتى لو وجدت مشاكل (مهم في البداية)
+          # يمكنك تغييرها لاحقاً لـ 1 لفرض الأمان بالقوة
+          exit-code: 0
+          # استبعاد المسارات المعروفة بأنها false positives
+          skip-rules: ''
+          # إضافة ملف التكوين للـ exclusions
+          config: |
+            {
+              "skip_paths": [
+                "node_modules",
+                ".next",
+                "dist",
+                "build",
+                "coverage",
+                "test",
+                "__tests__"
+              ]
+            }
+
+      # رفع التقرير إلى تبويب Security في GitHub
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif
