@@ -10,7 +10,7 @@ $ARGUMENTS
 
 ## Outline
 
-1. Run `Get-AllFeatureDirs` (from common.ps1 via a script) to discover all features.
+1. Run `Get-AllAminooofDirs` (from common.ps1 via a script) to discover all features.
    - If no features exist, inform the user and suggest `/syskit.systematize`.
 
 2. For each feature, run the feature status script:

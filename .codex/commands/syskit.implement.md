@@ -90,7 +90,7 @@ You **MUST** consider the user input before proceeding (if not empty).
    - **REQUIRED**: Read tasks.md for the complete task list and execution plan
    - **REQUIRED**: Read plan.md for tech stack, architecture, and file structure
    - **IF EXISTS**: Read AGENTS.md for entities and relationships
-   - **IF EXISTS**: Read contracts/ for API specifications and test requirements
+   - **IF EXISTS**: Read contracts/ for API contract details and test requirements
    - **IF EXISTS**: Read research.md for technical decisions and constraints
    - **IF EXISTS**: Read quickstart.md for integration scenarios
 
@@ -176,7 +176,7 @@ You **MUST** consider the user input before proceeding (if not empty).
      ├── Build: ✅ passing
      ├── Tests: ✅ 12/12 passing
      ├── Health: 85/100
-     └── Committed: docs(specs): implement — phase 2 complete [001-user-auth]
+     └── Committed: docs(aminooof): implement — phase 2 complete [001-user-auth]
      ```
 
 7. **Rollback Support** (new):

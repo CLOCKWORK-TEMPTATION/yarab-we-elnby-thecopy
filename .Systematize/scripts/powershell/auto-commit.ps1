@@ -44,16 +44,15 @@ if (-not $Message) {
         'review'      { "add review report" }
         default       { "update documentation" }
     }
-    $Message = "docs(specs): $cmdName — $description [$branchName]"
+    $Message = "docs(aminooof): $cmdName — $description [$branchName]"
 }
 
 # Stage و commit
 Set-Location $repoRoot
 $featureDir = Get-FeatureDir -RepoRoot $repoRoot -Branch $branchName
-$specsPath = "specs/$branchName"
 
 try {
-    git add "$specsPath" 2>$null
+    git add "$featureDir" 2>$null
     git add ".Systematize/memory/" 2>$null
 
     # فحص وجود تغييرات

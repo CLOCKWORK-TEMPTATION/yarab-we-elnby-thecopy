@@ -619,7 +619,7 @@ Output a Markdown report (**no file writes**) with the following structure:
 
 ---
 
-## Specification Analysis Report
+## Sys Analysis Report
 
 ### 1. Executive Summary
 

@@ -29,7 +29,7 @@ You **MUST** consider the user input before proceeding (if not empty).
 ### Core Rules
 
 1. **ATOMIC DECOMPOSITION** — Every task completable in ONE work session (2–4 hours max). If larger, split it.
-2. **TASK FORMULA** — Every task description follows: `[Action] + [Component/File] + [Specifications] + [Acceptance Criterion]`
+2. **TASK FORMULA** — Every task description follows: `[Action] + [Component/File] + [Implementation Details] + [Acceptance Criterion]`
 3. **TRACEABILITY** — Every task traces back to a specific section/requirement in plan.md or sys.md.
 4. **LAYER CLASSIFICATION** — Every task is typed: 🗄️ Backend / 🎨 Frontend / 🔧 DevOps / 🔗 Cross-Cutting.
 5. **LAYER-PREFIXED IDs** — IDs follow the convention: `BE-T-001`, `FE-T-001`, `DO-T-001`, `CC-T-001`.
@@ -130,7 +130,7 @@ You **MUST** consider the user input before proceeding (if not empty).
    - **Parallel**: Yes/No
    - **Story**: US1/US2/... or Setup/Foundation/Polish
    - **Milestone**: MS1/MS2/... or N/A
-   - **Description**: Following task formula `[Action] + [Component/File] + [Specs] + [Criterion]`
+   - **Description**: Following task formula `[Action] + [Component/File] + [Implementation Details] + [Criterion]`
    - **Expected Outputs**: List of files/artifacts with checkboxes
    - **Acceptance Criteria**: Testable criteria with checkboxes
    - **Risks / Attention Points**: Or "None"
@@ -255,7 +255,7 @@ Every task MUST be a full Task Card section following `.Systematize/templates/ta
 | **Milestone** | [MS1/MS2/...] or N/A |
 
 **Description:**
-[Action + Component/File + Specifications + Criterion]
+[Action + Component/File + Implementation Details + Criterion]
 
 **Expected Outputs:**
 - [ ] [File or artifact]

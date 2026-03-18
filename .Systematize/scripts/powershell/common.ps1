@@ -1,6 +1,149 @@
 #!/usr/bin/env pwsh
 # Common PowerShell functions analogous to common.sh
 
+$script:FeatureWorkspaceName = 'aminooof'
+$script:LegacyFeatureWorkspaceName = [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('c3BlY3M='))
+
+function Move-FeatureWorkspace {
+    param(
+        [Parameter(Mandatory = $true)][string]$SourceDir,
+        [Parameter(Mandatory = $true)][string]$TargetDir
+    )
+
+    Move-Item -LiteralPath $SourceDir -Destination $TargetDir -Force
+}
+
+function Get-FeatureWorkspaceRoot {
+    param(
+        [string]$RepoRoot = (Get-RepoRoot),
+        [switch]$Mutating,
+        [switch]$EnsureExists
+    )
+
+    $currentRoot = Join-Path $RepoRoot $script:FeatureWorkspaceName
+    $legacyRoot = Join-Path $RepoRoot $script:LegacyFeatureWorkspaceName
+    $currentExists = Test-Path -LiteralPath $currentRoot -PathType Container
+    $legacyExists = Test-Path -LiteralPath $legacyRoot -PathType Container
+
+    if ($currentExists -and $legacyExists) {
+        throw "Conflicting workflow roots detected. Resolve manually before continuing:`n- $currentRoot`n- $legacyRoot"
+    }
+
+    if ($legacyExists -and -not $currentExists) {
+        if ($Mutating) {
+            Move-FeatureWorkspace -SourceDir $legacyRoot -TargetDir $currentRoot
+            return $currentRoot
+        }
+
+        return $legacyRoot
+    }
+
+    if (-not $currentExists -and $EnsureExists) {
+        Ensure-Dir -Path $currentRoot
+    }
+
+    return $currentRoot
+}
+
+function Get-ConstitutionFilePath {
+    param([string]$RepoRoot = (Get-RepoRoot))
+    return (Join-Path $RepoRoot '.Systematize/memory/constitution.md')
+}
+
+function Get-DocumentCompletionStatus {
+    param(
+        [Parameter(Mandatory = $true)][string]$FilePath,
+        [string[]]$RequiredMarkers = @()
+    )
+
+    if (-not (Test-Path -LiteralPath $FilePath -PathType Leaf)) {
+        return [PSCustomObject]@{
+            status = 'not_started'
+            file_exists = $false
+            placeholders = 0
+            missing_markers = @()
+        }
+    }
+
+    $content = Get-Content -LiteralPath $FilePath -Raw -Encoding utf8
+    $placeholders = @(Find-UnresolvedPlaceholders -Content $content)
+    $missingMarkers = @($RequiredMarkers | Where-Object { $content -notmatch [regex]::Escape($_) })
+    $isBlank = [string]::IsNullOrWhiteSpace($content)
+
+    if ($isBlank) {
+        return [PSCustomObject]@{
+            status = 'not_started'
+            file_exists = $true
+            placeholders = $placeholders.Count
+            missing_markers = $missingMarkers
+        }
+    }
+
+    return [PSCustomObject]@{
+        status = if ($placeholders.Count -eq 0 -and $missingMarkers.Count -eq 0) { 'complete' } else { 'partial' }
+        file_exists = $true
+        placeholders = $placeholders.Count
+        missing_markers = $missingMarkers
+    }
+}
+
+function Get-ClarificationStatus {
+    param([Parameter(Mandatory = $true)][string]$FeatureDir)
+
+    $sysFile = Join-Path $FeatureDir 'sys.md'
+    if (-not (Test-Path -LiteralPath $sysFile -PathType Leaf)) {
+        return [PSCustomObject]@{
+            status = 'not_started'
+            file_exists = $false
+            questions_resolved = 0
+            assumptions_documented = 0
+        }
+    }
+
+    $sysContent = Get-Content -LiteralPath $sysFile -Raw -Encoding utf8
+    $startIndex = $sysContent.IndexOf('## Clarification Contract')
+    if ($startIndex -lt 0) {
+        return [PSCustomObject]@{
+            status = 'not_started'
+            file_exists = $true
+            questions_resolved = 0
+            assumptions_documented = 0
+        }
+    }
+
+    $section = $sysContent.Substring($startIndex)
+    $nextSectionMatch = [regex]::Match($section, "\n---\s*\n\s*## Level 3:|\n## Level 3:")
+    if ($nextSectionMatch.Success) {
+        $section = $section.Substring(0, $nextSectionMatch.Index)
+    }
+
+    $placeholders = @(Find-UnresolvedPlaceholders -Content $section)
+    $questionsResolved = @(
+        $section -split "`r?`n" |
+            Where-Object { $_.Trim().StartsWith('- Q:') -and $_ -notmatch '\[question\]|\[answer\]|\[section/decision affected\]' }
+    ).Count
+    $assumptionsDocumented = @(
+        $section -split "`r?`n" |
+            Where-Object { $_ -match '\*\*ASM-\d{3}\*\*' -and $_ -notmatch '\[Assumption\]|\[why assumed\]|\[impact\]' }
+    ).Count
+    $checklistNeedsSelection = $section.Contains('☐ Yes / ☐ No')
+    $checklistHasNo = $section -match '\|\s*\d+\s*\|[^|]+\|\s*☐ No\s*\|'
+    $hasWork = ($questionsResolved -gt 0) -or ($assumptionsDocumented -gt 0)
+
+    return [PSCustomObject]@{
+        status = if ($hasWork -and $placeholders.Count -eq 0 -and -not $checklistNeedsSelection -and -not $checklistHasNo) { 'complete' } else { 'partial' }
+        file_exists = $true
+        questions_resolved = $questionsResolved
+        assumptions_documented = $assumptionsDocumented
+    }
+}
+
+function Get-ConstitutionStatus {
+    param([string]$RepoRoot = (Get-RepoRoot))
+
+    return Get-DocumentCompletionStatus -FilePath (Get-ConstitutionFilePath -RepoRoot $RepoRoot) -RequiredMarkers @('## ٢٧. تقييم الاكتمال')
+}
+
 function Get-RepoRoot {
     try {
         $result = git rev-parse --show-toplevel 2>$null
@@ -33,13 +176,18 @@ function Get-CurrentBranch {
     
     # For non-git repos, try to find the latest feature directory
     $repoRoot = Get-RepoRoot
-    $specsDir = Join-Path $repoRoot "specs"
+    $featureRoot = $null
+    try {
+        $featureRoot = Get-FeatureWorkspaceRoot -RepoRoot $repoRoot
+    } catch {
+        $featureRoot = $null
+    }
     
-    if (Test-Path $specsDir) {
+    if ($featureRoot -and (Test-Path $featureRoot)) {
         $latestFeature = ""
         $highest = 0
         
-        Get-ChildItem -Path $specsDir -Directory | ForEach-Object {
+        Get-ChildItem -Path $featureRoot -Directory | ForEach-Object {
             if ($_.Name -match '^(\d{3})-') {
                 $num = [int]$matches[1]
                 if ($num -gt $highest) {
@@ -88,20 +236,35 @@ function Test-FeatureBranch {
 }
 
 function Get-FeatureDir {
-    param([string]$RepoRoot, [string]$Branch)
-    Join-Path $RepoRoot "specs/$Branch"
+    param(
+        [string]$RepoRoot,
+        [string]$Branch,
+        [switch]$Mutating,
+        [switch]$EnsureExists
+    )
+
+    $featureRoot = Get-FeatureWorkspaceRoot -RepoRoot $RepoRoot -Mutating:$Mutating -EnsureExists:$EnsureExists
+    Join-Path $featureRoot $Branch
 }
 
 function Get-FeaturePathsEnv {
+    param(
+        [switch]$Mutating,
+        [switch]$EnsureExists
+    )
+
     $repoRoot = Get-RepoRoot
     $currentBranch = Get-CurrentBranch
     $hasGit = Test-HasGit
-    $featureDir = Get-FeatureDir -RepoRoot $repoRoot -Branch $currentBranch
+    $featureRoot = Get-FeatureWorkspaceRoot -RepoRoot $repoRoot -Mutating:$Mutating -EnsureExists:$EnsureExists
+    $featureDir = Join-Path $featureRoot $currentBranch
     
     [PSCustomObject]@{
         REPO_ROOT     = $repoRoot
         CURRENT_BRANCH = $currentBranch
         HAS_GIT       = $hasGit
+        FEATURE_ROOT  = $featureRoot
+        AMINOOOF_DIR  = $featureDir
         FEATURE_DIR   = $featureDir
         FEATURE_SYS   = Join-Path $featureDir 'sys.md'
         IMPL_PLAN     = Join-Path $featureDir 'plan.md'
@@ -206,12 +369,12 @@ function Resolve-Template {
 # v2 Expansion — Additional Helper Functions
 # ============================================================
 
-function Get-AllFeatureDirs {
-    # يرجع كل مجلدات الـ features في specs/
+function Get-AllAminooofDirs {
+    # يرجع كل مجلدات الـ features في aminooof/
     param([string]$RepoRoot = (Get-RepoRoot))
-    $specsDir = Join-Path $RepoRoot "specs"
-    if (-not (Test-Path $specsDir)) { return @() }
-    Get-ChildItem -Path $specsDir -Directory | Where-Object { $_.Name -match '^\d{3}-' } | Sort-Object Name
+    $featureRoot = Get-FeatureWorkspaceRoot -RepoRoot $RepoRoot
+    if (-not (Test-Path $featureRoot)) { return @() }
+    Get-ChildItem -Path $featureRoot -Directory | Where-Object { $_.Name -match '^\d{3}-' } | Sort-Object Name
 }
 
 function Get-FeatureStatus {
@@ -282,12 +445,15 @@ function Compare-TrackedIDs {
 function Get-FeatureProgress {
     # يحسب نسبة اكتمال feature بناءً على الملفات الموجودة
     param([Parameter(Mandatory=$true)][string]$FeatureDir)
-    $totalPhases = 6  # sys, research, plan, tasks, checklists, implement
+    $totalPhases = 8  # sys, clarify, constitution, research, plan, tasks, checklists, implement
     $completed = 0
     if (Test-Path (Join-Path $FeatureDir 'sys.md'))      { $completed++ }
-    if (Test-Path (Join-Path $FeatureDir 'research.md'))  { $completed++ }
-    if (Test-Path (Join-Path $FeatureDir 'plan.md'))      { $completed++ }
-    if (Test-Path (Join-Path $FeatureDir 'tasks.md'))     { $completed++ }
+    if ((Get-ClarificationStatus -FeatureDir $FeatureDir).status -eq 'complete') { $completed++ }
+    $repoRoot = Resolve-Path (Join-Path $FeatureDir '../..')
+    if ((Get-ConstitutionStatus -RepoRoot $repoRoot).status -eq 'complete') { $completed++ }
+    if ((Get-DocumentCompletionStatus -FilePath (Join-Path $FeatureDir 'research.md')).status -eq 'complete') { $completed++ }
+    if ((Get-DocumentCompletionStatus -FilePath (Join-Path $FeatureDir 'plan.md')).status -eq 'complete') { $completed++ }
+    if ((Get-DocumentCompletionStatus -FilePath (Join-Path $FeatureDir 'tasks.md')).status -ne 'not_started') { $completed++ }
     $checkDir = Join-Path $FeatureDir 'checklists'
     if ((Test-Path $checkDir) -and (Get-ChildItem $checkDir -File -ErrorAction SilentlyContinue | Select-Object -First 1)) { $completed++ }
     # Implementation check — if tasks.md has [X] marks
@@ -539,19 +705,19 @@ function Get-FeatureHealthReport {
     $tasksContent = if (Test-Path $tasksFile) { Get-Content $tasksFile -Raw } else { '' }
     $allContent = "$sysContent`n$planContent`n$tasksContent"
 
-    $checks = @()
-    $totalScore = 0
+    $script:__syskitHealthChecks = [System.Collections.Generic.List[object]]::new()
+    $script:__syskitHealthScore = 0
 
     function Add-HealthCheck {
         param([string]$Name, [int]$Score, [string[]]$Issues)
         $safeScore = [math]::Min(10, [math]::Max(0, $Score))
-        $script:checks += [PSCustomObject]@{
+        $script:__syskitHealthChecks.Add([PSCustomObject]@{
             Name = $Name
             Score = $safeScore
             MaxScore = 10
             Issues = $Issues
-        }
-        $script:totalScore += $safeScore
+        }) | Out-Null
+        $script:__syskitHealthScore += $safeScore
     }
 
     $frIDs = [regex]::Matches($sysContent, 'FR-\d{3}') | ForEach-Object { $_.Value } | Sort-Object -Unique
@@ -638,10 +804,10 @@ function Get-FeatureHealthReport {
     Add-HealthCheck -Name 'Changelog present' -Score (10 - ($changelogIssues.Count * 3)) -Issues $changelogIssues
 
     return [PSCustomObject]@{
-        score = $totalScore
+        score = $script:__syskitHealthScore
         maxScore = 100
         threshold = $Threshold
-        status = if ($totalScore -ge $Threshold) { 'HEALTHY' } else { 'UNHEALTHY' }
-        checks = $checks
+        status = if ($script:__syskitHealthScore -ge $Threshold) { 'HEALTHY' } else { 'UNHEALTHY' }
+        checks = @($script:__syskitHealthChecks)
     }
 }

@@ -1,7 +1,14 @@
 // حالة feature — مكافئ get-feature-status.ps1
 import { existsSync, readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
-import { getFeaturePathsEnv, getFeatureDir, parseArgs } from './common.mjs';
+import {
+  getClarificationStatus,
+  getConstitutionStatus,
+  getDocumentCompletionStatus,
+  getFeatureDir,
+  getFeaturePathsEnv,
+  parseArgs
+} from './common.mjs';
 import { evaluateFeatureHealth, getFeatureLastActivity } from './health.mjs';
 
 export default async function main(argv) {
@@ -22,18 +29,15 @@ export default async function main(argv) {
   phases.systematize = existsSync(sysFile) ? { status: 'complete', file_exists: true } : { status: 'not_started', file_exists: false };
 
   // Clarify
-  const sysContent = read(sysFile);
-  const resolved = (sysContent.match(/→ A:/g) || []).length;
-  phases.clarify = { status: resolved > 0 ? 'complete' : 'not_started', questions_resolved: resolved };
-
-  // Research, Plan, Tasks
-  for (const [name, file] of [['research','research.md'],['plan','plan.md'],['tasks','tasks.md']]) {
-    phases[name] = { status: existsSync(join(featureDir, file)) ? 'complete' : 'not_started', file_exists: existsSync(join(featureDir, file)) };
-  }
+  phases.clarify = getClarificationStatus(featureDir);
 
   // Constitution
-  const constitutionFile = join(featureDir, '..', '..', '.Systematize', 'memory', 'constitution.md');
-  phases.constitution = { status: existsSync(constitutionFile) && !read(constitutionFile).includes('[PROJECT_NAME]') ? 'complete' : 'not_started', file_exists: existsSync(constitutionFile) };
+  phases.constitution = getConstitutionStatus(env.REPO_ROOT);
+
+  // Research, Plan, Tasks
+  phases.research = getDocumentCompletionStatus(join(featureDir, 'research.md'));
+  phases.plan = getDocumentCompletionStatus(join(featureDir, 'plan.md'));
+  phases.tasks = getDocumentCompletionStatus(join(featureDir, 'tasks.md'));
 
   // Checklist
   const checklistDir = join(featureDir, 'checklists');
@@ -44,17 +48,29 @@ export default async function main(argv) {
   const tasksFile = join(featureDir, 'tasks.md');
   const tasksContent = read(tasksFile);
   const completedTasks = (tasksContent.match(/\[X\]|\[x\]/g) || []).length;
-  phases.implementation = { status: completedTasks > 0 ? 'in_progress' : 'not_started', completed_tasks: completedTasks };
+  phases.implementation = {
+    status: completedTasks > 0 ? 'in_progress' : (phases.tasks.status === 'complete' ? 'complete' : 'not_started'),
+    completed_tasks: completedTasks
+  };
 
   const health = evaluateFeatureHealth(featureDir);
   const lastActivity = getFeatureLastActivity(featureDir);
 
   // Next step
-  const order = ['systematize','clarify','research','plan','tasks','constitution','checklist','implementation'];
-  const cmdMap = { systematize: '/syskit.systematize', clarify: '/syskit.clarify', research: '/syskit.research', plan: '/syskit.plan', tasks: '/syskit.tasks', constitution: '/syskit.constitution', checklist: 'checklists', implementation: 'implement' };
+  const order = ['systematize', 'clarify', 'constitution', 'research', 'plan', 'tasks', 'checklist', 'implementation'];
+  const cmdMap = {
+    systematize: '/syskit.systematize',
+    clarify: '/syskit.clarify',
+    constitution: '/syskit.constitution',
+    research: '/syskit.research',
+    plan: '/syskit.plan',
+    tasks: '/syskit.tasks',
+    checklist: '/syskit.checklist',
+    implementation: '/syskit.implement'
+  };
   let nextStep = 'complete';
   for (const p of order) {
-    if (phases[p].status === 'not_started') { nextStep = cmdMap[p]; break; }
+    if (phases[p].status !== 'complete') { nextStep = cmdMap[p]; break; }
   }
 
   const result = {

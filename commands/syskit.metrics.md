@@ -12,7 +12,7 @@ $ARGUMENTS
 
 1. Read `.Systematize/memory/analytics.json` for event data.
 
-2. Run `get-feature-status.ps1 -Json` / `node cli.mjs feature-status --json` for each feature found via `Get-AllFeatureDirs`.
+2. Run `get-feature-status.ps1 -Json` / `node cli.mjs feature-status --json` for each feature found via `Get-AllAminooofDirs`.
 
 3. **Calculate metrics**:
 

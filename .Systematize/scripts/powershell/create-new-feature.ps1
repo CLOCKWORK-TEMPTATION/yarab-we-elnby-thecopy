@@ -67,12 +67,12 @@ function Find-RepositoryRoot {
     }
 }
 
-function Get-HighestNumberFromSpecs {
-    param([string]$SpecsDir)
+function Get-HighestNumberFromAminooof {
+    param([string]$AminooofDir)
     
     $highest = 0
-    if (Test-Path $SpecsDir) {
-        Get-ChildItem -Path $SpecsDir -Directory | ForEach-Object {
+    if (Test-Path $AminooofDir) {
+        Get-ChildItem -Path $AminooofDir -Directory | ForEach-Object {
             if ($_.Name -match '^(\d+)') {
                 $num = [int]$matches[1]
                 if ($num -gt $highest) { $highest = $num }
@@ -109,7 +109,7 @@ function Get-HighestNumberFromBranches {
 
 function Get-NextBranchNumber {
     param(
-        [string]$SpecsDir
+        [string]$AminooofDir
     )
 
     # Fetch all remotes to get latest branch info (suppress errors if no remotes)
@@ -122,11 +122,11 @@ function Get-NextBranchNumber {
     # Get highest number from ALL branches (not just matching short name)
     $highestBranch = Get-HighestNumberFromBranches
 
-    # Get highest number from ALL specs (not just matching short name)
-    $highestSpec = Get-HighestNumberFromSpecs -SpecsDir $SpecsDir
+    # Get highest number from the workflow workspace
+    $highestWorkspace = Get-HighestNumberFromAminooof -AminooofDir $AminooofDir
 
     # Take the maximum of both
-    $maxNum = [Math]::Max($highestBranch, $highestSpec)
+    $maxNum = [Math]::Max($highestBranch, $highestWorkspace)
 
     # Return next number
     return $maxNum + 1
@@ -160,8 +160,7 @@ try {
 
 Set-Location $repoRoot
 
-$specsDir = Join-Path $repoRoot 'specs'
-New-Item -ItemType Directory -Path $specsDir -Force | Out-Null
+$aminooofDir = Get-FeatureWorkspaceRoot -RepoRoot $repoRoot -Mutating -EnsureExists
 
 # Function to generate branch name with stop word filtering and length filtering
 function Get-BranchName {
@@ -221,10 +220,10 @@ if ($ShortName) {
 if ($Number -eq 0) {
     if ($hasGit) {
         # Check existing branches on remotes
-        $Number = Get-NextBranchNumber -SpecsDir $specsDir
+        $Number = Get-NextBranchNumber -AminooofDir $aminooofDir
     } else {
         # Fall back to local directory check
-        $Number = (Get-HighestNumberFromSpecs -SpecsDir $specsDir) + 1
+        $Number = (Get-HighestNumberFromAminooof -AminooofDir $aminooofDir) + 1
     }
 }
 
@@ -278,7 +277,7 @@ if ($hasGit) {
     Write-Warning "[syskit] Warning: Git repository not detected; skipped branch creation for $branchName"
 }
 
-$featureDir = Join-Path $specsDir $branchName
+$featureDir = Join-Path $aminooofDir $branchName
 New-Item -ItemType Directory -Path $featureDir -Force | Out-Null
 
 $template = Resolve-Template -TemplateName 'sys-template' -RepoRoot $repoRoot
@@ -340,4 +339,3 @@ if ($Json) {
     Write-Output "HAS_GIT: $hasGit"
     Write-Output "SYSTEMATIZE_FEATURE environment variable set to: $branchName"
 }
-

@@ -7,6 +7,7 @@ import process from 'process';
 import {
   ensureDir,
   findUnresolvedPlaceholders,
+  getFeatureWorkspaceRoot,
   getSyskitConfig,
   parseArgs,
   readJsonFile,
@@ -153,7 +154,7 @@ function renderAgentGuidance(templateContent, projectName, supportedPlatforms, d
     '[PROJECT NAME]': projectName,
     '[DATE]': dateText,
     '[EXTRACTED FROM ALL PLAN.MD FILES]': '- Bootstrap stage: no plan-derived technologies yet',
-    '[ACTUAL STRUCTURE FROM PLANS]': 'commands/\n.Systematize/\nspecs/',
+    '[ACTUAL STRUCTURE FROM PLANS]': 'commands/\n.Systematize/\naminooof/',
     '[ONLY COMMANDS FOR ACTIVE TECHNOLOGIES]': commands,
     '[LANGUAGE-SPECIFIC, ONLY FOR LANGUAGES IN USE]': style,
     '[LAST 3 FEATURES AND WHAT THEY ADDED]': '- bootstrap: Installed Systematize KIT'
@@ -289,10 +290,11 @@ function initializeExtensions(targetRoot, force, summary) {
 }
 
 function initializeDirectories(targetRoot) {
+  const workflowRoot = getFeatureWorkspaceRoot(targetRoot, { mutating: true, ensureExists: true });
   const dirs = [
     join(targetRoot, '.Systematize', 'exports'),
     join(targetRoot, '.Systematize', 'snapshots'),
-    join(targetRoot, 'specs')
+    workflowRoot
   ];
 
   for (const dirPath of dirs) ensureDir(dirPath);

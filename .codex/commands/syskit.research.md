@@ -4,7 +4,7 @@ handoffs:
   - label: Create Implementation Plan
     agent: syskit.plan
     prompt: Create the implementation plan based on research findings
-  - label: Update Specification
+  - label: Update Sys
     agent: syskit.systematize
     prompt: Update the sys based on research findings
   - label: Run Clarification
@@ -42,7 +42,7 @@ The research follows 5 methodology phases:
 - **Phase D**: Synthesis — convert findings into conclusions linked to questions
 - **Phase E**: Final Recommendation — clear verdict with reasoning
 
-This command runs **after** `/syskit.constitution` in the standard workflow: `/syskit.systematize` → `/syskit.clarify` → `/syskit.constitution` → `/syskit.research` → `/syskit.plan`. It can also be invoked standalone with a concept description provided by the user.
+This command runs **after** `/syskit.constitution` in the standard workflow: `/syskit.systematize` → `/syskit.clarify` → `/syskit.constitution` → `/syskit.research` → `/syskit.plan`. It requires the active `sys.md` and a completed constitution.
 
 ---
 
@@ -78,7 +78,7 @@ Run the prerequisites check script from repo root. Parse JSON for `FEATURE_DIR` 
 - `CONSTITUTION` = .Systematize/memory/constitution.md
 - `TEMPLATE`     = .Systematize/templates/research-template.md
 
-If sys.md exists, use it as the primary input. If not, use $ARGUMENTS as the concept description.
+Use `sys.md` as the primary input. If it is missing, stop and direct the user to `/syskit.systematize`.
 
 For arguments with single quotes, use escape syntax: `'I'\''m Groot'` or double-quote: `"I'm Groot"`.
 
@@ -102,10 +102,7 @@ For arguments with single quotes, use escape syntax: `'I'\''m Groot'` or double-
 - Architecture decisions that need validation
 - Integration unknowns
 
-**If no sys.md exists (concept-only mode):**
-- Parse $ARGUMENTS for: concept name, problem description, target user, proposed approach
-- Ask up to 5 clarifying questions if the concept description is too vague to research
-- Proceed with available information
+If `sys.md` is missing or the constitution is incomplete, fail instead of inventing a parallel path.
 
 ---
 
@@ -247,7 +244,7 @@ Fill the output sections of research.md:
    - Final verdict and confidence
    - Readiness status
    - Next step recommendation:
-     - If Ready: `/syskit.plan` (or `/syskit.plan` Phase 0 will use research.md)
+     - If Ready: `/syskit.plan`
      - If Ready with conditions: list conditions, then `/syskit.plan`
      - If Not ready: list blockers, suggest `/syskit.clarify` or more research
 
@@ -278,8 +275,8 @@ Fill the output sections of research.md:
 ### Integration Rules
 - `ASM-XXX` assumptions from sys.md become testable hypotheses
 - `RK-XXX` risks from sys.md are validated or updated
-- NEEDS CLARIFICATION markers from plan.md become mandatory research targets
-- Research findings feed into `/syskit.plan` Phase 0 decisions
+- NEEDS CLARIFICATION markers from sys.md and constitution-derived assumptions become mandatory research targets
+- Research findings feed directly into `/syskit.plan` drafting decisions
 - New risks discovered → feed into sys.md Risk Registry and plan.md Risk Registry
 
 ### Token Efficiency

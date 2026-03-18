@@ -15,7 +15,7 @@
 
 ### API Contract
 
-| Aspect | Specification |
+| Aspect | Contract Detail |
 |--------|--------------|
 | Protocol | REST / GraphQL / gRPC |
 | Documentation | OpenAPI 3.x / GraphQL Schema |

@@ -37,7 +37,8 @@ This command is the **first step** before `/syskit.systematize`, `/syskit.plan`,
    - Pass `-TargetPath` / `--target-path` if the user specified a different repository
    - Pass `-Platforms` / `--platforms` if the user wants a subset of providers
    - If reinstall is approved, allow the installer to create a snapshot before rewriting managed outputs
-   - In interactive reinstall mode, keep the prompt stage in English and use arrow-key multi-select navigation with Space to toggle and Enter to confirm
+   - In interactive reinstall mode, keep the prompt stage in English, start with no selected platforms, keep global actions outside the list body, and use search + paged multi-select navigation
+   - Use `Up/Down`, `PageUp/PageDown`, `Home/End`, `Space`, `Enter`, `Esc`, `Ctrl+A`, and `Ctrl+Shift+A` for the interactive reinstall menu
 
 4. **Verify bootstrap outputs**:
    - `commands/`
@@ -50,7 +51,7 @@ This command is the **first step** before `/syskit.systematize`, `/syskit.plan`,
 5. **Report next step**:
    - If bootstrap succeeded, guide the user to `/syskit.guide` or `/syskit.systematize`
    - If some files were skipped because they already existed, summarize the skipped set clearly
-   - If reinstall happened, summarize whether installation was detected, which platforms were selected, and where the snapshot was written
+   - If reinstall happened, summarize the target root, whether reinstall occurred, how many platforms were selected, created and overwritten counts, and where the snapshot was written
 
 ## Rules
 

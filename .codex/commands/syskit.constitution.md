@@ -5,7 +5,7 @@ handoffs:
     agent: syskit.research
     prompt: Run deep research for the feature based on the constitution and sys
     send: true
-  - label: Build Specification
+  - label: Build Sys
     agent: syskit.systematize
     prompt: Implement the feature systematize based on the updated constitution. I want to build...
 ---

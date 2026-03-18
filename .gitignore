@@ -732,3 +732,35 @@ archive/
 .Systematize/exports/
 .Systematize/snapshots/
 
+# ==============================================================================
+# AI TOOLS & AGENT DIRECTORIES
+# ==============================================================================
+.agent/
+.agents/
+.aider/
+.amazonq/
+.amp/
+.augment/
+.bob/
+.claude/
+.clinerules/
+.codebuddy/
+.codex/
+.continue/
+.cursor/
+.gemini/
+.husky/
+.kilocode/
+.kiro/
+.kiro-cli/
+.learnings/
+.nginx/
+.opencode/
+.qoder/
+.qodercli/
+.qwen/
+.roo/
+.shai/
+aminooof/
+commands/
+

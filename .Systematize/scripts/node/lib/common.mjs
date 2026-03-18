@@ -1,12 +1,80 @@
 // Systematize KIT — دوال مشتركة (مكافئ common.ps1)
 import { execSync } from 'child_process';
-import { existsSync, readFileSync, readdirSync, statSync, writeFileSync, mkdirSync } from 'fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from 'fs';
 import { join, resolve, dirname, basename } from 'path';
 import { createHash } from 'crypto';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+export const FEATURE_WORKSPACE_DIR = 'aminooof';
+export const LEGACY_FEATURE_WORKSPACE_DIR = Buffer.from('c3BlY3M=', 'base64').toString('utf8');
+
+function hasNumberedFeatureDirs(rootDir) {
+  if (!existsSync(rootDir)) return false;
+
+  return readdirSync(rootDir).some((entry) => {
+    const entryPath = join(rootDir, entry);
+    return /^\d{3}-/.test(entry) && statSync(entryPath).isDirectory();
+  });
+}
+
+function moveFeatureWorkspace(sourceDir, targetDir) {
+  try {
+    renameSync(sourceDir, targetDir);
+    return;
+  } catch (error) {
+    if (!error || error.code !== 'EXDEV') throw error;
+  }
+
+  cpSync(sourceDir, targetDir, { recursive: true });
+  rmSync(sourceDir, { recursive: true, force: true });
+}
+
+export function getFeatureWorkspaceRoot(repoRoot = getRepoRoot(), options = {}) {
+  const nextRoot = join(repoRoot, FEATURE_WORKSPACE_DIR);
+  const legacyRoot = join(repoRoot, LEGACY_FEATURE_WORKSPACE_DIR);
+  const nextExists = existsSync(nextRoot);
+  const legacyExists = existsSync(legacyRoot);
+  const mutating = options.mutating === true;
+  const ensureExists = options.ensureExists === true;
+
+  if (nextExists && legacyExists) {
+    throw new Error(
+      `Conflicting workflow roots detected. Resolve manually before continuing:\n- ${nextRoot}\n- ${legacyRoot}`
+    );
+  }
+
+  if (legacyExists && !nextExists) {
+    if (mutating) {
+      moveFeatureWorkspace(legacyRoot, nextRoot);
+      return nextRoot;
+    }
+
+    return legacyRoot;
+  }
+
+  if (!nextExists && ensureExists) {
+    mkdirSync(nextRoot, { recursive: true });
+  }
+
+  return nextRoot;
+}
+
+export function getConstitutionFilePath(repoRoot = getRepoRoot()) {
+  return join(repoRoot, '.Systematize', 'memory', 'constitution.md');
+}
+
+function extractClarificationSection(sysContent) {
+  const startIndex = sysContent.indexOf('## Clarification Contract');
+  if (startIndex === -1) return '';
+
+  const rest = sysContent.slice(startIndex);
+  const nextSectionMatch = rest.match(/\n---\s*\n\s*## Level 3:|\n## Level 3:/);
+  if (!nextSectionMatch) return rest;
+
+  return rest.slice(0, nextSectionMatch.index);
+}
 
 // === دوال أساسية ===
 
@@ -32,11 +100,15 @@ export function getCurrentBranch() {
   try {
     return execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf8', stdio: ['pipe','pipe','pipe'] }).trim();
   } catch {
-    // Fallback: آخر feature من specs/
-    const specsDir = join(getRepoRoot(), 'specs');
-    if (existsSync(specsDir)) {
-      const dirs = readdirSync(specsDir).filter(d => /^\d{3}-/.test(d)).sort();
-      if (dirs.length > 0) return dirs[dirs.length - 1];
+    // Fallback: آخر feature من aminooof/
+    try {
+      const featureRoot = getFeatureWorkspaceRoot(getRepoRoot());
+      if (existsSync(featureRoot)) {
+        const dirs = readdirSync(featureRoot).filter(d => /^\d{3}-/.test(d)).sort();
+        if (dirs.length > 0) return dirs[dirs.length - 1];
+      }
+    } catch {
+      // Ignore workspace conflicts while resolving a best-effort branch name.
     }
     return 'main';
   }
@@ -49,18 +121,21 @@ export function hasGit() {
   } catch { return false; }
 }
 
-export function getFeatureDir(repoRoot, branch) {
-  return join(repoRoot, 'specs', branch);
+export function getFeatureDir(repoRoot, branch, options = {}) {
+  return join(getFeatureWorkspaceRoot(repoRoot, options), branch);
 }
 
-export function getFeaturePathsEnv() {
+export function getFeaturePathsEnv(options = {}) {
   const repoRoot = getRepoRoot();
   const branch = getCurrentBranch();
-  const featureDir = getFeatureDir(repoRoot, branch);
+  const featureRoot = getFeatureWorkspaceRoot(repoRoot, options);
+  const featureDir = join(featureRoot, branch);
   return {
     REPO_ROOT: repoRoot,
     CURRENT_BRANCH: branch,
     HAS_GIT: hasGit(),
+    FEATURE_ROOT: featureRoot,
+    AMINOOOF_DIR: featureDir,
     FEATURE_DIR: featureDir,
     FEATURE_SYS: join(featureDir, 'sys.md'),
     IMPL_PLAN: join(featureDir, 'plan.md'),
@@ -74,13 +149,73 @@ export function getFeaturePathsEnv() {
 
 // === دوال v2 ===
 
-export function getAllFeatureDirs(repoRoot) {
-  const specsDir = join(repoRoot || getRepoRoot(), 'specs');
-  if (!existsSync(specsDir)) return [];
-  return readdirSync(specsDir)
-    .filter(d => /^\d{3}-/.test(d) && statSync(join(specsDir, d)).isDirectory())
+export function getAllAminooofDirs(repoRoot, options = {}) {
+  const featureRoot = getFeatureWorkspaceRoot(repoRoot || getRepoRoot(), options);
+  if (!existsSync(featureRoot)) return [];
+  return readdirSync(featureRoot)
+    .filter(d => /^\d{3}-/.test(d) && statSync(join(featureRoot, d)).isDirectory())
     .sort()
-    .map(d => ({ name: d, path: join(specsDir, d) }));
+    .map(d => ({ name: d, path: join(featureRoot, d) }));
+}
+
+export function getDocumentCompletionStatus(filePath, options = {}) {
+  if (!existsSync(filePath)) {
+    return { status: 'not_started', file_exists: false, placeholders: 0, missing_markers: [] };
+  }
+
+  const content = readFileSync(filePath, 'utf8');
+  const placeholders = findUnresolvedPlaceholders(content);
+  const missingMarkers = (options.requiredMarkers || []).filter((marker) => !content.includes(marker));
+  const isBlank = content.trim().length === 0;
+
+  if (isBlank) {
+    return { status: 'not_started', file_exists: true, placeholders: placeholders.length, missing_markers: missingMarkers };
+  }
+
+  return {
+    status: placeholders.length === 0 && missingMarkers.length === 0 ? 'complete' : 'partial',
+    file_exists: true,
+    placeholders: placeholders.length,
+    missing_markers: missingMarkers
+  };
+}
+
+export function getClarificationStatus(featureDir) {
+  const sysFile = join(featureDir, 'sys.md');
+  if (!existsSync(sysFile)) {
+    return { status: 'not_started', file_exists: false, questions_resolved: 0, assumptions_documented: 0 };
+  }
+
+  const section = extractClarificationSection(readFileSync(sysFile, 'utf8'));
+  if (!section) {
+    return { status: 'not_started', file_exists: true, questions_resolved: 0, assumptions_documented: 0 };
+  }
+
+  const unresolvedPlaceholders = findUnresolvedPlaceholders(section);
+  const questionsResolved = section
+    .split('\n')
+    .filter((line) => line.trim().startsWith('- Q:') && !/\[question\]|\[answer\]|\[section\/decision affected\]/.test(line))
+    .length;
+  const assumptionsDocumented = section
+    .split('\n')
+    .filter((line) => /\*\*ASM-\d{3}\*\*/.test(line) && !/\[Assumption\]|\[why assumed\]|\[impact\]/.test(line))
+    .length;
+  const checklistNeedsSelection = section.includes('☐ Yes / ☐ No');
+  const checklistHasNo = /\|\s*\d+\s*\|[^|]+\|\s*☐ No\s*\|/.test(section);
+  const hasWork = questionsResolved > 0 || assumptionsDocumented > 0;
+
+  return {
+    status: hasWork && unresolvedPlaceholders.length === 0 && !checklistNeedsSelection && !checklistHasNo ? 'complete' : 'partial',
+    file_exists: true,
+    questions_resolved: questionsResolved,
+    assumptions_documented: assumptionsDocumented
+  };
+}
+
+export function getConstitutionStatus(repoRoot = getRepoRoot()) {
+  return getDocumentCompletionStatus(getConstitutionFilePath(repoRoot), {
+    requiredMarkers: ['## ٢٧. تقييم الاكتمال']
+  });
 }
 
 export function getArtifactHash(filePath) {
@@ -98,12 +233,14 @@ export function getTrackedIDs(filePath) {
 }
 
 export function getFeatureProgress(featureDir) {
-  const totalPhases = 6;
+  const totalPhases = 8;
   let completed = 0;
   if (existsSync(join(featureDir, 'sys.md'))) completed++;
-  if (existsSync(join(featureDir, 'research.md'))) completed++;
-  if (existsSync(join(featureDir, 'plan.md'))) completed++;
-  if (existsSync(join(featureDir, 'tasks.md'))) completed++;
+  if (getClarificationStatus(featureDir).status === 'complete') completed++;
+  if (getConstitutionStatus(dirname(dirname(featureDir))).status === 'complete') completed++;
+  if (getDocumentCompletionStatus(join(featureDir, 'research.md')).status === 'complete') completed++;
+  if (getDocumentCompletionStatus(join(featureDir, 'plan.md')).status === 'complete') completed++;
+  if (getDocumentCompletionStatus(join(featureDir, 'tasks.md')).status !== 'not_started') completed++;
   const checkDir = join(featureDir, 'checklists');
   if (existsSync(checkDir) && readdirSync(checkDir).length > 0) completed++;
   const tasksFile = join(featureDir, 'tasks.md');

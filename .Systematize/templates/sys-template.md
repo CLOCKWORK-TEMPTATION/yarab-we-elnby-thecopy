@@ -4,7 +4,7 @@
   This document is a GOVERNING CONTRACT — not a feature description.
   It translates product vision into commitments that are executable, measurable, and reviewable.
   
-  A good spec answers five questions:
+  A good sys answers five questions:
   1. WHAT are we building?
   2. WHY are we building it?
   3. WHO are we building it for?
@@ -203,7 +203,7 @@
 
 <!--
   Filled automatically by /syskit.clarify sessions.
-  Format: Q: <question> → A: <answer> → Impact: <what changed in the spec>
+  Format: Q: <question> → A: <answer> → Impact: <what changed in the sys>
 -->
 
 - Q: [question] → A: [answer] → Impact: [section/decision affected]
@@ -309,7 +309,7 @@
 ### 5.3 Milestones *(🔄 living section — changes frequently)*
 
 <!--
-  This is the LIVING part of the spec. It changes as we build, design, and discover.
+  This is the LIVING part of the sys. It changes as we build, design, and discover.
   Define checkpoints, releases, and incremental features.
   What do we need to de-risk early? What do we defer to the end?
 -->

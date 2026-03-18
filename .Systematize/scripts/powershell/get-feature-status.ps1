@@ -44,50 +44,34 @@ if (Test-Path $sysFile) {
 }
 
 # Clarify
-if ((Test-Path $sysFile) -and (Get-Content $sysFile -Raw) -match 'Clarification Contract') {
-    $resolved = ([regex]::Matches((Get-Content $sysFile -Raw), '→ A:')).Count
-    $phases['clarify'] = [PSCustomObject]@{ status = if ($resolved -gt 0) { 'complete' } else { 'not_started' }; questions_resolved = $resolved }
-} else {
-    $phases['clarify'] = [PSCustomObject]@{ status = 'not_started'; questions_resolved = 0 }
-}
+$phases['clarify'] = Get-ClarificationStatus -FeatureDir $featureDir
 
 # Constitution
-$constFile = Join-Path $repoRoot '.Systematize/memory/constitution.md'
-if (Test-Path $constFile) {
-    $constContent = Get-Content $constFile -Raw
-    $totalSections = 27
-    $filledSections = ([regex]::Matches($constContent, '(?m)^## [٠-٩١٢٣٤٥٦٧٨٩]+\.')).Count
-    $completion = [math]::Round(($filledSections / $totalSections) * 100)
-    $phases['constitution'] = [PSCustomObject]@{ status = if ($completion -ge 80) { 'complete' } else { 'partial' }; completion = $completion }
-} else {
-    $phases['constitution'] = [PSCustomObject]@{ status = 'not_started'; completion = 0 }
-}
+$phases['constitution'] = Get-ConstitutionStatus -RepoRoot $repoRoot
 
 # Research
 $researchFile = Join-Path $featureDir 'research.md'
-$phases['research'] = [PSCustomObject]@{ status = if (Test-Path $researchFile) { 'complete' } else { 'not_started' }; file_exists = (Test-Path $researchFile) }
+$phases['research'] = Get-DocumentCompletionStatus -FilePath $researchFile
 
 # Plan
 $planFile = Join-Path $featureDir 'plan.md'
-$phases['plan'] = [PSCustomObject]@{ status = if (Test-Path $planFile) { 'complete' } else { 'not_started' }; file_exists = (Test-Path $planFile) }
+$phases['plan'] = Get-DocumentCompletionStatus -FilePath $planFile
 
 # Tasks
 $tasksFile = Join-Path $featureDir 'tasks.md'
-if (Test-Path $tasksFile) {
-    $tc = Get-Content $tasksFile -Raw
-    $total = ([regex]::Matches($tc, '(?:BE|FE|DO|CC)-T-\d{3}')).Count
-    $done = ([regex]::Matches($tc, '\[X\]|\[x\]')).Count
-    $phases['tasks'] = [PSCustomObject]@{ status = if ($total -gt 0 -and $done -eq $total) { 'complete' } elseif ($total -gt 0) { 'in_progress' } else { 'complete' }; file_exists = $true; total = $total; completed = $done }
-} else {
-    $phases['tasks'] = [PSCustomObject]@{ status = 'not_started'; file_exists = $false }
-}
+$phases['tasks'] = Get-DocumentCompletionStatus -FilePath $tasksFile
 
 # Checklist
 $checkDir = Join-Path $featureDir 'checklists'
 $phases['checklist'] = [PSCustomObject]@{ status = if ((Test-Path $checkDir) -and (Get-ChildItem $checkDir -File -ErrorAction SilentlyContinue | Select-Object -First 1)) { 'complete' } else { 'not_started' } }
 
 # Implementation
-$phases['implementation'] = [PSCustomObject]@{ status = if ($phases['tasks'].status -eq 'complete' -and $phases['tasks'].file_exists) { 'complete' } elseif ($phases['tasks'].status -eq 'in_progress') { 'in_progress' } else { 'not_started' } }
+$tc = if (Test-Path $tasksFile) { Get-Content $tasksFile -Raw } else { '' }
+$done = ([regex]::Matches($tc, '\[X\]|\[x\]')).Count
+$phases['implementation'] = [PSCustomObject]@{
+    status = if ($done -gt 0) { 'in_progress' } elseif ($phases['tasks'].status -eq 'complete' -and $phases['tasks'].file_exists) { 'complete' } else { 'not_started' }
+    completed_tasks = $done
+}
 
 # تحديد الخطوة التالية
 $nextStep = '/syskit.systematize'
@@ -103,7 +87,7 @@ $commandMap = @{
     'implementation' = '/syskit.implement'
 }
 foreach ($p in $phaseOrder) {
-    if ($phases[$p].status -eq 'not_started') {
+    if ($phases[$p].status -ne 'complete') {
         $nextStep = $commandMap[$p]
         break
     }
@@ -136,8 +120,8 @@ if ($Json) {
         $icon = switch ($s.status) { 'complete' { '✅' }; 'partial' { '🔶' }; 'in_progress' { '🔄' }; default { '⬜' } }
         $detail = switch ($p) {
             'clarify' { if ($s.questions_resolved) { "$($s.questions_resolved) questions resolved" } else { '' } }
-            'constitution' { if ($s.completion) { "$($s.completion)% complete" } else { '' } }
-            'tasks' { if ($s.total) { "$($s.completed)/$($s.total) tasks" } else { '' } }
+            'constitution' { if ($s.placeholders -ge 0) { "$($s.placeholders) placeholders remaining" } else { '' } }
+            'tasks' { if ($s.placeholders -ge 0) { "$($s.placeholders) placeholders remaining" } else { '' } }
             default { '' }
         }
         $phaseName = $p.Substring(0,1).ToUpper() + $p.Substring(1)

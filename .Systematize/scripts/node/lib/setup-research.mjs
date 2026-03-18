@@ -1,7 +1,17 @@
 // Setup research documentation for a feature
 import { existsSync, copyFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
-import { getCurrentBranch, getFeatureDir, getFeaturePathsEnv, getRepoRoot, parseArgs, resolveTemplate, ensureDir, testFeatureBranch } from './common.mjs';
+import {
+  ensureDir,
+  getConstitutionStatus,
+  getCurrentBranch,
+  getFeatureDir,
+  getFeaturePathsEnv,
+  getRepoRoot,
+  parseArgs,
+  resolveTemplate,
+  testFeatureBranch
+} from './common.mjs';
 
 export default async function main(argv) {
   const opts = parseArgs(argv);
@@ -15,9 +25,11 @@ export default async function main(argv) {
   }
 
   const repoRoot = getRepoRoot();
-  const paths = getFeaturePathsEnv();
+  const paths = getFeaturePathsEnv({ mutating: true, ensureExists: true });
   const branch = opts.branch || paths.CURRENT_BRANCH || getCurrentBranch();
-  const featureDir = opts.branch ? getFeatureDir(repoRoot, branch) : paths.FEATURE_DIR;
+  const featureDir = opts.branch
+    ? getFeatureDir(repoRoot, branch, { mutating: true, ensureExists: true })
+    : paths.FEATURE_DIR;
   const featurePaths = {
     ...paths,
     CURRENT_BRANCH: branch,
@@ -38,6 +50,19 @@ export default async function main(argv) {
   // Ensure the feature directory exists
   ensureDir(featurePaths.FEATURE_DIR);
 
+  if (!existsSync(featurePaths.FEATURE_SYS)) {
+    console.error(`ERROR: sys.md not found in ${featurePaths.FEATURE_DIR}`);
+    console.error('Run /syskit.systematize first to create the governing sys document.');
+    process.exit(1);
+  }
+
+  const constitutionStatus = getConstitutionStatus(repoRoot);
+  if (constitutionStatus.status !== 'complete') {
+    console.error('ERROR: The constitution gate is not satisfied.');
+    console.error('Run /syskit.constitution and complete it before /syskit.research.');
+    process.exit(1);
+  }
+
   // Copy research template if it exists
   const template = resolveTemplate(repoRoot, 'research-template');
   if (template && existsSync(template)) {
@@ -53,7 +78,7 @@ export default async function main(argv) {
   const result = {
     FEATURE_SYS: featurePaths.FEATURE_SYS,
     RESEARCH: featurePaths.RESEARCH,
-    SPECS_DIR: featurePaths.FEATURE_DIR,
+    AMINOOOF_DIR: featurePaths.FEATURE_DIR,
     BRANCH: featurePaths.CURRENT_BRANCH,
     HAS_GIT: featurePaths.HAS_GIT
   };
@@ -63,7 +88,7 @@ export default async function main(argv) {
   } else {
     console.log(`FEATURE_SYS: ${result.FEATURE_SYS}`);
     console.log(`RESEARCH: ${result.RESEARCH}`);
-    console.log(`SPECS_DIR: ${result.SPECS_DIR}`);
+    console.log(`AMINOOOF_DIR: ${result.AMINOOOF_DIR}`);
     console.log(`BRANCH: ${result.BRANCH}`);
     console.log(`HAS_GIT: ${result.HAS_GIT}`);
   }

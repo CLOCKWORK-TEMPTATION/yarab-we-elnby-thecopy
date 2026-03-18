@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
   "features": {
-    "didooo": {
-      "created_at": "2026-03-18T09:54:56.757Z",
+    "001-v-formation-split-entry": {
+      "created_at": "2026-03-18T11:56:18.124Z",
       "events": [
         {
           "type": "command_lifecycle",
-          "timestamp": "2026-03-18T09:54:56.758Z",
+          "timestamp": "2026-03-18T11:56:18.125Z",
           "command": "create-feature",
           "status": "completed",
           "has_git": true
@@ -14,55 +14,48 @@
       ],
       "phases": {}
     },
-    "001-v-formation-split-entry": {
-      "created_at": "2026-03-18T10:07:44.021Z",
+    "002-audit-platform-apps": {
+      "created_at": "2026-03-18T12:03:23.498Z",
       "events": [
         {
           "type": "command_lifecycle",
-          "timestamp": "2026-03-18T10:07:44.022Z",
+          "timestamp": "2026-03-18T12:03:23.498Z",
           "command": "check-prerequisites",
           "status": "completed",
           "has_git": true
         },
         {
           "type": "command_lifecycle",
-          "timestamp": "2026-03-18T10:28:35.788Z",
-          "command": "check-prerequisites",
-          "status": "failed",
-          "exit_code": 1
-        },
-        {
-          "type": "command_lifecycle",
-          "timestamp": "2026-03-18T10:29:02.070Z",
+          "timestamp": "2026-03-18T14:59:46.082Z",
           "command": "check-prerequisites",
           "status": "completed",
           "has_git": true
         },
         {
           "type": "command_lifecycle",
-          "timestamp": "2026-03-18T10:56:44.608Z",
-          "command": "setup-plan",
+          "timestamp": "2026-03-18T15:00:07.107Z",
+          "command": "healthcheck",
           "status": "completed",
           "has_git": true
         },
         {
           "type": "command_lifecycle",
-          "timestamp": "2026-03-18T10:59:57.021Z",
-          "command": "update-agent-context",
+          "timestamp": "2026-03-18T15:20:21.551Z",
+          "command": "healthcheck",
           "status": "completed",
           "has_git": true
         },
         {
           "type": "command_lifecycle",
-          "timestamp": "2026-03-18T11:01:22.715Z",
-          "command": "check-prerequisites",
+          "timestamp": "2026-03-18T15:21:49.945Z",
+          "command": "healthcheck",
           "status": "completed",
           "has_git": true
         },
         {
           "type": "command_lifecycle",
-          "timestamp": "2026-03-18T11:06:53.185Z",
-          "command": "check-prerequisites",
+          "timestamp": "2026-03-18T17:04:45.386Z",
+          "command": "healthcheck",
           "status": "completed",
           "has_git": true
         }

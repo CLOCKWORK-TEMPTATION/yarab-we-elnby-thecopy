@@ -1,5 +1,5 @@
 ---
-description: Fast-track for small projects — combines systematize, clarify, and plan in one streamlined pass.
+description: Fast-track for small projects — combines systematize and clarify in one streamlined pass, then hands off to the mandatory workflow gates.
 ---
 
 ## User Input
@@ -13,7 +13,7 @@ You **MUST** consider the user input before proceeding (if not empty).
 ## Pre-Check
 
 1. Count words in `$ARGUMENTS`. If > 500 words, inform the user:
-   "This description is quite detailed. Consider using the full workflow (/syskit.systematize → /syskit.clarify → /syskit.plan) for better results."
+   "This description is quite detailed. Consider using the full workflow (/syskit.systematize → /syskit.clarify → /syskit.constitution → /syskit.research → /syskit.plan) for better results."
    Ask if they want to proceed with quickstart anyway.
 
 2. Check if a feature already exists (sys.md present). If so, warn and ask before overwriting.
@@ -34,14 +34,13 @@ You **MUST** consider the user input before proceeding (if not empty).
    - Are there any hard constraints?
    - Fill the Clarification Contract in sys.md
 
-3. **Generate plan** (S profile — concise):
-   - Run `setup-plan.ps1` / `node cli.mjs check-prerequisites`
-   - Fill plan.md with:
-     - Summary (2-3 sentences)
-     - Technical Context table
-     - Simplified Architecture (single component diagram)
-     - 2-phase execution plan (Build + Test)
-     - 3-item risk checklist
+3. **Stop before planning**:
+   - Do NOT generate `plan.md`
+   - Do NOT bypass constitution or research
+   - Report the exact mandatory next sequence:
+     1. `/syskit.constitution`
+     2. `/syskit.research`
+     3. `/syskit.plan`
 
 4. **Output summary**:
    ```
@@ -49,25 +48,23 @@ You **MUST** consider the user input before proceeding (if not empty).
 
    Created:
    ├── sys.md (Lite PRD)
-   ├── plan.md (S Profile)
-
    Next steps:
-   1. /syskit.tasks — break into task cards
-   2. /syskit.implement — start building
+   1. /syskit.constitution
+   2. /syskit.research
+   3. /syskit.plan
    ```
 
 ## Rules
 
 - Maximum 500-word feature descriptions
 - Lite PRD = ≤2 pages
-- S Profile plan = ≤3 pages
 - Skip all optional/conditional sections
 - This is for prototypes and small features only
 
 ## Output
 
 - **Primary format**: Quickstart completion summary in Markdown.
-- **Files created or updated**: New feature branch context, `sys.md`, and `plan.md` in streamlined form.
+- **Files created or updated**: New feature branch context and `sys.md` with a streamlined Clarification Contract.
 - **Success result**: Created artifact paths, reduced-scope assumptions, and the immediate next commands.
-- **Exit status**: `0` when the Lite PRD and concise plan are created; `1` when the input is too ambiguous, bootstrap prerequisites fail, or plan generation cannot complete.
+- **Exit status**: `0` when the Lite PRD and streamlined clarification output are created; `1` when the input is too ambiguous, bootstrap prerequisites fail, or clarification cannot complete.
 - **Failure conditions**: Existing feature overwrite not approved, missing templates, or unresolved blockers after the quick clarification pass.

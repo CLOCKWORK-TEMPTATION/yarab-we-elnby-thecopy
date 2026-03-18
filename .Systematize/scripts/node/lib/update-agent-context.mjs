@@ -1,7 +1,7 @@
 // تحديث ملفات context للـ agents — مكافئ update-agent-context.ps1
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, join } from 'path';
-import { ensureDir, findUnresolvedPlaceholders, getFeaturePathsEnv, getRepoRoot, parseArgs, resolveTemplate } from './common.mjs';
+import { ensureDir, findUnresolvedPlaceholders, getFeatureDir, getFeaturePathsEnv, getRepoRoot, parseArgs, resolveTemplate } from './common.mjs';
 
 const AGENT_TARGETS = {
   claude: { path: 'CLAUDE.md', label: 'Claude Code' },
@@ -135,7 +135,7 @@ OPTIONS:
   const repoRoot = getRepoRoot();
   const env = getFeaturePathsEnv();
   const branch = opts.branch || env.CURRENT_BRANCH;
-  const planPath = opts.branch ? join(repoRoot, 'specs', branch, 'plan.md') : env.IMPL_PLAN;
+  const planPath = opts.branch ? join(getFeatureDir(repoRoot, branch), 'plan.md') : env.IMPL_PLAN;
   const templatePath = resolveTemplate(repoRoot, 'agent-file-template');
 
   if (!existsSync(planPath)) {

@@ -223,7 +223,7 @@ function New-AgentGuidance {
         '[PROJECT NAME]' = $ProjectName
         '[DATE]' = $DateText
         '[EXTRACTED FROM ALL PLAN.MD FILES]' = '- Bootstrap stage: no plan-derived technologies yet'
-        '[ACTUAL STRUCTURE FROM PLANS]' = "commands/`n.Systematize/`nspecs/"
+        '[ACTUAL STRUCTURE FROM PLANS]' = "commands/`n.Systematize/`naminooof/"
         '[ONLY COMMANDS FOR ACTIVE TECHNOLOGIES]' = $commands
         '[LANGUAGE-SPECIFIC, ONLY FOR LANGUAGES IN USE]' = $style
         '[LAST 3 FEATURES AND WHAT THEY ADDED]' = '- bootstrap: Installed Systematize KIT'
@@ -386,10 +386,12 @@ function Initialize-Extensions {
 function Initialize-Directories {
     param([Parameter(Mandatory = $true)][string]$TargetRoot)
 
+    $workflowRoot = Get-FeatureWorkspaceRoot -RepoRoot $TargetRoot -Mutating -EnsureExists
+
     @(
         (Join-Path $TargetRoot '.Systematize/exports'),
         (Join-Path $TargetRoot '.Systematize/snapshots'),
-        (Join-Path $TargetRoot 'specs')
+        $workflowRoot
     ) | ForEach-Object {
         New-DirectoryIfMissing -Path $_
     }

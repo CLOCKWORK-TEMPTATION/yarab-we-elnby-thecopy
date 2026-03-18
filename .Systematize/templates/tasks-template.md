@@ -10,7 +10,7 @@ description: "Task list template for feature implementation — atomic, traceabl
   
   GOVERNING PRINCIPLES:
   1. ATOMIC DECOMPOSITION — Every task completable in ONE work session (2–4 hours max)
-  2. TASK FORMULA — [Action] + [Component/File] + [Specifications] + [Acceptance Criterion]
+  2. TASK FORMULA — [Action] + [Component/File] + [Implementation Details] + [Acceptance Criterion]
   3. TRACEABILITY — Every task traces back to its source in the plan/sys
   4. LAYER CLASSIFICATION — Every task is typed: Backend (🗄️) / Frontend (🎨) / DevOps (🔧) / Cross-Cutting (🔗)
   5. NO VAGUENESS — Every task has outputs, acceptance criteria, and file paths
@@ -23,7 +23,7 @@ description: "Task list template for feature implementation — atomic, traceabl
   ✅ "إنشاء مكون LoginForm.tsx يحتوي على حقول (email, password) مع validation باستخدام Zod ورسائل خطأ بالعربية"
 -->
 
-**Input**: Design documents from `/specs/[###-feature-name]/`
+**Input**: Design documents from `/aminooof/[###-feature-name]/`
 **Prerequisites**: plan.md (required), sys.md (required for user stories), research.md, AGENTS.md, contracts/
 
 **Tests**: The examples below include test tasks. Tests are OPTIONAL — only include them if explicitly requested in the feature systematize document.
@@ -103,7 +103,7 @@ Every task MUST follow this structure:
   
   The /syskit.tasks command MUST replace these with actual tasks based on:
   - User stories from sys.md (with their priorities P1, P2, P3...)
-  - Feature requirements from plan.md (with FR-XXX, NFR-XXX IDs)
+  - Feature requirements from plan.md (with FR-XXX, NFR-XXX, TC-XXX, AC-XXX IDs)
   - Entities from AGENTS.md
   - Endpoints from contracts/
   
@@ -643,6 +643,7 @@ Before finalizing this task list, verify:
 ### Traceability Check
 - [ ] Every task traces to a source in plan.md or sys.md
 - [ ] Every FR-XXX from sys.md has at least one task
+- [ ] Every TC-XXX and critical AC-XXX has at least one implementing or verifying task
 - [ ] Every entity from AGENTS.md has at least one task
 
 ---

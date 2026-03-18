@@ -1,7 +1,7 @@
 # the copy Development Guidelines
 
 Auto-generated from all feature plans. Last updated: 2026-03-18
-Supported platforms: GitHub Copilot, opencode, Codex CLI, Kiro CLI, Amp, IBM Bob
+Supported platforms: Codex CLI
 
 
 ## Active Technologies
@@ -13,7 +13,7 @@ Supported platforms: GitHub Copilot, opencode, Codex CLI, Kiro CLI, Amp, IBM Bob
 ```text
 commands/
 .Systematize/
-specs/
+aminooof/
 ```
 
 ## Commands

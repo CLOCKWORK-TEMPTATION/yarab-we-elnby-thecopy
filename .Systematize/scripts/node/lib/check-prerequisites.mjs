@@ -56,14 +56,14 @@ EXAMPLES:
     process.exit(1);
   }
 
-  // Validate plan.md
-  if (!existsSync(env.IMPL_PLAN)) {
+  // tasks.md implies plan.md for the implementation phase, while earlier
+  // phases should still be able to resolve the active feature workspace.
+  if (opts['require-tasks'] && !existsSync(env.IMPL_PLAN)) {
     console.error(`ERROR: plan.md not found in ${env.FEATURE_DIR}`);
     console.error('Run /syskit.plan first to create the implementation plan.');
     process.exit(1);
   }
 
-  // Check tasks.md if required
   if (opts['require-tasks'] && !existsSync(env.TASKS)) {
     console.error(`ERROR: tasks.md not found in ${env.FEATURE_DIR}`);
     console.error('Run /syskit.tasks first to create the task list.');

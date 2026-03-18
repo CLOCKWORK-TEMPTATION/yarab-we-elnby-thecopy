@@ -1,80 +1,137 @@
-# Review Report: [FEATURE_NAME]
+# Executive Audit Report: [FEATURE_NAME]
 
 **Branch**: `[BRANCH]`
 **Date**: [DATE]
 **Reviewer**: [REVIEWER]
-**Artifacts Reviewed**: sys.md, plan.md, tasks.md
+**Review Mode**: [REVIEW_MODE]
+**Confidence Level**: [CONFIDENCE_LEVEL]
 
 ---
 
-## sys.md (PRD) Review
+## Executive Summary
 
-| # | Aspect | Status | Finding | Suggestion |
-|---|--------|--------|---------|------------|
-| 1 | Requirements clarity | ✅/⚠️/❌ | [FINDING] | [SUGGESTION] |
-| 2 | Edge cases | ✅/⚠️/❌ | [FINDING] | [SUGGESTION] |
-| 3 | NFR measurability | ✅/⚠️/❌ | [FINDING] | [SUGGESTION] |
-| 4 | Risk coverage | ✅/⚠️/❌ | [FINDING] | [SUGGESTION] |
-| 5 | Scope boundaries | ✅/⚠️/❌ | [FINDING] | [SUGGESTION] |
-| 6 | Acceptance criteria | ✅/⚠️/❌ | [FINDING] | [SUGGESTION] |
-
----
-
-## plan.md Review
-
-| # | Aspect | Status | Finding | Suggestion |
-|---|--------|--------|---------|------------|
-| 1 | Architecture soundness | ✅/⚠️/❌ | [FINDING] | [SUGGESTION] |
-| 2 | Security considerations | ✅/⚠️/❌ | [FINDING] | [SUGGESTION] |
-| 3 | Testing strategy | ✅/⚠️/❌ | [FINDING] | [SUGGESTION] |
-| 4 | Phase transitions | ✅/⚠️/❌ | [FINDING] | [SUGGESTION] |
-| 5 | Estimate realism | ✅/⚠️/❌ | [FINDING] | [SUGGESTION] |
+- **General State**: [GENERAL_STATE]
+- **Top Five Issues**:
+  1. [TOP_ISSUE_1]
+  2. [TOP_ISSUE_2]
+  3. [TOP_ISSUE_3]
+  4. [TOP_ISSUE_4]
+  5. [TOP_ISSUE_5]
+- **Executive Judgment**: [EXECUTIVE_JUDGMENT]
 
 ---
 
-## tasks.md Review
+## Critical Issues Table
 
-| # | Aspect | Status | Finding | Suggestion |
-|---|--------|--------|---------|------------|
-| 1 | Task atomicity (≤4h) | ✅/⚠️/❌ | [FINDING] | [SUGGESTION] |
-| 2 | Dependency accuracy | ✅/⚠️/❌ | [FINDING] | [SUGGESTION] |
-| 3 | Coverage completeness | ✅/⚠️/❌ | [FINDING] | [SUGGESTION] |
-| 4 | Parallel opportunities | ✅/⚠️/❌ | [FINDING] | [SUGGESTION] |
+| ID | Severity | Type | Layer | Location | Description | Impact | Fix |
+|----|----------|------|-------|----------|-------------|--------|-----|
+| [ISSUE_ID] | [SEVERITY] | [TYPE] | [LAYER] | [LOCATION] | [DESCRIPTION] | [IMPACT] | [FIX] |
 
 ---
 
-## Cross-Artifact Consistency
+## Layer-by-Layer Findings
 
-| Check | Result | Details |
-|-------|--------|---------|
-| FR → Tasks mapping | ✅/❌ | [DETAILS] |
-| NFR → Architecture | ✅/❌ | [DETAILS] |
-| Risk → Mitigation tasks | ✅/❌ | [DETAILS] |
-| Estimate alignment | ✅/❌ | [DETAILS] |
+### package.json and toolchain
+
+- [FINDING_OR_NONE]
+
+### automated checks
+
+- [FINDING_OR_NONE]
+
+### dev vs production boundaries
+
+- [FINDING_OR_NONE]
+
+### server and API
+
+- [FINDING_OR_NONE]
+
+### shared logic
+
+- [FINDING_OR_NONE]
+
+### frontend
+
+- [FINDING_OR_NONE]
+
+### frontend-backend integration
+
+- [FINDING_OR_NONE]
+
+### security
+
+- [FINDING_OR_NONE]
+
+### performance and production readiness
+
+- [FINDING_OR_NONE]
 
 ---
 
-## Review Verdict
+## Confidence and Coverage
 
-| Status | Description |
-|--------|------------|
-| 🟢 APPROVED | Ready for implementation |
-| 🟡 APPROVED WITH CONDITIONS | Proceed with listed conditions |
-| 🔴 CHANGES REQUIRED | Must fix blockers before proceeding |
-
-**Verdict**: [🟢/🟡/🔴] [VERDICT_TEXT]
+- **Executed Checks**: [EXECUTED_CHECKS]
+- **Blocked Checks**: [BLOCKED_CHECKS]
+- **Uncovered Areas**: [UNCOVERED_AREAS]
+- **Confidence Rationale**: [CONFIDENCE_RATIONALE]
+- **Residual Risk**: [RESIDUAL_RISK]
 
 ---
 
-## Review Gate
+## Repair Priority Map
 
-| Reviewer | Status | Date | Comments |
-|----------|--------|------|----------|
-| [REVIEWER] | [STATUS] | [DATE] | [COMMENTS] |
+### يجب إصلاحه فورًا
+
+- [IMMEDIATE_FIX_OR_NONE]
+
+### يجب إصلاحه قبل أي ميزة جديدة
+
+- [PRE_FEATURE_FIX_OR_NONE]
+
+### يمكن تأجيله
+
+- [DEFERRABLE_FIX_OR_NONE]
+
+### تحسينات اختيارية
+
+- [OPTIONAL_IMPROVEMENT_OR_NONE]
 
 ---
 
-## Changelog
-<!-- يتملي تلقائياً مع كل تعديل -->
-| التاريخ | الإصدار | التغيير | المؤلف |
-|---------|---------|--------|--------|
+## Action Plan
+
+### المرحلة 1: إيقاف النزيف
+
+- **الهدف**: [PHASE_1_GOAL]
+- **النطاق**: [PHASE_1_SCOPE]
+- **التغييرات المطلوبة**: [PHASE_1_CHANGES]
+- **معيار النجاح**: [PHASE_1_SUCCESS]
+
+### المرحلة 2: تثبيت العقود وحدود الطبقات
+
+- **الهدف**: [PHASE_2_GOAL]
+- **النطاق**: [PHASE_2_SCOPE]
+- **التغييرات المطلوبة**: [PHASE_2_CHANGES]
+- **معيار النجاح**: [PHASE_2_SUCCESS]
+
+### المرحلة 3: تنظيف المنطق المشترك
+
+- **الهدف**: [PHASE_3_GOAL]
+- **النطاق**: [PHASE_3_SCOPE]
+- **التغييرات المطلوبة**: [PHASE_3_CHANGES]
+- **معيار النجاح**: [PHASE_3_SUCCESS]
+
+### المرحلة 4: ضبط الواجهة والتكامل
+
+- **الهدف**: [PHASE_4_GOAL]
+- **النطاق**: [PHASE_4_SCOPE]
+- **التغييرات المطلوبة**: [PHASE_4_CHANGES]
+- **معيار النجاح**: [PHASE_4_SUCCESS]
+
+### المرحلة 5: رفع الجاهزية الإنتاجية
+
+- **الهدف**: [PHASE_5_GOAL]
+- **النطاق**: [PHASE_5_SCOPE]
+- **التغييرات المطلوبة**: [PHASE_5_CHANGES]
+- **معيار النجاح**: [PHASE_5_SUCCESS]

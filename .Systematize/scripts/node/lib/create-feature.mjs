@@ -2,7 +2,7 @@
 import { execFileSync, execSync } from 'child_process';
 import { existsSync, mkdirSync, copyFileSync, readFileSync, writeFileSync, readdirSync } from 'fs';
 import { join, resolve, dirname } from 'path';
-import { getRepoRoot, hasGit, parseArgs, readJsonFile, writeJsonFile, getSyskitConfig, resolveTemplate } from './common.mjs';
+import { getFeatureWorkspaceRoot, getRepoRoot, hasGit, parseArgs, getSyskitConfig, resolveTemplate } from './common.mjs';
 
 const STOP_WORDS = new Set([
   'i', 'a', 'an', 'the', 'to', 'for', 'of', 'in', 'on', 'at', 'by', 'with', 'from',
@@ -39,10 +39,10 @@ function generateBranchName(description) {
   return cleanBranchName(description).split('-').filter(Boolean).slice(0, 3).join('-');
 }
 
-function getHighestNumberFromSpecs(specsDir) {
+function getHighestNumberFromAminooof(aminooofDir) {
   let highest = 0;
-  if (existsSync(specsDir)) {
-    for (const d of readdirSync(specsDir)) {
+  if (existsSync(aminooofDir)) {
+    for (const d of readdirSync(aminooofDir)) {
       const m = d.match(/^(\d+)/);
       if (m) highest = Math.max(highest, parseInt(m[1]));
     }
@@ -63,12 +63,12 @@ function getHighestNumberFromBranches() {
   return highest;
 }
 
-function getNextBranchNumber(specsDir) {
+function getNextBranchNumber(aminooofDir) {
   // Fetch remotes
   try { execSync('git fetch --all --prune', { stdio: 'pipe' }); } catch { /* ignore */ }
   const highestBranch = getHighestNumberFromBranches();
-  const highestSpec = getHighestNumberFromSpecs(specsDir);
-  return Math.max(highestBranch, highestSpec) + 1;
+  const highestWorkspace = getHighestNumberFromAminooof(aminooofDir);
+  return Math.max(highestBranch, highestWorkspace) + 1;
 }
 
 export default async function main(argv) {
@@ -97,8 +97,7 @@ EXAMPLES:
     process.exit(1);
   }
 
-  const specsDir = join(repoRoot, 'specs');
-  mkdirSync(specsDir, { recursive: true });
+  const aminooofDir = getFeatureWorkspaceRoot(repoRoot, { mutating: true, ensureExists: true });
 
   // Generate branch name
   const branchSuffix = opts['short-name']
@@ -109,8 +108,8 @@ EXAMPLES:
   let number = opts.number ? parseInt(opts.number) : 0;
   if (number === 0) {
     number = hasGit()
-      ? getNextBranchNumber(specsDir)
-      : getHighestNumberFromSpecs(specsDir) + 1;
+      ? getNextBranchNumber(aminooofDir)
+      : getHighestNumberFromAminooof(aminooofDir) + 1;
   }
 
   const featureNum = String(number).padStart(3, '0');
@@ -147,7 +146,7 @@ EXAMPLES:
   }
 
   // Create feature directory and sys.md
-  const featureDir = join(specsDir, branchName);
+  const featureDir = join(aminooofDir, branchName);
   mkdirSync(featureDir, { recursive: true });
 
   const templatePath = resolveTemplate(repoRoot, 'sys-template');

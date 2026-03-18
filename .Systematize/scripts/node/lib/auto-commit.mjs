@@ -16,10 +16,10 @@ export default async function main(argv) {
   const branch = opts.branch || env.CURRENT_BRANCH;
   const cmd = opts.command || 'update';
   const descMap = { systematize:'add PRD', clarify:'resolve ambiguities', plan:'add plan', tasks:'break into tasks', implement:'update progress' };
-  const message = opts.message || `docs(specs): ${cmd} — ${descMap[cmd] || 'update documentation'} [${branch}]`;
+  const message = opts.message || `docs(aminooof): ${cmd} — ${descMap[cmd] || 'update documentation'} [${branch}]`;
 
   try {
-    execFileSync('git', ['add', `specs/${branch}`, '.Systematize/memory/'], { cwd: env.REPO_ROOT, stdio: 'pipe' });
+    execFileSync('git', ['add', env.FEATURE_DIR, '.Systematize/memory/'], { cwd: env.REPO_ROOT, stdio: 'pipe' });
     const status = execSync('git diff --cached --name-only', { cwd: env.REPO_ROOT, encoding: 'utf8' }).trim();
     if (!status) {
       if (opts.json) console.log(JSON.stringify({ committed: false, reason: 'No changes' }));

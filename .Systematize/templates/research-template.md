@@ -226,7 +226,7 @@
 - Research papers
 - Original company/product websites
 - Published data from original entities
-- Technical specifications
+- Technical contract details
 - Original financial/operational reports (if relevant)
 
 ### 7.2 Strong Secondary Sources

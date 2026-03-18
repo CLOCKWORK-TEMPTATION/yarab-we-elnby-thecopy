@@ -19,7 +19,7 @@ You **MUST** consider the user input before proceeding (if not empty).
 
 Goal: Detect and reduce ambiguity or missing decision points in the active feature systematize document, produce a mandatory **Clarification Contract**, and record everything directly in the sys file.
 
-Note: This clarification workflow is expected to run (and be completed) BEFORE invoking `/syskit.constitution`. The standard workflow is: `/syskit.systematize` → `/syskit.clarify` → `/syskit.constitution` → `/syskit.research` → `/syskit.plan`. If the user explicitly states they are skipping clarification (e.g., exploratory spike), you may proceed, but must warn that downstream rework risk increases.
+Note: This clarification workflow is mandatory and must complete BEFORE invoking `/syskit.constitution`. The enforced workflow is: `/syskit.systematize` → `/syskit.clarify` → `/syskit.constitution` → `/syskit.research` → `/syskit.plan`.
 
 ### Governing Principles
 
@@ -187,7 +187,7 @@ These principles are **non-negotiable** and govern every decision in this phase:
    - **Success Criteria**: measurable criteria for "done".
    - **Clarification Checklist**: update each item to ☐ Yes or ☐ No.
 
-   The Clarification Contract is the mandatory output of this phase. It is the "mini execution contract" (Principle 13). If any checklist item is ☐ No, warn that the sys is not ready for `/syskit.plan`.
+   The Clarification Contract is the mandatory output of this phase. It is the "mini execution contract" (Principle 13). If any checklist item is ☐ No, warn that the sys is not ready for `/syskit.constitution`.
 
 8. **Validation** (after each write + final pass):
    - Questions Resolved section has exactly one bullet per accepted answer.
@@ -215,7 +215,7 @@ These principles are **non-negotiable** and govern every decision in this phase:
     | [category] | Resolved / Assumed / Deferred / Clear / Outstanding | [what was done] |
 
     - If Outstanding or Deferred remain → recommend re-running `/syskit.clarify` or proceeding with documented risk.
-    - Suggested next command.
+    - Suggested next command. Default to `/syskit.constitution` only when the Clarification Contract is complete; otherwise recommend re-running `/syskit.clarify`.
 
 ### Behavior Rules
 
