@@ -1,0 +1,33 @@
+# Systematize KIT — تكوين التنبيهات
+schema_version: 1
+
+alerts:
+  stale_assumption:
+    description: "Assumption open without validation"
+    trigger: "ASM status = 'Pending' AND age > 7 days"
+    severity: "warning"
+    action: "warn"
+
+  risk_escalation:
+    description: "Risk probability increased"
+    trigger: "RK probability changed to 'High' or 'Critical'"
+    severity: "critical"
+    action: "block"
+
+  scope_creep:
+    description: "Requirements count grew significantly"
+    trigger: "FR count > baseline * 1.2"
+    severity: "warning"
+    action: "review"
+
+  orphan_requirement:
+    description: "Requirement without implementation task"
+    trigger: "FR exists without matching task"
+    severity: "high"
+    action: "warn"
+
+  stale_feature:
+    description: "Feature with no activity"
+    trigger: "last_modified > 14 days"
+    severity: "info"
+    action: "remind"
