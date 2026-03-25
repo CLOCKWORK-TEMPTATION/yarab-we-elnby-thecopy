@@ -1,18 +1,59 @@
 import { useState, useEffect } from "react";
-import { onAuthChange } from "@/lib/firebase";
-import type { User } from "firebase/auth";
+import { getCurrentUser } from "@/lib/api";
 
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthChange((user: User | null) => {
-      setUser(user);
-      setLoading(false);
-    });
+    let mounted = true;
 
-    return unsubscribe;
+    async function fetchUser() {
+      try {
+        const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+        if (!token) {
+          if (mounted) {
+            setUser(null);
+            setLoading(false);
+          }
+          return;
+        }
+
+        const userData = await getCurrentUser();
+        if (mounted) {
+          setUser(userData);
+        }
+      } catch (error) {
+        console.error("Auth check failed:", error);
+        if (mounted) {
+          setUser(null);
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    }
+
+    fetchUser();
+
+    // Optional: Add event listener to track token changes across tabs
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "auth_token") {
+        fetchUser();
+      }
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("storage", handleStorageChange);
+    }
+
+    return () => {
+      mounted = false;
+      if (typeof window !== "undefined") {
+        window.removeEventListener("storage", handleStorageChange);
+      }
+    };
   }, []);
 
   return { user, loading };

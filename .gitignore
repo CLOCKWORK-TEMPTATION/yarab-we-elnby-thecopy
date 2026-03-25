@@ -485,11 +485,16 @@ docker-compose.override.yml
 .codex/
 .gemini/
 .qoder/
+.qodercli/
 .qwen/
 .roo/
 .shai/
 .opencode/
 .kiro-cli/
+.clinerules
+.codebuddy/
+.continue/
+.learnings/
 
 # MCP Configuration files (contains API keys and tokens)
 mcp.json

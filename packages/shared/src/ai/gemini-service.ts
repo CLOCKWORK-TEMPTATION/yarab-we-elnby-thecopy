@@ -80,16 +80,15 @@ export class GeminiService {
   private genAI: GoogleGenerativeAI | null = null;
 
   constructor(apiKey?: string) {
-    if (apiKey || typeof window === "undefined") {
-      // Server-side or with explicit API key
-      const key =
-        apiKey ||
-        process.env.GEMINI_API_KEY ||
-        process.env.GOOGLE_GENAI_API_KEY;
-      if (key) {
-        const { GoogleGenerativeAI } = require("@google/generative-ai");
-        this.genAI = new GoogleGenerativeAI(key);
-      }
+    // Determine the key based on parameter or environment variables
+    let envKey: string | undefined;
+    if (typeof process !== "undefined" && process.env) {
+      envKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
+    }
+    
+    const key = apiKey || envKey;
+    if (key) {
+      this.genAI = new GoogleGenerativeAI(key);
     }
   }
 
@@ -142,10 +141,10 @@ export class GeminiService {
       await model.generateContent("Hello");
 
       return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
-        error: error.message || "Failed to connect to Gemini API",
+        error: error instanceof Error ? error.message : "Failed to connect to Gemini API",
       };
     }
   }
@@ -182,10 +181,10 @@ ${text}`;
           characterCount: text.length,
         },
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
-        error: error.message || "Failed to analyze text",
+        error: error instanceof Error ? error.message : "Failed to analyze text",
       };
     }
   }
@@ -228,10 +227,10 @@ ${text}`;
           technique,
         },
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
-        error: error.message || "Failed to enhance prompt",
+        error: error instanceof Error ? error.message : "Failed to enhance prompt",
       };
     }
   }
@@ -256,8 +255,8 @@ ${text}`;
       const result = await model.generateContent(prompt);
       const response = await result.response;
       return response.text();
-    } catch (error: any) {
-      throw new Error(`Failed to generate content: ${error.message}`);
+    } catch (error: unknown) {
+      throw new Error(`Failed to generate content: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
   }
 }

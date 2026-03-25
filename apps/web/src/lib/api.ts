@@ -62,6 +62,75 @@ async function fetchWithAuth(
  */
 
 /**
+ * API functions for Auth services (JWT based)
+ */
+
+export async function loginUser(email: string, password: string): Promise<any> {
+  const response = await fetch("/api/auth/login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email, password }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok || !data.success) {
+    throw new Error(data.error || data.details?.[0]?.message || "فشل تسجيل الدخول");
+  }
+
+  if (data.data?.token && typeof window !== "undefined") {
+    localStorage.setItem("auth_token", data.data.token);
+  }
+
+  return data.data;
+}
+
+export async function registerUser(email: string, password: string): Promise<any> {
+  const response = await fetch("/api/auth/signup", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email, password }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok || !data.success) {
+    throw new Error(data.error || data.details?.[0]?.message || "فشل إنشاء الحساب");
+  }
+
+  if (data.data?.token && typeof window !== "undefined") {
+    localStorage.setItem("auth_token", data.data.token);
+  }
+
+  return data.data;
+}
+
+export async function logoutUser(): Promise<void> {
+  try {
+    await fetchWithAuth("/api/auth/logout", { method: "POST" });
+  } catch (error) {
+    console.error("Logout failed on server:", error);
+  } finally {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("auth_token");
+    }
+  }
+}
+
+export async function getCurrentUser(): Promise<any> {
+  const response = await fetchWithAuth("/api/auth/me");
+  if (!response.ok) {
+    throw new Error("Failed to get current user");
+  }
+  const data = await response.json();
+  return data.data;
+}
+
+/**
  * Seven Stations Analysis - NEW BACKEND ENDPOINT
  * Triggers multi-agent analysis pipeline on backend
  */

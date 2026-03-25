@@ -31,7 +31,7 @@ async function ensureClient(): Promise<RedisClientType | null> {
   try {
     client = createClient({ url: process.env.REDIS_URL }) as RedisClientType;
 
-    client.on("error", (err) => {
+    client.on("error", (err: Error) => {
       console.warn("[redis] Client error:", err.message);
     });
 
@@ -125,7 +125,7 @@ export async function invalidateCache(pattern: string): Promise<void> {
     let cursor = 0;
     do {
       const result = await redis.scan(cursor, { MATCH: pattern, COUNT: 100 });
-      cursor = result.cursor;
+      cursor = Number(result.cursor);
       const keys = result.keys;
       if (keys.length > 0) {
         await redis.del(keys);
