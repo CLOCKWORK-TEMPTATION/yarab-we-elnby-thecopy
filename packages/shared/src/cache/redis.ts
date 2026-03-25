@@ -1,24 +1,69 @@
 /**
  * Redis caching utilities
  *
- * NOTE: This is a STUB implementation for development.
- * In production, connect to actual Redis instance by:
- * 1. Set REDIS_ENABLED=true in environment
- * 2. Provide REDIS_URL connection string
- * 3. Implement actual Redis client connection below
+ * Uses the `redis` package (v5) for actual caching when enabled.
+ * Gracefully falls back to pass-through when Redis is unavailable.
  *
- * Current behavior: Caching is DISABLED - all calls pass through
+ * Enable by setting:
+ *   REDIS_ENABLED=true
+ *   REDIS_URL=redis://localhost:6379
  */
 
-// Development flag - set to true and implement Redis client for production
-const REDIS_ENABLED = process.env.REDIS_ENABLED === "true";
+import { createClient, type RedisClientType } from "redis";
+
+// ── Configuration ──────────────────────────────────────────────────
+
+const REDIS_ENABLED =
+  process.env.REDIS_ENABLED === "true" && !!process.env.REDIS_URL;
+
+const DEFAULT_TTL = 3600; // 1 hour in seconds
+
+// ── Singleton client ───────────────────────────────────────────────
+
+let client: RedisClientType | null = null;
+let connectionFailed = false;
+
+async function ensureClient(): Promise<RedisClientType | null> {
+  if (!REDIS_ENABLED) return null;
+  if (connectionFailed) return null;
+  if (client?.isOpen) return client;
+
+  try {
+    client = createClient({ url: process.env.REDIS_URL }) as RedisClientType;
+
+    client.on("error", (err) => {
+      console.warn("[redis] Client error:", err.message);
+    });
+
+    await client.connect();
+    return client;
+  } catch (err) {
+    console.warn(
+      "[redis] Failed to connect — caching disabled for this process:",
+      (err as Error).message
+    );
+    connectionFailed = true;
+    client = null;
+    return null;
+  }
+}
+
+// ── Public API ─────────────────────────────────────────────────────
 
 export interface CacheOptions {
   ttl?: number; // Time to live in seconds
 }
 
 /**
- * Generate a cache key for Gemini API calls
+ * Returns the underlying Redis client (lazy-initialized).
+ * Returns null when Redis is disabled or unavailable.
+ */
+export async function getRedisClient(): Promise<RedisClientType | null> {
+  return ensureClient();
+}
+
+/**
+ * Generate a cache key for Gemini API calls.
  */
 export function generateGeminiCacheKey(
   prompt: string,
@@ -32,87 +77,104 @@ export function generateGeminiCacheKey(
 }
 
 /**
- * Cached Gemini API call
- *
- * DEV STUB: Currently bypasses caching completely
- * TODO PRODUCTION: Implement Redis connection and caching logic
- */
-export async function cachedGeminiCall<T>(
-  key: string,
-  callFn: () => Promise<T>,
-  options?: CacheOptions
-): Promise<T> {
-  if (!REDIS_ENABLED) {
-    // Development mode: no caching
-    return callFn();
-  }
-
-  // TODO PRODUCTION: Implement actual Redis caching
-  // 1. Check Redis for existing cache with key
-  // 2. If found, return cached value
-  // 3. If not found, call callFn(), cache result, return value
-  // Example:
-  // const cached = await redisClient.get(key);
-  // if (cached) return JSON.parse(cached);
-  // const result = await callFn();
-  // await redisClient.setex(key, options?.ttl || 3600, JSON.stringify(result));
-  // return result;
-
-  return callFn();
-}
-
-/**
- * Get cached value
- *
- * DEV STUB: Always returns null
- * TODO PRODUCTION: Implement Redis get operation
+ * Get a cached value by key. Returns null on miss or when Redis is unavailable.
  */
 export async function getCached<T>(key: string): Promise<T | null> {
-  if (!REDIS_ENABLED) {
+  try {
+    const redis = await ensureClient();
+    if (!redis) return null;
+
+    const raw = await redis.get(key);
+    if (raw === null) return null;
+
+    return JSON.parse(raw) as T;
+  } catch (err) {
+    console.warn("[redis] getCached error:", (err as Error).message);
     return null;
   }
-
-  // TODO PRODUCTION: Implement actual Redis get
-  // const value = await redisClient.get(key);
-  // return value ? JSON.parse(value) : null;
-
-  return null;
 }
 
 /**
- * Set cached value
- *
- * DEV STUB: No-op function
- * TODO PRODUCTION: Implement Redis set operation
+ * Set a cached value. Serializes to JSON. Optional TTL (defaults to 1 hour).
  */
 export async function setCached<T>(
   key: string,
   value: T,
   options?: CacheOptions
 ): Promise<void> {
-  if (!REDIS_ENABLED) {
-    return;
-  }
+  try {
+    const redis = await ensureClient();
+    if (!redis) return;
 
-  // TODO PRODUCTION: Implement actual Redis set
-  // const ttl = options?.ttl || 3600;
-  // await redisClient.setex(key, ttl, JSON.stringify(value));
+    const ttl = options?.ttl ?? DEFAULT_TTL;
+    await redis.set(key, JSON.stringify(value), { EX: ttl });
+  } catch (err) {
+    console.warn("[redis] setCached error:", (err as Error).message);
+  }
 }
 
 /**
- * Invalidate cache
- *
- * DEV STUB: No-op function
- * TODO PRODUCTION: Implement Redis pattern-based deletion
+ * Invalidate cache keys matching a glob pattern.
+ * Uses SCAN (not KEYS) to avoid blocking Redis on large datasets.
  */
 export async function invalidateCache(pattern: string): Promise<void> {
-  if (!REDIS_ENABLED) {
-    return;
+  try {
+    const redis = await ensureClient();
+    if (!redis) return;
+
+    let cursor = 0;
+    do {
+      const result = await redis.scan(cursor, { MATCH: pattern, COUNT: 100 });
+      cursor = result.cursor;
+      const keys = result.keys;
+      if (keys.length > 0) {
+        await redis.del(keys);
+      }
+    } while (cursor !== 0);
+  } catch (err) {
+    console.warn("[redis] invalidateCache error:", (err as Error).message);
+  }
+}
+
+/**
+ * Cache-through helper for Gemini (or any async) calls.
+ * On cache hit, returns the cached value. On miss, calls `callFn`,
+ * caches the result, and returns it.
+ * Falls through to a direct call when Redis is unavailable.
+ */
+export async function cachedGeminiCall<T>(
+  key: string,
+  callFn: () => Promise<T>,
+  options?: CacheOptions
+): Promise<T> {
+  try {
+    const redis = await ensureClient();
+    if (redis) {
+      const raw = await redis.get(key);
+      if (raw !== null) {
+        return JSON.parse(raw) as T;
+      }
+    }
+  } catch (err) {
+    console.warn("[redis] cachedGeminiCall read error:", (err as Error).message);
+    // Fall through to direct call
   }
 
-  // TODO PRODUCTION: Implement actual Redis invalidation
-  // const keys = await redisClient.keys(pattern);
-  // if (keys.length > 0) {
-  //   await redisClient.del(...keys);
-  // }
+  const result = await callFn();
+
+  // Fire-and-forget cache write — don't slow down the response
+  try {
+    const redis = await ensureClient();
+    if (redis) {
+      const ttl = options?.ttl ?? DEFAULT_TTL;
+      await redis.set(key, JSON.stringify(result), { EX: ttl });
+    }
+  } catch (err) {
+    console.warn(
+      "[redis] cachedGeminiCall write error:",
+      (err as Error).message
+    );
+  }
+
+  return result;
 }

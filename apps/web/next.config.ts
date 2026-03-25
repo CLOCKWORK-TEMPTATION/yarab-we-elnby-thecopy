@@ -85,7 +85,7 @@ const nextConfig = {
   serverExternalPackages: ['@google/genai', 'puppeteer', 'sharp'],
   
   // Enable production browser sourcemaps
-  productionBrowserSourceMaps: true,
+  productionBrowserSourceMaps: false,
 
   // Ensure correct root when multiple lockfiles exist (silences Next.js warning)
   // يؤشر إلى جذر الـ monorepo لتتبع الملفات من packages/ و apps/ معًا

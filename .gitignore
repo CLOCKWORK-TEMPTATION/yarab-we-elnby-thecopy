@@ -478,6 +478,18 @@ docker-compose.override.yml
 .github-copilot/
 .tabnine/
 .codeium/
+.aider/
+.amp/
+.augment/
+.bob/
+.codex/
+.gemini/
+.qoder/
+.qwen/
+.roo/
+.shai/
+.opencode/
+.kiro-cli/
 
 # MCP Configuration files (contains API keys and tokens)
 mcp.json
