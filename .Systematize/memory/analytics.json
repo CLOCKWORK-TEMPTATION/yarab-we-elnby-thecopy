@@ -317,6 +317,13 @@
           "command": "feature-status",
           "status": "completed",
           "has_git": true
+        },
+        {
+          "type": "command_lifecycle",
+          "timestamp": "2026-03-25T00:52:54.572Z",
+          "command": "healthcheck",
+          "status": "completed",
+          "has_git": true
         }
       ],
       "phases": {}

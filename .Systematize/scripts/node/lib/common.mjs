@@ -44,11 +44,15 @@ export function getFeatureWorkspaceRoot(repoRoot = getRepoRoot(), options = {}) 
   const mutating = options.mutating === true;
   const ensureExists = options.ensureExists === true;
 
-  if ((nextExists && existingLegacyRoots.length > 0) || existingLegacyRoots.length > 1) {
+  if (existingLegacyRoots.length > 1) {
     const conflictingRoots = [nextRoot, ...existingLegacyRoots].filter((item, index, array) => array.indexOf(item) === index);
     throw new Error(
       `Conflicting workflow roots detected. Resolve manually before continuing:\n- ${conflictingRoots.join('\n- ')}`
     );
+  }
+
+  if (nextExists && existingLegacyRoots.length === 1) {
+    return nextRoot;
   }
 
   if (existingLegacyRoots.length === 1 && !nextExists) {

@@ -94,17 +94,14 @@ function writeClarifiedSys(featureDir) {
   );
 }
 
-test('detects conflicting workflow roots and forces manual resolution', () => {
+test('prefers the canonical features root when a legacy root also exists', () => {
   const tempRepo = createTempRepo();
 
   try {
-    mkdirSync(join(tempRepo, 'features'), { recursive: true });
+    mkdirSync(join(tempRepo, 'features', '001-current-flow'), { recursive: true });
     mkdirSync(join(tempRepo, legacyWorkspaceName), { recursive: true });
 
-    assert.throws(
-      () => getFeatureWorkspaceRoot(tempRepo),
-      /Conflicting workflow roots detected/
-    );
+    assert.equal(getFeatureWorkspaceRoot(tempRepo), join(tempRepo, 'features'));
   } finally {
     rmSync(tempRepo, { recursive: true, force: true });
   }

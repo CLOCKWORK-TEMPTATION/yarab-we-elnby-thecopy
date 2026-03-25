@@ -31,9 +31,13 @@ function Get-FeatureWorkspaceRoot {
             Where-Object { Test-Path -LiteralPath $_ -PathType Container }
     )
 
-    if (($currentExists -and $legacyRoots.Count -gt 0) -or $legacyRoots.Count -gt 1) {
+    if ($legacyRoots.Count -gt 1) {
         $conflictingRoots = @($currentRoot) + $legacyRoots | Select-Object -Unique
         throw "Conflicting workflow roots detected. Resolve manually before continuing:`n- $($conflictingRoots -join "`n- ")"
+    }
+
+    if ($currentExists -and $legacyRoots.Count -eq 1) {
+        return $currentRoot
     }
 
     if ($legacyRoots.Count -eq 1 -and -not $currentExists) {
