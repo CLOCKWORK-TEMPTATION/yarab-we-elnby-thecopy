@@ -77,7 +77,7 @@ export function auditEditorSubtree(repoRoot) {
       severity: 'high',
       layer: 'editor_subtree',
       location: `${webPackageJsonPath} | ${webTsconfigPath}`,
-      problem: 'apps/web dev mode executes editor server code that the official apps/web type-check excludes.',
+      problem: 'apps/web dev mode executes editor server code that is excluded from apps/web type-check validation.',
       evidence: `apps/web package.json dev script runs ${EDITOR_FILE_IMPORT_SERVER} while apps/web tsconfig exclude lists ${editorExcludes.join(', ')}.`,
       impact: 'The official frontend development path can execute editor code that never passes through the advertised type-check boundary.',
       fix: 'Either include the editor subtree in apps/web type-check coverage or promote it to an explicitly separate workspace with its own required validation commands.'

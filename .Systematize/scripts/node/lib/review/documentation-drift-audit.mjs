@@ -65,8 +65,8 @@ export function auditDocumentationDrift(repoRoot) {
         severity: 'medium',
         layer: 'documentation_drift',
         location: rootReadmePath,
-        problem: 'Root README documents pnpm start:dev even though the root manifest does not expose that script.',
-        evidence: 'README.md quick-start section references pnpm start:dev, while package.json exposes dev/start/stop but no start:dev.',
+        problem: `Root README documents ${rootCommand} start:dev even though the root manifest does not expose that script.`,
+        evidence: `README.md quick-start section references ${rootCommand} start:dev, while package.json exposes dev/start/stop but no start:dev.`,
         impact: 'Reviewers and developers may follow a non-existent startup path and mis-diagnose workspace failures.',
         fix: 'Update the README to use the real root script names from package.json.'
       }));
@@ -79,8 +79,8 @@ export function auditDocumentationDrift(repoRoot) {
         severity: 'medium',
         layer: 'documentation_drift',
         location: rootReadmePath,
-        problem: 'Root README documents pnpm kill:dev even though the root manifest uses a different stop command.',
-        evidence: 'README.md quick-start section references pnpm kill:dev, while package.json exposes stop instead.',
+        problem: `Root README documents ${rootCommand} kill:dev even though the root manifest uses a different stop command.`,
+        evidence: `README.md quick-start section references ${rootCommand} kill:dev, while package.json exposes stop instead.`,
         impact: 'Operators may leave background services running because the documented shutdown command does not exist.',
         fix: 'Replace pnpm kill:dev in the README with the actual root shutdown command.'
       }));
@@ -131,8 +131,8 @@ export function auditDocumentationDrift(repoRoot) {
         severity: 'low',
         layer: 'documentation_drift',
         location: webReadmePath,
-        problem: 'apps/web README documents pnpm typecheck while the app manifest exposes pnpm type-check.',
-        evidence: 'apps/web/README.md uses the old script name typecheck, but apps/web/package.json defines type-check.',
+        problem: `apps/web README documents ${webCommand} typecheck while the app manifest exposes ${webCommand} type-check.`,
+        evidence: `apps/web/README.md uses the old script name typecheck, but apps/web/package.json defines type-check.`,
         impact: 'The documented frontend validation path fails even when the app scripts are otherwise healthy.',
         fix: 'Update the README to use the exact script name from apps/web/package.json.'
       }));

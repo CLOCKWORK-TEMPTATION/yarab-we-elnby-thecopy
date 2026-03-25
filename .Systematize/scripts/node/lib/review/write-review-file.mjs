@@ -32,7 +32,7 @@ const SECTION_TITLES = [
 
 function escapeMarkdownTableCell(value) {
   return String(value || '')
-    .replace(/\r?\n/g, ' <br> ')
+    .replace(/\r?\n/g, '<br>')
     .replace(/\|/g, '\\|')
     .replace(/`/g, '\\`');
 }

@@ -147,7 +147,7 @@ test('editor subtree audit flags excluded-but-executed editor runtime boundaries
 
     const audit = auditEditorSubtree(tempRepo);
     assert.ok(audit.findings.some((finding) => finding.type === 'execution_gap'));
-    assert.ok(audit.findings.some((finding) => finding.problem.includes('type-check excludes')));
+    assert.ok(audit.findings.some((finding) => finding.problem.includes('excluded from apps/web type-check validation')));
     assert.ok(audit.findings.some((finding) => finding.problem.includes('nested app manifest')));
   } finally {
     rmSync(tempRepo, { recursive: true, force: true });
