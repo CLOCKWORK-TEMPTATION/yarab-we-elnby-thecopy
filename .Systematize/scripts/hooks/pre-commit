@@ -1,5 +1,0 @@
-#!/bin/sh
-set -eu
-
-printf '%s\n' 'Systematize Framework pre-commit: running full verification chain...'
-npm run verify
