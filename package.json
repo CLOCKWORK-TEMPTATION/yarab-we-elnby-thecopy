@@ -23,7 +23,11 @@
     "start:redis": "powershell -Command \"Start-Process -FilePath '.\\redis\\redis-server.exe' -WindowStyle Minimized\"",
     "check:exports": "node scripts/check-duplicate-exports.mjs",
     "audit:code": "npx tsx scripts/code-auditor.ts",
-    "sentry:setup": "npx @sentry/wizard@latest -i nextjs --saas --org me-gj0 --project the-copy"
+    "sentry:setup": "npx @sentry/wizard@latest -i nextjs --saas --org me-gj0 --project the-copy",
+    "ariana": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/start-ariana.ps1",
+    "ariana:web": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/start-ariana.ps1 -WebOnly",
+    "ariana:backend": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/start-ariana.ps1 -BackendOnly",
+    "ariana:inplace": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/start-ariana.ps1 -InPlace"
   },
   "devDependencies": {
     "cypress": "^15.8.0",
