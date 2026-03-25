@@ -11,6 +11,8 @@ function safeReadJson(filePath) {
   }
 }
 
+const EDITOR_FILE_IMPORT_SERVER = 'src/app/(main)/editor/server/file-import-server.mjs';
+
 export function auditEditorSubtree(repoRoot) {
   const evidence = [];
   const findings = [];
@@ -67,7 +69,7 @@ export function auditEditorSubtree(repoRoot) {
     summary: 'Loaded apps/web package.json to inspect how dev mode wires the editor subtree.'
   }));
 
-  const devUsesEditorServer = devScript.includes('src/app/(main)/editor/server/file-import-server.mjs');
+  const devUsesEditorServer = devScript.includes(EDITOR_FILE_IMPORT_SERVER);
   if (devUsesEditorServer && editorExcludes.length > 0) {
     findings.push(createFinding({
       id: 'FD-ED-001',
@@ -76,7 +78,7 @@ export function auditEditorSubtree(repoRoot) {
       layer: 'editor_subtree',
       location: `${webPackageJsonPath} | ${webTsconfigPath}`,
       problem: 'apps/web dev mode executes editor server code that the official apps/web type-check excludes.',
-      evidence: `apps/web package.json dev script runs ${'src/app/(main)/editor/server/file-import-server.mjs'} while apps/web tsconfig exclude lists ${editorExcludes.join(', ')}.`,
+      evidence: `apps/web package.json dev script runs ${EDITOR_FILE_IMPORT_SERVER} while apps/web tsconfig exclude lists ${editorExcludes.join(', ')}.`,
       impact: 'The official frontend development path can execute editor code that never passes through the advertised type-check boundary.',
       fix: 'Either include the editor subtree in apps/web type-check coverage or promote it to an explicitly separate workspace with its own required validation commands.'
     }));

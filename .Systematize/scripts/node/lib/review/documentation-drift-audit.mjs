@@ -16,6 +16,21 @@ function loadText(filePath) {
   return readFileSync(filePath, 'utf8');
 }
 
+const FRONTEND_CD_PATTERN = /cd\s+frontend\b/i;
+const FRONTEND_PATH_PATTERN = /frontend\//i;
+
+function detectPackageManagerCommand(packageJson = {}) {
+  const packageManager = String(packageJson.packageManager || '').toLowerCase();
+  if (packageManager.startsWith('yarn')) return 'yarn';
+  if (packageManager.startsWith('bun')) return 'bun';
+  if (packageManager.startsWith('npm')) return 'npm';
+  return 'pnpm';
+}
+
+function buildCommandPattern(packageManagerCommand, scriptName) {
+  return new RegExp(`${packageManagerCommand}\\s+${scriptName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+}
+
 export function auditDocumentationDrift(repoRoot) {
   const evidence = [];
   const findings = [];
@@ -28,6 +43,11 @@ export function auditDocumentationDrift(repoRoot) {
 
   const rootReadme = loadText(rootReadmePath);
   const webReadme = loadText(webReadmePath);
+  const rootCommand = detectPackageManagerCommand(rootPackageJson);
+  const webCommand = detectPackageManagerCommand(webPackageJson);
+  const startDevPattern = buildCommandPattern(rootCommand, 'start:dev');
+  const killDevPattern = buildCommandPattern(rootCommand, 'kill:dev');
+  const typecheckPattern = buildCommandPattern(webCommand, 'typecheck');
 
   if (rootReadme) {
     evidence.push(createEvidenceRecord({
@@ -38,7 +58,7 @@ export function auditDocumentationDrift(repoRoot) {
       summary: 'Loaded root README for documentation drift checks.'
     }));
 
-    if (/pnpm\s+start:dev\b/i.test(rootReadme) && !rootPackageJson.scripts?.['start:dev']) {
+    if (startDevPattern.test(rootReadme) && !rootPackageJson.scripts?.['start:dev']) {
       findings.push(createFinding({
         id: 'FD-DD-001',
         type: 'documentation_drift',
@@ -52,7 +72,7 @@ export function auditDocumentationDrift(repoRoot) {
       }));
     }
 
-    if (/pnpm\s+kill:dev\b/i.test(rootReadme) && !rootPackageJson.scripts?.['kill:dev']) {
+    if (killDevPattern.test(rootReadme) && !rootPackageJson.scripts?.['kill:dev']) {
       findings.push(createFinding({
         id: 'FD-DD-002',
         type: 'documentation_drift',
@@ -66,7 +86,7 @@ export function auditDocumentationDrift(repoRoot) {
       }));
     }
 
-    if (/cd\s+frontend\b/i.test(rootReadme) && existsSync(join(repoRoot, 'apps', 'web'))) {
+    if (FRONTEND_CD_PATTERN.test(rootReadme) && existsSync(join(repoRoot, 'apps', 'web'))) {
       findings.push(createFinding({
         id: 'FD-DD-003',
         type: 'documentation_drift',
@@ -90,7 +110,7 @@ export function auditDocumentationDrift(repoRoot) {
       summary: 'Loaded apps/web README for command drift checks.'
     }));
 
-    if (/frontend\//i.test(webReadme) && !existsSync(join(repoRoot, 'frontend'))) {
+    if (FRONTEND_PATH_PATTERN.test(webReadme) && !existsSync(join(repoRoot, 'frontend'))) {
       findings.push(createFinding({
         id: 'FD-DD-004',
         type: 'documentation_drift',
@@ -104,7 +124,7 @@ export function auditDocumentationDrift(repoRoot) {
       }));
     }
 
-    if (/pnpm\s+typecheck\b/i.test(webReadme) && !webPackageJson.scripts?.typecheck && webPackageJson.scripts?.['type-check']) {
+    if (typecheckPattern.test(webReadme) && !webPackageJson.scripts?.typecheck && webPackageJson.scripts?.['type-check']) {
       findings.push(createFinding({
         id: 'FD-DD-005',
         type: 'documentation_drift',

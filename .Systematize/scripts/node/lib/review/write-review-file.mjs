@@ -22,7 +22,7 @@ const SECTION_TITLES = [
   ['toolchain_workspace', 'Toolchain and Workspace'],
   ['automated_checks', 'Automated Checks'],
   ['documentation_drift', 'Documentation Drift'],
-  ['frontend', 'frontend'],
+  ['frontend', 'Frontend'],
   ['editor_subtree', 'Editor Subtree'],
   ['backend', 'Backend'],
   ['shared_packages', 'Shared Packages'],
@@ -30,12 +30,15 @@ const SECTION_TITLES = [
   ['security_production_readiness', 'Security and Production Readiness']
 ];
 
-function escapeCell(value) {
-  return String(value || '').replace(/\|/g, '\\|');
+function escapeMarkdownTableCell(value) {
+  return String(value || '')
+    .replace(/\r?\n/g, ' <br> ')
+    .replace(/\|/g, '\\|')
+    .replace(/`/g, '\\`');
 }
 
 function formatFindingRow(finding) {
-  return `| ${escapeCell(finding.id)} | ${SEVERITY_LABELS[finding.severity] || finding.severity} | ${TYPE_LABELS[finding.type] || finding.type} | ${escapeCell(finding.layer)} | ${escapeCell(finding.location)} | ${escapeCell(finding.problem)} | ${escapeCell(finding.evidence)} | ${escapeCell(finding.impact)} | ${escapeCell(finding.fix)} |`;
+  return `| ${escapeMarkdownTableCell(finding.id)} | ${SEVERITY_LABELS[finding.severity] || finding.severity} | ${TYPE_LABELS[finding.type] || finding.type} | ${escapeMarkdownTableCell(finding.layer)} | ${escapeMarkdownTableCell(finding.location)} | ${escapeMarkdownTableCell(finding.problem)} | ${escapeMarkdownTableCell(finding.evidence)} | ${escapeMarkdownTableCell(finding.impact)} | ${escapeMarkdownTableCell(finding.fix)} |`;
 }
 
 function renderFindingsTable(findings = []) {
@@ -75,6 +78,9 @@ function renderCriticalIssues(findings = []) {
 }
 
 function renderCoverageLines(coverage) {
+  const executedChecks = coverage.executed_checks.length > 0
+    ? coverage.executed_checks.map((item) => item.command).join(' | ')
+    : 'لا توجد أوامر منفذة بنجاح أو بفشل قابل للقياس.';
   const lines = [
     `- ما الذي تم التحقق منه فعليًا: ${coverage.reviewed_artifacts.join('، ')}`,
     `- ما الذي تعذر تنفيذه: ${coverage.blocked_checks.length > 0 ? coverage.blocked_checks.map((item) => item.command || item.name).join(' | ') : 'لا يوجد.'}`,
@@ -82,7 +88,7 @@ function renderCoverageLines(coverage) {
     `- ما الذي بقي خارج التغطية: ${coverage.skipped_layers.length > 0 ? coverage.skipped_layers.map((item) => `${item.layer}: ${item.reason}`).join(' | ') : 'لا يوجد.'}`
   ];
 
-  lines.push(`- الأوامر التنفيذية التي أمكن تشغيلها: ${coverage.executed_checks.length > 0 ? coverage.executed_checks.map((item) => item.command).join(' | ') : 'لا توجد أوامر منفذة بنجاح أو بفشل قابل للقياس.'}`);
+  lines.push(`- الأوامر التنفيذية التي أمكن تشغيلها: ${executedChecks}`);
 
   if (coverage.confidence_reasons.length > 0) {
     lines.push(`- لماذا الثقة High أو Medium أو Low: ${coverage.confidence_reasons.map((item) => `${item.message} (${item.evidence})`).join(' | ')}`);
