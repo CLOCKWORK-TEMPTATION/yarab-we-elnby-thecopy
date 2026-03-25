@@ -5,7 +5,7 @@ updates:
   # ---------------------------------------------------------------
   - package-ecosystem: "npm"
     # تحديد مسار الـ Frontend بدقة داخل الـ Monorepo
-    directory: "/frontend"
+    directory: "/apps/web"
     schedule:
       interval: "weekly"
       day: "Thursday"
@@ -24,7 +24,7 @@ updates:
   # 2. تحديث مكتبات الـ Backend (Node.js/Express Ecosystem)
   # ---------------------------------------------------------------
   - package-ecosystem: "npm"
-    directory: "/backend"
+    directory: "/apps/backend"
     schedule:
       interval: "weekly"
       day: "Thursday"
@@ -41,7 +41,7 @@ updates:
   # ---------------------------------------------------------------
   - package-ecosystem: "docker"
     # يشير للمكان اللي فيه Dockerfile الخاص بالباك إند
-    directory: "/backend"
+    directory: "/apps/backend"
     schedule:
       interval: "weekly"
       day: "Thursday"

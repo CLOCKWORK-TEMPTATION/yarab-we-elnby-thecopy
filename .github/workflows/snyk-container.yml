@@ -31,15 +31,15 @@ jobs:
 
     - name: Run Snyk to check Docker image for vulnerabilities
       # عدم إيقاف الـ Build عند وجود ثغرات (عشان التقرير يترفع الأول)
-      continue-on-error: true
       uses: snyk/actions/docker@master
-      env:
-        # تأكد من إضافة SNYK_TOKEN في إعدادات الـ Secrets في GitHub
-        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       with:
         image: clockwork-backend
         # توجيه الأداة لملف الدوكر الصحيح داخل مجلد الباك إند
         args: --file=apps/backend/Dockerfile
+      env:
+        # تأكد من إضافة SNYK_TOKEN في إعدادات الـ Secrets في GitHub
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      continue-on-error: true
 
     - name: Upload result to GitHub Code Scanning
       uses: github/codeql-action/upload-sarif@v3

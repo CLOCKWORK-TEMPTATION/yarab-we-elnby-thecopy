@@ -3,7 +3,6 @@
 import dynamic from "next/dynamic";
 import { useEffect } from "react";
 
-// @ts-ignore — editor/src مستثنى من apps/web tsconfig by design
 const EditorApp = dynamic(
   () => import("./src/App").then((m) => ({ default: m.App })),
   {
@@ -25,7 +24,6 @@ export default function EditorPage() {
     if (initialized) return;
     initialized = true;
 
-    // @ts-ignore
     void import("./src/providers").then(({ createThemeProvider }) => {
       createThemeProvider({
         attribute: "class",
@@ -35,7 +33,6 @@ export default function EditorPage() {
       });
     });
 
-    // @ts-ignore
     void import("./src/components/ui/toaster").then(({ createToaster }) => {
       const toaster = createToaster();
       document.body.appendChild(toaster.element);
