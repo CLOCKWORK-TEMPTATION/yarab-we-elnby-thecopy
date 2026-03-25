@@ -1,5 +1,12 @@
 ---
 description: Analyze changes across feature artifacts and suggest required updates to maintain consistency and traceability.
+command_name: sync
+command_family: Inspection
+command_stage: change-control
+command_requirement_level: optional
+command_visibility: operational
+command_execution_mode: runtime-backed
+runtime_command: update-sync-state
 handoffs:
   - label: Update Plan
     agent: syskit.plan

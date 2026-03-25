@@ -1,5 +1,12 @@
 ---
 description: Display a unified dashboard showing status of ALL features in the project — with conflict detection and team overview.
+command_name: dashboard
+command_family: Portfolio
+command_stage: reporting
+command_requirement_level: optional
+command_visibility: optional
+command_execution_mode: runtime-backed
+runtime_command: export-dashboard
 ---
 
 ## User Input
@@ -10,7 +17,7 @@ $ARGUMENTS
 
 ## Outline
 
-1. Run `Get-AllFeatureDirs` (from common.ps1 via a script) to discover all features.
+1. Run `Get-AllFeatureDirs` (or the compatibility alias `Get-AllAminooofDirs`) to discover all features.
    - If no features exist, inform the user and suggest `/syskit.systematize`.
 
 2. For each feature, run the feature status script:

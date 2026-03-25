@@ -1,5 +1,12 @@
 ---
 description: Export feature documentation in various formats — HTML dashboard, executive summary, Confluence/Notion-ready markdown, or combined PDF-ready document.
+command_name: export
+command_family: Portfolio
+command_stage: reporting
+command_requirement_level: optional
+command_visibility: optional
+command_execution_mode: runtime-backed
+runtime_command: export-dashboard
 ---
 
 ## User Input

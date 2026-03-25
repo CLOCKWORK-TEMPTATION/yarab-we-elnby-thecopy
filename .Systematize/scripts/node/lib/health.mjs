@@ -143,7 +143,8 @@ export function evaluateFeatureHealth(featureDir, threshold = 70) {
     score: totalScore,
     maxScore: 100,
     threshold,
-    status: totalScore >= threshold ? 'HEALTHY' : 'UNHEALTHY',
+    status: totalScore >= threshold ? 'ADVISORY_PASS' : 'ADVISORY_FAIL',
+    scope: 'heuristic',
     checks
   };
 }

@@ -1,7 +1,7 @@
 {
   "name": "syskit-cli",
   "version": "2.0.0",
-  "description": "Systematize KIT — Cross-platform CLI for feature documentation management",
+  "description": "Systematize Framework runtime engine for software project governance",
   "type": "module",
   "bin": {
     "syskit": "./cli.mjs"

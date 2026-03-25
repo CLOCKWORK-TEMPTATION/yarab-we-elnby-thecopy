@@ -1,5 +1,12 @@
 ---
 description: Analyze project metrics across all features — estimation accuracy, clarification efficiency, risk prediction, and rework rate.
+command_name: metrics
+command_family: Portfolio
+command_stage: reporting
+command_requirement_level: optional
+command_visibility: optional
+command_execution_mode: runtime-backed
+runtime_command: record-analytics
 ---
 
 ## User Input
@@ -12,7 +19,7 @@ $ARGUMENTS
 
 1. Read `.Systematize/memory/analytics.json` for event data.
 
-2. Run `get-feature-status.ps1 -Json` / `node cli.mjs feature-status --json` for each feature found via `Get-AllAminooofDirs`.
+2. Run `get-feature-status.ps1 -Json` / `node cli.mjs feature-status --json` for each feature found via `Get-AllFeatureDirs`.
 
 3. **Calculate metrics**:
 

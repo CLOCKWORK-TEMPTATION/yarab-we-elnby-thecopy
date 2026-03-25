@@ -1,5 +1,12 @@
 ---
 description: Create the implementation plan — governing execution reference with architecture, phased execution, testing strategy, readiness gate, and design artifacts.
+command_name: plan
+command_family: Gate
+command_stage: phase-05
+command_requirement_level: mandatory
+command_visibility: primary
+command_execution_mode: runtime-backed
+runtime_command: setup-plan
 handoffs: 
   - label: Create Tasks
     agent: syskit.tasks
@@ -38,12 +45,12 @@ You **MUST** consider the user input before proceeding (if not empty).
 
 ## Outline
 
-1. **Setup**: Run the plan setup script from repo root and parse JSON for FEATURE_SYS, IMPL_PLAN, SPECS_DIR, BRANCH.
+1. **Setup**: Run the plan setup script from repo root and parse JSON for FEATURE_SYS, IMPL_PLAN, FEATURES_DIR, BRANCH.
    - **PowerShell**: `pwsh -File .Systematize/scripts/powershell/setup-plan.ps1 -Json`
    - **Node.js**: `node .Systematize/scripts/node/cli.mjs setup-plan --json`
    - For single quotes in args: use double-quote (e.g., `"I'm Groot"`)
 
-2. **Load context**: Read FEATURE_SYS and `.Systematize/memory/constitution.md`. Load IMPL_PLAN template (already copied by script).
+2. **Load context**: Read FEATURE_SYS, `research.md`, and `.Systematize/memory/constitution.md`. Load IMPL_PLAN template (already copied by script).
 
 3. **Fill the plan** following this execution flow:
 
@@ -57,12 +64,12 @@ You **MUST** consider the user input before proceeding (if not empty).
    - If user specified a profile, use it. Otherwise infer from sys and mark in Plan Card.
 
    **Step 2 — Summary** *(mandatory)*:
-   - Extract primary requirement from sys + technical approach (to be refined after research)
+   - Extract primary requirement from sys + research-backed technical direction
 
    **Step 3 — Technical Context** *(mandatory)*:
    - Fill all 9 fields from sys + project analysis
-   - Mark unknowns as NEEDS CLARIFICATION (to be resolved in Phase 0)
-   - Every field must have a concrete value before Phase 1 starts
+   - Every field must use sys + research evidence
+   - If a field still cannot be resolved from both, stop with a blocker instead of deferring to implicit research
 
    **Step 4 — Stakeholders & Decision Rights** *(mandatory)*:
    - Identify decision makers for product, technical, budget, launch decisions
@@ -126,25 +133,13 @@ You **MUST** consider the user input before proceeding (if not empty).
    **Step 17 — Approval** *(mandatory)*:
    - Initialize approval table (signatures added later)
 
-4. **Execute Phase 0: Research** (resolve all NEEDS CLARIFICATION):
+4. **Validate the mandatory research gate**:
 
-   Run `/syskit.research` to generate a deep, structured research plan and execute research.
-   The research command will:
-
-   1. Extract all unknowns from Technical Context (NEEDS CLARIFICATION markers)
-   2. Extract assumptions (`ASM-XXX`) from sys.md Clarification Contract
-   3. Generate research questions across 7 categories (problem, user, market, solution, technical, risk, decision)
-   4. Execute 5-phase methodology (Decompose → Survey → Deepen → Synthesize → Recommend)
-   5. Produce `research.md` using `.Systematize/templates/research-template.md` with:
-      - Research plan (sections 1–10): questions, hypotheses, boundaries, methodology
-      - Research report (sections 11–12): answers, evidence, hypothesis results, verdict
-      - Final judgment: PROCEED / PROCEED WITH CHANGES / STOP / PIVOT + confidence level
-   6. **Update plan**: Replace all NEEDS CLARIFICATION in Technical Context with resolved values
-
-   **Gate**: If research verdict is STOP or PIVOT, halt plan execution and report to user.
-   If verdict is PROCEED WITH CHANGES, apply required changes before continuing.
-
-   **Output**: research.md (13-section deep research document) with all unknowns resolved
+   - Treat `research.md` as a required upstream artifact, not a sub-step of planning.
+   - Confirm it exists, is complete, and resolves all architecture-shaping or constraint-shaping unknowns.
+   - If research verdict is STOP or PIVOT, halt immediately and report that planning is blocked.
+   - If research verdict is PROCEED WITH CHANGES, apply those changes to the plan inputs before drafting.
+   - If `research.md` is missing or incomplete, fail and direct the user to `/syskit.research`.
 
 5. **Execute Phase 1: Design & Contracts**:
 
@@ -188,7 +183,7 @@ You **MUST** consider the user input before proceeding (if not empty).
 ## Key Rules
 
 - Use absolute paths
-- ERROR on gate failures or unresolved clarifications after Phase 0
+- ERROR on gate failures or unresolved research findings
 - Do NOT duplicate sys content — reference it
 - Mandatory sections cannot be skipped or left empty
 - Architecture decisions MUST document rejected alternatives
@@ -201,5 +196,5 @@ You **MUST** consider the user input before proceeding (if not empty).
 - **Primary format**: Plan generation summary in Markdown.
 - **Files created or updated**: `plan.md`, and when applicable `AGENTS.md`, `quickstart.md`, agent context files, and interface contracts.
 - **Success result**: Plan path, readiness gate status, generated artifacts, constitution check result, and remaining blockers.
-- **Exit status**: `0` when the plan and mandatory supporting artifacts are generated; `1` when setup fails, research blocks progress, or readiness gates remain violated.
-- **Failure conditions**: Missing `sys.md`, unresolved technical unknowns after research, constitution gate failures, or file generation errors.
+- **Exit status**: `0` when the plan and mandatory supporting artifacts are generated; `1` when setup fails, upstream research is missing/incomplete, or readiness gates remain violated.
+- **Failure conditions**: Missing `sys.md`, missing or incomplete `research.md`, constitution gate failures, or file generation errors.

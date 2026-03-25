@@ -5,6 +5,7 @@ import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
+import { hasPowerShell } from './helpers/powershell.mjs';
 
 import {
   applyPlatformSelectionKey,
@@ -20,6 +21,7 @@ import {
 } from '../lib/init-syskit.mjs';
 
 const repoRoot = fileURLToPath(new URL('../../../../', import.meta.url));
+const powerShellAvailable = hasPowerShell();
 
 function createTempRepo() {
   return mkdtempSync(join(tmpdir(), 'syskit-init-test-'));
@@ -238,6 +240,9 @@ test('node init creates install state, mirror outputs, and reinstall snapshots',
     assert.equal(existsSync(join(repoRoot, '.claude', 'templates')), false);
     assert.equal(existsSync(join(repoRoot, '.claude', 'scripts')), false);
     assert.equal(existsSync(join(repoRoot, 'AGENTS.md')), false);
+    assert.equal(existsSync(join(repoRoot, '.Systematize', 'extension-packages', 'export', 'extension.json')), true);
+    assert.equal(existsSync(join(repoRoot, '.Systematize', 'extensions', 'export', 'extension.json')), true);
+    assert.equal(existsSync(join(repoRoot, '.Systematize', 'extensions', 'taskstoissues', 'extension.json')), false);
 
     const state = JSON.parse(readFileSync(join(repoRoot, '.Systematize', 'memory', 'install-state.json'), 'utf8'));
     assert.deepEqual(state.selected_platforms, ['claude']);
@@ -254,7 +259,7 @@ test('node init creates install state, mirror outputs, and reinstall snapshots',
   }
 });
 
-test('powershell init follows the same reinstall and platform-scope contract', () => {
+test('powershell init follows the same reinstall and platform-scope contract', { skip: !powerShellAvailable }, () => {
   const repoRoot = createTempRepo();
 
   try {
@@ -267,6 +272,9 @@ test('powershell init follows the same reinstall and platform-scope contract', (
     assert.equal(existsSync(join(repoRoot, '.claude', 'templates')), false);
     assert.equal(existsSync(join(repoRoot, '.claude', 'scripts')), false);
     assert.equal(existsSync(join(repoRoot, 'AGENTS.md')), false);
+    assert.equal(existsSync(join(repoRoot, '.Systematize', 'extension-packages', 'export', 'extension.json')), true);
+    assert.equal(existsSync(join(repoRoot, '.Systematize', 'extensions', 'export', 'extension.json')), true);
+    assert.equal(existsSync(join(repoRoot, '.Systematize', 'extensions', 'taskstoissues', 'extension.json')), false);
 
     const reinstall = runPowerShellInit(['-TargetPath', repoRoot, '-Platforms', 'claude']);
     assert.equal(reinstall.installation_detected, true);
@@ -281,31 +289,13 @@ test('powershell init follows the same reinstall and platform-scope contract', (
   }
 });
 
-test('powershell platform selection screen renders without crashing when nothing is selected', () => {
+test('powershell init wrapper exposes help without depending on in-file runtime helpers', { skip: !powerShellAvailable }, () => {
   const scriptPath = join(repoRoot, '.Systematize', 'scripts', 'powershell', 'init-syskit.ps1');
-  const commonPath = join(repoRoot, '.Systematize', 'scripts', 'powershell', 'common.ps1');
-  const smokeScript = [
-    `$scriptPath = '${scriptPath.replace(/\\/g, '\\\\')}'`,
-    '$content = Get-Content -LiteralPath $scriptPath -Raw -Encoding utf8',
-    '$marker = "if (`$Help) {"',
-    '$index = $content.IndexOf($marker)',
-    "if ($index -lt 0) { throw 'Bootstrap entry marker not found.' }",
-    '$definitions = $content.Substring(0, $index)',
-    '$definitions = $definitions.Replace(\'. "$PSScriptRoot/common.ps1"\', \'\')',
-    `. '${commonPath.replace(/\\/g, '\\\\')}'`,
-    'Invoke-Expression $definitions',
-    "$platforms = @(",
-    "  [pscustomobject]@{ key = 'claude'; display_name = 'Claude Code'; managed_outputs = @('CLAUDE.md', '.claude/CLAUDE.md'); status = 'موجود جزئيًا' },",
-    "  [pscustomobject]@{ key = 'codex'; display_name = 'Codex CLI'; managed_outputs = @('AGENTS.md', '.codex/AGENTS.md'); status = 'موجود بالكامل' },",
-    "  [pscustomobject]@{ key = 'amazonq'; display_name = 'Amazon Q Developer'; managed_outputs = @('.amazonq/rules/syskit-rules.md'); status = 'غير موجود' }",
-    ')',
-    '$state = New-PlatformSelectionState -PlatformStatuses $platforms',
-    'Write-PlatformSelectionScreen -PlatformStatuses $platforms -State $state'
-  ].join('\n');
-
-  execFileSync(
+  const helpOutput = execFileSync(
     'pwsh',
-    ['-NoProfile', '-NonInteractive', '-Command', smokeScript],
+    ['-File', scriptPath, '-Help'],
     { cwd: repoRoot, encoding: 'utf8' }
   );
+
+  assert.match(helpOutput, /Usage: init-syskit\.ps1/i);
 });

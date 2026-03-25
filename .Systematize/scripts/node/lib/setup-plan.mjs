@@ -1,7 +1,8 @@
 // Setup implementation plan for a feature
-import { existsSync, copyFileSync, writeFileSync } from 'fs';
+import { existsSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import {
+  composeTemplateWithActivePreset,
   ensureDir,
   getConstitutionStatus,
   getCurrentBranch,
@@ -71,13 +72,14 @@ export default async function main(argv) {
     process.exit(1);
   }
 
-  // Copy plan template if it exists
-  const template = resolveTemplate(repoRoot, 'plan-template');
-  if (template && existsSync(template)) {
-    copyFileSync(template, featurePaths.IMPL_PLAN);
+  // Compose the governing plan from the full base template plus any active preset overlay.
+  const composedTemplate = composeTemplateWithActivePreset(repoRoot, 'plan-template');
+  if (composedTemplate && composedTemplate.content.trim()) {
+    writeFileSync(featurePaths.IMPL_PLAN, composedTemplate.content, 'utf8');
     if (!opts.json) console.log(`Copied plan template to ${featurePaths.IMPL_PLAN}`);
   } else {
-    if (!opts.json) console.warn('Plan template not found');
+    const template = resolveTemplate(repoRoot, 'plan-template');
+    if (!opts.json) console.warn(template && existsSync(template) ? 'Plan template composition returned empty content' : 'Plan template not found');
     // Create a basic plan file if template doesn't exist
     writeFileSync(featurePaths.IMPL_PLAN, '', 'utf8');
   }
@@ -86,7 +88,7 @@ export default async function main(argv) {
   const result = {
     FEATURE_SYS: featurePaths.FEATURE_SYS,
     IMPL_PLAN: featurePaths.IMPL_PLAN,
-    AMINOOOF_DIR: featurePaths.FEATURE_DIR,
+    FEATURES_DIR: featurePaths.FEATURE_DIR,
     BRANCH: featurePaths.CURRENT_BRANCH,
     HAS_GIT: featurePaths.HAS_GIT
   };
@@ -96,7 +98,7 @@ export default async function main(argv) {
   } else {
     console.log(`FEATURE_SYS: ${result.FEATURE_SYS}`);
     console.log(`IMPL_PLAN: ${result.IMPL_PLAN}`);
-    console.log(`AMINOOOF_DIR: ${result.AMINOOOF_DIR}`);
+    console.log(`FEATURES_DIR: ${result.FEATURES_DIR}`);
     console.log(`BRANCH: ${result.BRANCH}`);
     console.log(`HAS_GIT: ${result.HAS_GIT}`);
   }

@@ -1,5 +1,12 @@
 ---
 description: Create the implementation plan — governing execution reference with architecture, phased execution, testing strategy, readiness gate, and design artifacts.
+command_name: plan
+command_family: Gate
+command_stage: phase-05
+command_requirement_level: mandatory
+command_visibility: primary
+command_execution_mode: runtime-backed
+runtime_command: setup-plan
 handoffs: 
   - label: Create Tasks
     agent: syskit.tasks
@@ -38,7 +45,7 @@ You **MUST** consider the user input before proceeding (if not empty).
 
 ## Outline
 
-1. **Setup**: Run the plan setup script from repo root and parse JSON for FEATURE_SYS, IMPL_PLAN, AMINOOOF_DIR, BRANCH.
+1. **Setup**: Run the plan setup script from repo root and parse JSON for FEATURE_SYS, IMPL_PLAN, FEATURES_DIR, BRANCH.
    - **PowerShell**: `pwsh -File .Systematize/scripts/powershell/setup-plan.ps1 -Json`
    - **Node.js**: `node .Systematize/scripts/node/cli.mjs setup-plan --json`
    - For single quotes in args: use double-quote (e.g., `"I'm Groot"`)

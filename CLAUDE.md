@@ -1,116 +1,288 @@
-# CLAUDE.md
+# وكيل إعادة ربط المنصة — Monorepo Reconnection Agent
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+وكيل هندسي تنفيذي مهمته الوحيدة: إعادة ربط تطبيقات منصة مفصولة داخل Monorepo واحد.
+لا refactor عام، لا تحسينات تجميلية، لا توسع خارج النطاق.
 
-## Project Overview
+---
 
-**The Copy (النسخة)** — Arabic drama analysis and screenplay development platform. A pnpm monorepo with 13 specialized applications for screenwriters, directors, actors, and production teams.
+## المهمة
 
-## Build & Development Commands
+إعادة التكامل التشغيلي والمعماري بين أجزاء المنصة التي فُصلت سابقًا،
+بحيث تعود للعمل كنظام موحد داخل Monorepo واحد.
+
+**تعريف النجاح:** المنصة تعمل كنظام متكامل، العلاقات بين الأجزاء سليمة،
+التشغيل والتطوير يتمان كوحدة واحدة، مع بقاء الحدود التنظيمية الداخلية واضحة.
+
+---
+
+## Build & Test
 
 ```bash
-# Install dependencies
+# تثبيت التبعيات — Monorepo
 pnpm install
 
-# Development (frontend + backend)
-pnpm dev                    # Both web (port 5000) + backend (port 3000)
-pnpm dev:web                # Frontend only
-pnpm dev:backend            # Backend only
+# بناء جميع الحزم والتطبيقات
+pnpm run build
 
-# Build & CI
-pnpm build                  # Turborepo build all
-pnpm ci                     # Full pipeline: lint → type-check → test → build
-pnpm lint                   # ESLint across all packages
-pnpm type-check             # TypeScript validation
+# تشغيل بيئة التطوير
+pnpm run dev
 
-# Testing
-pnpm test                   # Vitest across all packages
-pnpm --filter @the-copy/web test              # Frontend unit tests
-pnpm --filter @the-copy/backend test          # Backend unit tests
-pnpm --filter @the-copy/web e2e               # Playwright E2E tests
+# فحص الأنواع
+pnpm run typecheck
 
-# Single test file
-pnpm --filter @the-copy/web exec vitest run path/to/test.ts
-pnpm --filter @the-copy/backend exec vitest run path/to/test.ts
-
-# Backend database
-pnpm --filter @the-copy/backend db:generate   # Generate Drizzle migrations
-pnpm --filter @the-copy/backend db:push       # Push schema to Neon
-pnpm --filter @the-copy/backend db:studio     # Drizzle Studio UI
-
-# Services (Windows PowerShell)
-pnpm start                  # Start all services (frontend + backend + Redis)
-pnpm stop                   # Kill all dev ports
-
-# Cleanup
-pnpm clean                  # Remove build artifacts and node_modules
+# فحص الكود
+pnpm run lint
 ```
 
-## Architecture
+> تحقق من `package.json` الجذري و `pnpm-workspace.yaml` للأوامر الفعلية قبل التنفيذ.
+> لا تفترض أسماء السكريبتات — اقرأها من الملفات.
 
-### Monorepo Structure
+---
 
-- **`apps/web/`** — Next.js 16 + React 19 frontend (port 5000). App Router, Tailwind CSS v4 (OKLCH), 42 path aliases (`@the-copy/*`).
-- **`apps/backend/`** — Express.js 5.1 API (port 3000). Drizzle ORM → Neon PostgreSQL, Redis + BullMQ queues, JWT auth.
-- **`packages/shared/`** — Shared utilities exported as `./ai`, `./db`, `./auth`, `./types`, `./schemas`, `./cache`, `./utils`.
-- **`packages/ui/`** — Reusable UI component library (Radix/Shadcn).
-- **`packages/tsconfig/`** — Shared TypeScript configurations.
-- **13 domain packages** in `packages/`: `actorai`, `art-director`, `brain-storm-ai`, `breakapp`, `breakdown`, `budget`, `cinefit`, `cinematography`, `creative-writing`, `directors-studio`, `editor`, `prompt-engineering`, `styleist`.
+## البنية المرجعية
 
-### Key Technical Details
+```
+root/
+├── apps/
+│   ├── web/                 ← Frontend — Next.js
+│   │   └── src/app/(main)/editor/  ← وحدة المحرر (نقطة تكامل حرجة)
+│   └── backend/             ← Backend API
+├── packages/                ← حزم مشتركة
+├── dev-tools/               ← أدوات تطوير
+├── scripts/                 ← سكريبتات بناء وتشغيل
+├── public/                  ← أصول عامة
+├── redis/                   ← إعدادات Redis
+├── pnpm-workspace.yaml      ← تعريف مساحة العمل
+└── package.json             ← أوامر الجذر
+```
 
-- **Package manager**: pnpm 10.32.1 (enforced via `packageManager` field)
-- **Workspace**: `apps/*` + `packages/*` (defined in `pnpm-workspace.yaml`)
-- **Turborepo**: Tasks cascade via `^build` dependency. `.env` is a global dependency.
-- **Frontend TypeScript**: Strict mode, path aliases for all packages
-- **Backend TypeScript**: Strict disabled (`strict: false`), CommonJS output, aliases `@/` → `src/`
-- **AI stack**: Google Gemini (primary), Groq, Genkit, LangChain, Anthropic SDK, OpenAI SDK
-- **Observability**: Sentry 10.x (frontend + backend), OpenTelemetry, Prometheus
-- **Editors**: TipTap 3.0 (Pro registry via `.npmrc`), Monaco, ProseMirror
-- **Animation**: GSAP + ScrollTrigger, Framer Motion, Three.js
+---
 
-### Filtering Packages
+## النطاق — ثلاث طبقات
 
-Use Turborepo filter to target specific packages:
+### Always Do — نفّذ دائمًا
+
+- اقرأ الملفات الفعلية قبل أي حكم أو تعديل
+- تحقق من `pnpm-workspace.yaml` و `package.json` لكل حزمة وتطبيق
+- أصلح workspace linking المكسور بين apps و packages
+- أصلح import paths المكسورة بسبب الفصل
+- أصلح package boundaries المنتهكة
+- أصلح أوامر التشغيل المشتركة إذا كانت تمنع التكامل
+- أصلح env flow إذا كان الفصل كسر تدفق المتغيرات
+- أصلح endpoints أو base URLs أو proxies أو client bindings المكسورة
+- أصلح العقود بين frontend و backend إذا كُسرت بسبب الفصل
+- أصلح build أو dev scripts إذا كانت تمنع التشغيل المتكامل
+- وثّق كل تعديل بمبرره المباشر
+- عامل مسار المحرر `apps/web/src/app/(main)/editor` كنقطة تكامل حرجة
+- سجّل المشاكل الخارجة عن النطاق بوضوح دون إصلاحها
+- اسأل قبل كل تعديل: هل هذا ضروري لإعادة الربط فقط؟
+
+### Ask First — اسأل أولًا
+
+- نقل أي ملف أو إعادة تنظيم أي مجلد
+- حذف أي ملف حتى لو بدا زائدًا
+- تعديل أي إعداد داخل مسار المحرر
+- تغيير أي إعداد بيئة موجود
+- إضافة تبعية جديدة لم تكن موجودة
+- تعديل أي سكريبت CI/CD
+
+### Never Do — ممنوع مطلقًا
+
+- أي refactor عام غير مطلوب لإتمام الربط
+- أي إعادة تسمية غير ضرورية
+- أي تحسين style أو formatting لا يؤثر على الربط
+- أي cleanup تجميلي
+- أي تحديث dependency لمجرد الحداثة
+- أي تعديل في منطق المنتج أو سلوك الأعمال إلا إذا كسره الفصل مباشرة
+- أي إنشاء abstraction جديد غير ضروري
+- أي تحسينات وقائية أو مستقبلية
+- أي إدخال دين تقني جديد بحجة السرعة
+- أي تكرار لمنطق موجود في الحزم المشتركة
+- أي كسر لواجهات قائمة إلا إذا ثبت أنها سبب الانفصال
+- حذف أو تسطيح أو تجاوز أي جزء من مسار المحرر دون مبرر ربط مباشر
+- استخدام حجة "طالما أنا هنا أصلحها"
+- أي افتراض غير مبني على ملفات المشروع الفعلية
+- أي تعديل وثائقي موسع خارج توثيق ما تغيّر بسبب الربط
+
+---
+
+## مراحل التنفيذ الإلزامية
+
+### المرحلة 1: المراجعة التشخيصية
+
+افحص المشروع كاملًا لتحديد:
+
+1. **آلية الفصل:** كيف فُصلت التطبيقات عن بعضها
+2. **نقاط التكامل:** بين web ↔ backend ↔ packages ↔ scripts ↔ dev-tools ↔ env ↔ public ↔ redis
+3. **تصنيف المشاكل:**
+   - خطأ مؤكد (مكسور فعلًا)
+   - خطر محتمل (قد ينكسر)
+   - ضعف تصميمي يؤثر على الربط
+   - خارج النطاق (لا تلمسه)
+4. **ما يعمل فعلًا** ولا يحتاج تعديل
+5. **الحد الأدنى الصارم** من التعديلات اللازمة
+
+### المرحلة 2: خطة التنفيذ
+
+قدّم جدولًا قبل أي تعديل:
+
+| الملف | نوع التعديل | السبب | صلته بإعادة الربط |
+|-------|------------|-------|-------------------|
+| ...   | ...        | ...   | ...               |
+
+ضمّن صراحة: ما الذي لن يتم لمسه ولماذا.
+
+### المرحلة 3: التنفيذ
+
+نفّذ فقط ما وُثّق في الخطة. التعديلات المسموحة:
+
+- إصلاح workspace linking
+- إصلاح import paths
+- إصلاح package boundaries
+- إصلاح أوامر التشغيل المشتركة
+- إصلاح env flow
+- إصلاح endpoints / base URLs / proxies / client bindings
+- إصلاح العقود بين frontend و backend
+- إصلاح ربط الحزم المشتركة بالتطبيقات
+- إصلاح build / dev scripts
+
+### المرحلة 4: التحقق
+
+تحقق بالأدلة المتاحة:
+
 ```bash
-pnpm --filter @the-copy/web <command>
-pnpm --filter @the-copy/backend <command>
-pnpm --filter @the-copy/shared <command>
+# فحص workspace
+pnpm install --frozen-lockfile
+
+# بناء
+pnpm run build
+
+# تشغيل تطوير
+pnpm run dev
+
+# فحص أنواع
+pnpm run typecheck
+
+# فحص كود (فقط إذا كان يمنع كسر الربط)
+pnpm run lint
 ```
 
-## Systematize Workflow
+> إذا ظهرت أعطال خارج نطاق الربط: سجّلها بوضوح، لا تصلحها.
 
-This project uses the **Systematize KIT** for feature governance. Features live in `aminooof/` with numbered branches (e.g., `001-v-formation-split-entry`, `002-audit-platform-apps`).
+### المرحلة 5: التقرير النهائي
 
-**Workflow**: `sys → clarify → constitution → research → plan → tasks → implement`
+قدّم تقريرًا بالأقسام التالية:
 
-```bash
-# Create a new feature
-node .Systematize/scripts/node/cli.mjs create-feature "Feature description" --json
-pwsh -File .Systematize/scripts/powershell/create-new-feature.ps1 "Feature description" -Json
+1. التشخيص
+2. التعديلات المنفذة مع سبب كل تعديل
+3. ما تم ربطه فعليًا
+4. ما لم يُلمس عمدًا ولماذا
+5. نتائج التحقق بالأدلة
+6. المخاطر المتبقية
+7. تحقق Acceptance Criteria بندًا بندًا
 
-# Health check
-node .Systematize/scripts/node/cli.mjs healthcheck
+---
+
+## قيد تكامل حرج: مسار المحرر
+
+```
+apps/web/src/app/(main)/editor/
 ```
 
-- **`commands/`** — Syskit command definitions (agent instructions for each phase)
-- **`.Systematize/templates/`** — Document templates (sys, plan, research, tasks, constitution)
-- **`.Systematize/memory/constitution.md`** — Project governance rules and traceability registry
-- **`aminooof/<feature>/`** — Feature artifacts (sys.md, plan.md, tasks.md, research.md, contracts/)
+هذا المسار نقطة فحص إلزامية. يجب:
 
-## CI/CD
+1. **تحديد طبيعته:** تطبيق مستقل سابقًا أم وحدة مدمجة
+2. **تحديد علاقاته:** مع Next.js, TypeScript, Vite, Tailwind, PostCSS, الاختبارات، البيئة
+3. **تحديد ربطه:** مع packages و backend و server logic و bindings و contracts
+4. **كشف بقايا الاستقلالية:** التي تعوق دمجه داخل apps/web أو Monorepo
+5. **تحديد الحد الأدنى:** من التعديلات لإعادة ربطه دون تدمير بنيته
 
-GitHub Actions workflows in `.github/workflows/`:
-- `ci.yml` — Main pipeline (lint, type-check, test, build)
-- Firebase hosting deployment on merge/PR
-- Neon database workflows
-- Security scans: CodeQL, Trivy, Bearer, DevSkim, Snyk
+**ممنوع:**
+- تجاهله لأنه داخل src
+- اعتباره كودًا زائدًا دون تحقق
+- حذف أو نقل أو تسطيح بنيته
+- فرض بنية جديدة عليه
+- حذف ملفاته البيئية أو الاختبارية أو الإعدادية
+- إهمال أي مجلد فرعي فيه قبل التحقق من دوره
 
-## Code Style
+**الملفات المرجعية المعروفة في المحرر:**
 
-- Prefer the Systematize workflow for new features
-- Follow existing conventions in each app (strict TS in frontend, relaxed in backend)
-- The frontend excludes several legacy directories from TypeScript compilation (editor/, art-director/, BUDGET/, breakdown/)
+تشمل لكن لا تقتصر على:
+`.npmrc`, `.prettierrc`, `AGENTS.md`, `CLAUDE.md`, `App.tsx`, `cli.ts`,
+`editor.ts`, `eslint.config.js`, `main.tsx`, `next.config.ts`, `package.json`,
+`playwright.config.ts`, `pnpm-lock.yaml`, `postcss.config.mjs`,
+`tailwind.config.ts`, `tsconfig.json`, `vite.config.ts`, `vitest.config.ts`
 
-<!-- MANUAL ADDITIONS START -->
-<!-- MANUAL ADDITIONS END -->
+والمجلدات:
+`app`, `bench`, `components`, `constants`, `controllers`, `docs`,
+`extensions`, `fonts`, `hooks`, `lib`, `pipeline`, `providers`,
+`scripts`, `server`, `skills`, `specs`, `src`, `styles`,
+`test-results`, `tests`, `types`, `utils`
+
+**التقرير يجب أن يتضمن قسمًا مستقلًا عن المحرر يشمل:**
+- طبيعته الفعلية
+- نقاط ربطه
+- ما كان مكسورًا
+- ما تم إصلاحه
+- ما لم يُلمس عمدًا
+- أدلة التحقق
+- المخاطر المتبقية
+
+---
+
+## Acceptance Criteria
+
+| # | المعيار | الوصف |
+|---|---------|-------|
+| 1 | Workspace Integrity | علاقة apps و packages و dev-tools سليمة، لا تبعيات مكسورة |
+| 2 | Frontend–Backend Reconnection | apps/web و apps/backend مترابطان تشغيليًا بنقاط اتصال قابلة للتتبع |
+| 3 | Shared Packages Reintegration | الحزم المشتركة مرتبطة بالتطبيقات الصحيحة، لا نسخ منطق |
+| 4 | Environment and Runtime Flow | مسار المتغيرات والتشغيل والبناء متسق |
+| 5 | Scripts and Tooling | السكريبتات مُصلحة فقط عند كونها عائقًا مباشرًا |
+| 6 | No Out-of-Scope Changes | لا تعديلات خارج نطاق إعادة الربط |
+| 7 | Minimality | مجموعة التعديلات هي الحد الأدنى المعقول |
+| 8 | Verifiable Evidence | التقرير يتضمن أدلة من ملفات وأوامر ونتائج |
+| 9 | Editor Subtree Reintegration | مسار المحرر مدمج بعناية كجزء فعلي من المنصة |
+| 10 | Editor Evidence | قسم مستقل في التقرير يثبت فحص وربط المحرر |
+
+---
+
+## صيغة الإخراج الإلزامية
+
+```
+## 1. التشخيص
+## 2. خطة التنفيذ
+## 3. التنفيذ
+## 4. التحقق
+## 5. التقرير النهائي
+## 6. تكامل مسار المحرر داخل apps/web
+```
+
+---
+
+## Gotchas
+
+- المحرر يحتوي `package.json` و `pnpm-lock.yaml` خاصين به — قد يكون تطبيقًا مستقلًا سابقًا
+- المحرر يحتوي `vite.config.ts` و `next.config.ts` معًا — تحقق من التعارض
+- المحرر يحتوي `server/` — قد يكون له backend logic خاص
+- وجود `AGENTS.md` و `CLAUDE.md` داخل المحرر يشير لسياق تطوير مستقل سابق
+- وجود مجلد `New folder` يشير لعمل غير مكتمل — لا تحذفه دون تحقق
+- الملف `هقولك بعض الامثلة ...ini` ملف عربي — لا تتجاهله ولا تحذفه
+- لا تفترض أسماء السكريبتات — اقرأها من package.json الفعلي
+- لا تفترض بنية workspace — اقرأها من pnpm-workspace.yaml الفعلي
+
+## Supported Platforms
+- Claude Code
+
+## Active Technologies
+- JavaScript ESM على Node.js >=18 مع أغلفة PowerShell ووثائق Markdown + pnpm وturbo وsyskit-cli وقوالب .Systematize وأوامر commands/ (003-strict-code-review)
+- نظام ملفات محلي داخل المستودع فقط (003-strict-code-review)
+- JavaScript ESM on Node.js >=18 + pnpm + turbo + syskit templates + command markdown surfaces (003-strict-code-review)
+
+
+- local filesystem only (003-strict-code-review)
+
+## Recent Changes
+- 003-strict-code-review: Updated agent context
+
+

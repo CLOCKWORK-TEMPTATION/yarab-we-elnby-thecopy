@@ -1,5 +1,12 @@
 ---
-description: Interactive tutorial that explains the Systematize KIT workflow and guides users to their next step based on current project state.
+description: Official guidance entry that recommends one clear next command based on the current repository and feature state.
+command_name: guide
+command_family: Admin
+command_stage: onboarding
+command_requirement_level: optional
+command_visibility: primary
+command_execution_mode: hybrid
+runtime_command: setup-guide
 ---
 
 ## User Input
@@ -8,36 +15,52 @@ description: Interactive tutorial that explains the Systematize KIT workflow and
 $ARGUMENTS
 ```
 
+## Command Role
+
+- **المدخل التوجيهي الرسمي**: هذا الأمر هو نقطة البدء الرسمية على الأسطح الظاهرة للمستخدم.
+- هو طبقة إرشاد فقط.
+- ليس طبقة حوكمة جديدة.
+- ليس محرك قرار مستقل.
+- لا يكتب حالة جديدة.
+- لا يغير العقود.
+- يستخدم فقط فحوصًا قرائية موجودة أصلًا لتقديم توصية واحدة واضحة.
+
 ## Outline
 
-1. **Determine user level** from `$ARGUMENTS`:
-   - If specified (beginner/intermediate/advanced), use that
-   - Otherwise, ask: "What's your experience level with Systematize KIT?"
+1. **Resolve initialization status** using existing read-only signals:
+   - Prefer `.Systematize/memory/install-state.json`
+   - Fall back to the current bootstrap markers already used by the framework
 
-2. **Show system overview** based on level:
+2. **If initialization is not detected**:
+   - Recommend `/syskit.init` only
+   - Explain that this is the path for **التهيئة الأولى**
+   - Stop without expanding the rest of the workflow
 
-   **Beginner**: Full explanation of the 10-command workflow with examples
-   **Intermediate**: Quick reference of commands with tips
-   **Advanced**: Just the current status and optimization suggestions
+3. **If initialization is detected and there is no active feature context**:
+   - Recommend `/syskit.quickstart` only when the user explicitly asks for a quick path, a prototype, or a very small feature
+   - Otherwise recommend `/syskit.systematize` as the default **المسار الكامل**
 
-3. Run the feature status script to determine current state.
+4. **If an active feature context exists**:
+   - Run the feature status script in read-only mode
    - **PowerShell**: `pwsh -File .Systematize/scripts/powershell/get-feature-status.ps1 -Json`
    - **Node.js**: `node .Systematize/scripts/node/cli.mjs feature-status --json`
+   - Recommend the first missing mandatory gate only
 
-4. **Explain the next step**:
-   - What the next command does
-   - What inputs it needs
-   - What outputs it produces
-   - Common mistakes to avoid
+5. **Explain the single recommended next command**:
+   - What it does
+   - What input it needs
+   - What it produces
    - Example invocation
 
-5. **Offer to run it**: "Would you like me to run `[next command]` now?"
+6. **Offer to continue with that one command**: "Would you like me to run `[next command]` now?"
 
 ## Rules
 
+- Keep one clear next step
+- Do not present this command as a governance gate
+- Do not create or mutate files unless the user explicitly asks to run the recommended command
+- Push heavy documents to the reference layer instead of front-loading them
 - Be conversational and helpful, not technical
-- Use examples from the user's actual project when possible
-- Don't overwhelm beginners with advanced features
 - Always end with a clear, actionable next step
 
 ## Output

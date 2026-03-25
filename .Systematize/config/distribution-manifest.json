@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "bundle_root": "systematize-framework",
+  "prebuild_generators": [
+    ".Systematize/scripts/node/lib/sync-command-metadata.mjs",
+    ".Systematize/scripts/node/lib/generate-command-runtime-map.mjs",
+    ".Systematize/scripts/node/lib/generate-command-surface-docs.mjs",
+    ".Systematize/scripts/node/lib/generate-project-tree.mjs"
+  ],
+  "repo_generated_paths": [
+    "commands",
+    "README.md",
+    "docs/START_HERE.md",
+    "docs/REFERENCE.md",
+    "docs/COMMAND_RUNTIME_MAP.md",
+    "docs/_project_tree.json"
+  ],
+  "include_paths": [
+    "README.md",
+    "commands",
+    "docs",
+    ".Systematize/config",
+    ".Systematize/extension-packages",
+    ".Systematize/templates",
+    ".Systematize/scripts",
+    ".Systematize/presets",
+    ".Systematize/extensions/README.md",
+    ".Systematize/extensions/commands/.gitkeep",
+    ".Systematize/extensions/templates/.gitkeep"
+  ],
+  "generated_stage_files": [
+    "INSTALL.md",
+    "install-framework.mjs",
+    "install-framework.ps1",
+    "distribution-manifest.json"
+  ]
+}

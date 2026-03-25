@@ -1,6 +1,7 @@
-import { existsSync, readFileSync } from 'fs';
+import { existsSync, readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { getRepoRoot, getSyskitConfig } from './common.mjs';
+import { parseNestedYamlObject, parseScalar } from './config-parser.mjs';
 
 const DEFAULT_SYSKIT_CONFIG = Object.freeze({
   schema_version: 1,
@@ -11,8 +12,10 @@ const DEFAULT_SYSKIT_CONFIG = Object.freeze({
   auto_changelog: true,
   default_preset: null,
   alerts_enabled: true,
+  export_enabled: true,
   export_format: 'markdown',
-  analytics_enabled: true
+  analytics_enabled: true,
+  taskstoissues_enabled: false
 });
 
 const DEFAULT_ALERTS_CONFIG = Object.freeze({
@@ -64,79 +67,11 @@ const DEFAULT_ALERTS_CONFIG = Object.freeze({
 const DEFAULT_EXTENSIONS_CONFIG = Object.freeze({
   schema_version: 2,
   hooks: {},
-  custom_commands: []
+  custom_commands: [],
+  installed_extensions: []
 });
 
-function stripInlineComment(value) {
-  let output = '';
-  let quote = null;
-
-  for (let i = 0; i < value.length; i += 1) {
-    const char = value[i];
-
-    if ((char === '"' || char === '\'') && value[i - 1] !== '\\') {
-      quote = quote === char ? null : quote || char;
-      output += char;
-      continue;
-    }
-
-    if (char === '#' && !quote && (i === 0 || /\s/.test(value[i - 1]))) {
-      break;
-    }
-
-    output += char;
-  }
-
-  return output.trim();
-}
-
-function parseScalar(rawValue) {
-  const value = stripInlineComment(rawValue);
-
-  if (value === '') return '';
-  if (value === 'true') return true;
-  if (value === 'false') return false;
-  if (value === 'null') return null;
-  if (/^-?\d+(\.\d+)?$/.test(value)) return Number(value);
-
-  if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith('\'') && value.endsWith('\''))) {
-    return value.slice(1, -1);
-  }
-
-  return value;
-}
-
-function parseNestedYamlObject(content) {
-  const result = {};
-  const stack = [{ indent: -1, value: result }];
-
-  for (const rawLine of content.split(/\r?\n/)) {
-    if (!rawLine.trim() || rawLine.trim().startsWith('#')) continue;
-
-    const indent = rawLine.match(/^ */)[0].length;
-    const line = rawLine.trim();
-    const separator = line.indexOf(':');
-    if (separator === -1) continue;
-
-    const key = line.slice(0, separator).trim();
-    const rawValue = line.slice(separator + 1).trim();
-
-    while (stack.length > 1 && indent <= stack[stack.length - 1].indent) {
-      stack.pop();
-    }
-
-    const parent = stack[stack.length - 1].value;
-
-    if (rawValue === '') {
-      parent[key] = {};
-      stack.push({ indent, value: parent[key] });
-    } else {
-      parent[key] = parseScalar(rawValue);
-    }
-  }
-
-  return result;
-}
+const LEGACY_EXTENSION_ENTRIES = new Set(['commands', 'templates']);
 
 function parseListItemObject(text) {
   const object = {};
@@ -261,6 +196,63 @@ function mergeAlertDefaults(parsed) {
   };
 }
 
+function readExtensionManifests(rootDir) {
+  if (!existsSync(rootDir)) return [];
+
+  const manifests = [];
+  for (const entry of readdirSync(rootDir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    if (LEGACY_EXTENSION_ENTRIES.has(entry.name)) continue;
+
+    const manifestPath = join(rootDir, entry.name, 'extension.json');
+    if (!existsSync(manifestPath)) continue;
+
+    try {
+      const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+      manifests.push({
+        ...manifest,
+        name: manifest.name || entry.name,
+        package_dir: entry.name,
+        manifest_path: manifestPath
+      });
+    } catch {
+      // Ignore malformed manifests so one broken extension does not break the core.
+    }
+  }
+
+  return manifests;
+}
+
+function mergeExtensionDeclarations(baseConfig, manifests) {
+  const merged = {
+    schema_version: baseConfig.schema_version || DEFAULT_EXTENSIONS_CONFIG.schema_version,
+    hooks: { ...(baseConfig.hooks || {}) },
+    custom_commands: [...(baseConfig.custom_commands || [])],
+    installed_extensions: manifests.map(({ manifest_path, ...manifest }) => manifest)
+  };
+
+  const customCommandNames = new Set(
+    merged.custom_commands
+      .map((item) => item?.name)
+      .filter(Boolean)
+  );
+
+  for (const manifest of manifests) {
+    for (const [hookName, hookList] of Object.entries(manifest.hooks || {})) {
+      if (!Array.isArray(hookList)) continue;
+      merged.hooks[hookName] = [...(merged.hooks[hookName] || []), ...hookList];
+    }
+
+    for (const command of manifest.custom_commands || []) {
+      if (!command?.name || customCommandNames.has(command.name)) continue;
+      merged.custom_commands.push(command);
+      customCommandNames.add(command.name);
+    }
+  }
+
+  return merged;
+}
+
 export function getSyskitRuntimeConfig(repoRoot = getRepoRoot()) {
   const parsed = getSyskitConfig(repoRoot) || {};
 
@@ -270,6 +262,55 @@ export function getSyskitRuntimeConfig(repoRoot = getRepoRoot()) {
     schema_version: DEFAULT_SYSKIT_CONFIG.schema_version,
     reserved_keys: ['version', 'constitution_profile', 'export_format']
   };
+}
+
+export function getOptionalCapabilityFlags(repoRoot = getRepoRoot()) {
+  const runtimeConfig = getSyskitRuntimeConfig(repoRoot);
+  return {
+    alerts: runtimeConfig.alerts_enabled !== false,
+    analytics: runtimeConfig.analytics_enabled !== false,
+    export: runtimeConfig.export_enabled !== false,
+    taskstoissues: runtimeConfig.taskstoissues_enabled === true
+  };
+}
+
+export function getInstalledExtensions(repoRoot = getRepoRoot()) {
+  return readExtensionManifests(join(repoRoot, '.Systematize', 'extensions'));
+}
+
+export function getAvailableExtensionPackages(repoRoot = getRepoRoot()) {
+  return readExtensionManifests(join(repoRoot, '.Systematize', 'extension-packages'));
+}
+
+export function getOptionalCapabilityInstallState(repoRoot = getRepoRoot()) {
+  const availablePackages = getAvailableExtensionPackages(repoRoot);
+  const installedExtensions = getInstalledExtensions(repoRoot);
+  const installedByName = new Set(installedExtensions.map((item) => item.name));
+  const state = {};
+
+  for (const manifest of availablePackages) {
+    const capabilityName = manifest.capability || manifest.name;
+    if (!capabilityName) continue;
+
+    state[capabilityName] = {
+      available: true,
+      installed: installedByName.has(manifest.name),
+      extension: manifest.name
+    };
+  }
+
+  return state;
+}
+
+export function isOptionalCapabilityEnabled(capabilityName, repoRoot = getRepoRoot()) {
+  const flags = getOptionalCapabilityFlags(repoRoot);
+  const installState = getOptionalCapabilityInstallState(repoRoot);
+
+  if (installState[capabilityName]) {
+    return flags[capabilityName] === true && installState[capabilityName].installed === true;
+  }
+
+  return flags[capabilityName] === true;
 }
 
 export function getAlertsConfig(repoRoot = getRepoRoot()) {
@@ -282,14 +323,16 @@ export function getAlertsConfig(repoRoot = getRepoRoot()) {
 
 export function getExtensionsConfig(repoRoot = getRepoRoot()) {
   const configPath = join(repoRoot, '.Systematize/config/extensions.yml');
-  if (!existsSync(configPath)) return DEFAULT_EXTENSIONS_CONFIG;
+  const parsed = existsSync(configPath)
+    ? parseExtensionsYaml(readFileSync(configPath, 'utf8'))
+    : DEFAULT_EXTENSIONS_CONFIG;
+  const installedExtensions = getInstalledExtensions(repoRoot);
 
-  const parsed = parseExtensionsYaml(readFileSync(configPath, 'utf8'));
-  return {
+  return mergeExtensionDeclarations({
     schema_version: parsed.schema_version || DEFAULT_EXTENSIONS_CONFIG.schema_version,
     hooks: parsed.hooks || {},
     custom_commands: parsed.custom_commands || []
-  };
+  }, installedExtensions);
 }
 
 export function loadHooks(repoRoot, hookName) {

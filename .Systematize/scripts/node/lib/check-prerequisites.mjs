@@ -1,7 +1,7 @@
 // فحص المتطلبات — مكافئ check-prerequisites.ps1
 import { existsSync, readdirSync } from 'fs';
 import { join } from 'path';
-import { getFeaturePathsEnv, parseArgs } from './common.mjs';
+import { getConstitutionStatus, getFeaturePathsEnv, parseArgs } from './common.mjs';
 
 export default async function main(argv) {
   const opts = parseArgs(argv);
@@ -56,14 +56,28 @@ EXAMPLES:
     process.exit(1);
   }
 
-  // tasks.md implies plan.md for the implementation phase, while earlier
-  // phases should still be able to resolve the active feature workspace.
+  // Validate sys.md as the minimum feature anchor.
+  if (!existsSync(env.FEATURE_SYS)) {
+    console.error(`ERROR: sys.md not found in ${env.FEATURE_DIR}`);
+    console.error('Run /syskit.systematize first to create the governing sys document.');
+    process.exit(1);
+  }
+
+  const constitutionStatus = getConstitutionStatus(env.REPO_ROOT);
+  if (constitutionStatus.status !== 'complete') {
+    console.error('ERROR: The constitution gate is not satisfied.');
+    console.error('Run /syskit.constitution and complete it before commands that depend on shared prerequisites.');
+    process.exit(1);
+  }
+
+  // Require plan.md only when tasks are explicitly required.
   if (opts['require-tasks'] && !existsSync(env.IMPL_PLAN)) {
     console.error(`ERROR: plan.md not found in ${env.FEATURE_DIR}`);
     console.error('Run /syskit.plan first to create the implementation plan.');
     process.exit(1);
   }
 
+  // Check tasks.md if required.
   if (opts['require-tasks'] && !existsSync(env.TASKS)) {
     console.error(`ERROR: tasks.md not found in ${env.FEATURE_DIR}`);
     console.error('Run /syskit.tasks first to create the task list.');

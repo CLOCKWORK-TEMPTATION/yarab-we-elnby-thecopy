@@ -18,13 +18,14 @@ export default async function main(argv) {
   if (opts.json) {
     console.log(JSON.stringify({ branch, ...health }, null, 2));
   } else {
-    console.log(`\n🏥 Health Score: ${health.score}/${health.maxScore}\n`);
+    console.log(`\n🏥 Advisory Health Score: ${health.score}/${health.maxScore} (heuristic — not an authoritative production verdict)\n`);
     for (const c of health.checks) {
       const icon = c.score === 10 ? '✅' : c.score >= 5 ? '⚠️' : '❌';
       console.log(`  ${icon} ${c.name}: ${c.score}/${c.maxScore}`);
       for (const issue of c.issues) console.log(`     └── ${issue}`);
     }
-    console.log(`\nStatus: ${health.status} ${health.status === 'HEALTHY' ? '✅' : '❌'} (threshold: ${threshold})`);
+    console.log(`\nAdvisory Status: ${health.status} ${health.status === 'ADVISORY_PASS' ? '✅' : '❌'} (threshold: ${threshold})`);
+    console.log('Note: This is a heuristic quick-check. For authoritative verification use: npm run verify');
   }
 
   if (health.score < threshold) process.exit(1);

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { existsSync, statSync } from 'fs';
-import { join } from 'path';
+import { join, resolve } from 'path';
 import { exportChangelogEntry, getCurrentBranch, getFeatureDir, getRepoRoot, hasGit, parseArgs } from './lib/common.mjs';
 import { getCustomCommandMap, getSyskitRuntimeConfig, loadHooks, normalizeCliCommandName, resolveHookCommand } from './lib/configuration.mjs';
 import { evaluateFeatureHealth } from './lib/health.mjs';
@@ -9,6 +9,10 @@ import { evaluateFeatureHealth } from './lib/health.mjs';
 const COMMANDS = {
   init: () => import('./lib/init-syskit.mjs'),
   'create-feature': () => import('./lib/create-feature.mjs'),
+  'list-extensions': () => import('./lib/list-extensions.mjs'),
+  'install-extension': () => import('./lib/install-extension.mjs'),
+  'remove-extension': () => import('./lib/remove-extension.mjs'),
+  'build-distribution': () => import('./lib/build-distribution.mjs'),
   'check-prerequisites': () => import('./lib/check-prerequisites.mjs'),
   snapshot: () => import('./lib/snapshot-artifacts.mjs'),
   healthcheck: () => import('./lib/run-healthcheck.mjs'),
@@ -23,7 +27,17 @@ const COMMANDS = {
   'update-agent-context': () => import('./lib/update-agent-context.mjs'),
   'setup-plan': () => import('./lib/setup-plan.mjs'),
   'setup-research': () => import('./lib/setup-research.mjs'),
-  'setup-tasks': () => import('./lib/setup-tasks.mjs')
+  'setup-tasks': () => import('./lib/setup-tasks.mjs'),
+  'setup-systematize': () => import('./lib/setup-systematize.mjs'),
+  'setup-clarify': () => import('./lib/setup-clarify.mjs'),
+  'setup-checklist': () => import('./lib/setup-checklist.mjs'),
+  'setup-review': () => import('./lib/setup-review.mjs'),
+  'setup-implement': () => import('./lib/setup-implement.mjs'),
+  'setup-analyze': () => import('./lib/setup-analyze.mjs'),
+  'setup-diff': () => import('./lib/setup-diff.mjs'),
+  'setup-quickstart': () => import('./lib/setup-quickstart.mjs'),
+  'setup-guide': () => import('./lib/setup-guide.mjs'),
+  'setup-taskstoissues': () => import('./lib/setup-taskstoissues.mjs')
 };
 
 const MUTATING_COMMANDS = new Set([
@@ -37,10 +51,17 @@ const MUTATING_COMMANDS = new Set([
   'update-agent-context',
   'setup-plan',
   'setup-research',
-  'setup-tasks'
+  'setup-tasks',
+  'setup-systematize',
+  'setup-clarify',
+  'setup-checklist',
+  'setup-review',
+  'setup-implement',
+  'setup-quickstart'
 ]);
 
-const VALIDATION_COMMANDS = new Set(['check-prerequisites', 'healthcheck', 'check-alerts', 'feature-status']);
+const VALIDATION_COMMANDS = new Set(['check-prerequisites', 'healthcheck', 'check-alerts', 'feature-status', 'setup-analyze', 'setup-diff', 'setup-guide', 'setup-taskstoissues']);
+const CLEAN_TREE_COMMANDS = new Set(['build-distribution']);
 
 class CommandExitError extends Error {
   constructor(code = 0) {
@@ -78,14 +99,18 @@ function detectChangedMarkdownFiles(before, paths) {
 function buildHelpText(version, customCommands) {
   const lines = [
     '',
-    `Systematize KIT CLI v${version}`,
+    `Systematize Framework Runtime CLI v${version}`,
     '',
     'الاستخدام:',
     '  node cli.mjs <command> [options]',
     '',
     'الأوامر المتاحة:',
-    '  init                  تهيئة Systematize KIT داخل المستودع الحالي',
+    '  init                  تهيئة Systematize Framework داخل المستودع الحالي',
     '  create-feature        إنشاء feature جديد',
+    '  list-extensions       عرض حزم التوسعات المتاحة',
+    '  install-extension     تثبيت حزمة توسعة',
+    '  remove-extension      إزالة توسعة مثبتة',
+    '  build-distribution    بناء حزمة توزيع رسمية',
     '  check-prerequisites   فحص المتطلبات',
     '  snapshot              حفظ نسخة احتياطية من الوثائق',
     '  healthcheck           فحص صحة الوثائق',
@@ -100,7 +125,17 @@ function buildHelpText(version, customCommands) {
     '  update-agent-context  تحديث ملفات agent context',
     '  setup-plan            تهيئة خطة التنفيذ',
     '  setup-research        تهيئة البحث',
-    '  setup-tasks           تهيئة قائمة المهام'
+    '  setup-tasks           تهيئة قائمة المهام',
+    '  setup-systematize     تهيئة وثيقة sys',
+    '  setup-clarify         تهيئة التوضيح',
+    '  setup-checklist       تهيئة قائمة المراجعة',
+    '  setup-review          تهيئة المراجعة',
+    '  setup-implement       تهيئة التنفيذ',
+    '  setup-analyze         تهيئة التحليل',
+    '  setup-diff            حساب الفروقات',
+    '  setup-quickstart      تهيئة المسار السريع',
+    '  setup-guide           كشف الحالة والتوصية',
+    '  setup-taskstoissues   تهيئة تحويل المهام لتذاكر'
   ];
 
   const customEntries = Object.values(customCommands);
@@ -283,6 +318,12 @@ async function main() {
   const commandArgs = args.slice(1);
   const parsedArgs = parseArgs(commandArgs);
   const jsonMode = parsedArgs.json === true;
+  const initTargetPath = command === 'init' && parsedArgs['target-path']
+    ? resolve(String(parsedArgs['target-path']))
+    : null;
+  const analyticsEnabled = runtimeConfig.analytics_enabled
+    && !CLEAN_TREE_COMMANDS.has(command)
+    && (!initTargetPath || initTargetPath === resolve(repoRoot));
   const trackedFiles = getTrackedMarkdownFiles(repoRoot, branch);
   const beforeTimes = captureFileTimes(trackedFiles);
   const lifecycleContext = { repoRoot, branch, command };
@@ -294,7 +335,7 @@ async function main() {
 
   try {
     const beforeHookResults = await executeHooks(`before_${command.replace(/-/g, '_')}`, lifecycleContext, { quiet: jsonMode });
-    if (runtimeConfig.analytics_enabled) {
+    if (analyticsEnabled) {
       for (const result of beforeHookResults) {
         await recordAnalyticsPayload('hook_executed', branch, {
           hook_name: `before_${command.replace(/-/g, '_')}`,
@@ -308,13 +349,13 @@ async function main() {
 
     const exitCode = await executeModule(command, commandArgs);
     if (exitCode !== 0) {
-      if (runtimeConfig.analytics_enabled) {
+      if (analyticsEnabled) {
         await recordAnalyticsEvent(command, 'failed', branch, { exit_code: exitCode });
       }
 
       if (VALIDATION_COMMANDS.has(command)) {
         const validationHookResults = await executeHooks('on_validation_fail', lifecycleContext, { quiet: jsonMode });
-        if (runtimeConfig.analytics_enabled) {
+        if (analyticsEnabled) {
           for (const result of validationHookResults) {
             await recordAnalyticsPayload('hook_executed', branch, {
               hook_name: 'on_validation_fail',
@@ -328,7 +369,7 @@ async function main() {
       }
 
       const errorHookResults = await executeHooks('on_error', lifecycleContext, { quiet: jsonMode });
-      if (runtimeConfig.analytics_enabled) {
+      if (analyticsEnabled) {
         for (const result of errorHookResults) {
           await recordAnalyticsPayload('hook_executed', branch, {
             hook_name: 'on_error',
@@ -343,7 +384,7 @@ async function main() {
     }
 
     const afterHookResults = await executeHooks(`after_${command.replace(/-/g, '_')}`, lifecycleContext, { quiet: jsonMode });
-    if (runtimeConfig.analytics_enabled) {
+    if (analyticsEnabled) {
       for (const result of afterHookResults) {
         await recordAnalyticsPayload('hook_executed', branch, {
           hook_name: `after_${command.replace(/-/g, '_')}`,
@@ -355,7 +396,7 @@ async function main() {
       }
     }
 
-    if (runtimeConfig.analytics_enabled) {
+    if (analyticsEnabled) {
       await recordAnalyticsEvent(command, 'completed', branch, { has_git: hasGit() });
     }
 
@@ -378,13 +419,13 @@ async function main() {
       }
     }
   } catch (error) {
-    if (runtimeConfig.analytics_enabled) {
+    if (analyticsEnabled) {
       await recordAnalyticsEvent(command, 'error', branch, { message: error.message });
     }
 
     try {
       const errorHookResults = await executeHooks('on_error', lifecycleContext, { quiet: jsonMode });
-      if (runtimeConfig.analytics_enabled) {
+      if (analyticsEnabled) {
         for (const result of errorHookResults) {
           await recordAnalyticsPayload('hook_executed', branch, {
             hook_name: 'on_error',

@@ -1,11 +1,11 @@
-# Systematize KIT — Node.js CLI
+# Systematize Framework — Node Runtime Engine
 
-بديل متطابق وظيفياً لسكريبتات PowerShell، يعمل على أي منصة تدعم Node.js 18+.
+المحرك التنفيذي الرسمي للمنظومة. يعمل على أي منصة تدعم Node.js 18+، ويُعد المرجع التشغيلي الأول، بينما تبقى طبقة PowerShell للتوافق والاستدعاء فقط.
 
 ## المتطلبات
 
 - Node.js ≥ 18.0.0
-- لا يحتاج تثبيت اعتمادات (zero dependencies)
+- لا يحتاج اعتمادات تشغيل داخل هذه الحزمة الفرعية
 
 ## الاستخدام
 
@@ -30,6 +30,15 @@ node .Systematize/scripts/node/cli.mjs snapshot --tag pre-update
 
 # تحديث حالة المزامنة
 node .Systematize/scripts/node/cli.mjs update-sync-state
+
+# عرض حزم التوسعات
+node .Systematize/scripts/node/cli.mjs list-extensions --json
+
+# تثبيت توسعة
+node .Systematize/scripts/node/cli.mjs install-extension export --json
+
+# بناء حزمة التوزيع
+node .Systematize/scripts/node/cli.mjs build-distribution --json
 ```
 
 ## الأوامر
@@ -47,9 +56,13 @@ node .Systematize/scripts/node/cli.mjs update-sync-state
 | `generate-pr` | `generate-pr.ps1` | توليد PR template |
 | `record-analytics` | `record-analytics.ps1` | تسجيل تحليلات |
 | `update-sync-state` | `update-sync-state.ps1` | تحديث المزامنة |
+| `list-extensions` | — | عرض حزم التوسعات المتاحة |
+| `install-extension` | — | تثبيت توسعة من الكتالوج |
+| `remove-extension` | — | إزالة توسعة مثبتة |
+| `build-distribution` | — | بناء حزمة توزيع رسمية |
 
 ## ملاحظات
 
 - كل أمر يدعم `--json` و `--help`
-- بدون اعتمادات خارجية (zero dependencies) — يستخدم فقط مكتبات Node.js المدمجة
-- نفس المعاملات ونفس المخرجات كسكريبتات PowerShell
+- المحرك نفسه يعتمد على مكتبات Node.js المدمجة فقط
+- الحزمة الجذرية في المستودع مخصصة للتحقق والتوليد والاختبارات والوثائق، وليست جزءًا من محرك التشغيل الموزع

@@ -13,7 +13,7 @@ Supported platforms: Codex CLI
 ```text
 commands/
 .Systematize/
-aminooof/
+features/
 ```
 
 ## Commands

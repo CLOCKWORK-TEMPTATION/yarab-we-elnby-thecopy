@@ -16,7 +16,7 @@ export default async function main(argv) {
   const branch = opts.branch || env.CURRENT_BRANCH;
   const cmd = opts.command || 'update';
   const descMap = { systematize:'add PRD', clarify:'resolve ambiguities', plan:'add plan', tasks:'break into tasks', implement:'update progress' };
-  const message = opts.message || `docs(aminooof): ${cmd} — ${descMap[cmd] || 'update documentation'} [${branch}]`;
+  const message = opts.message || `docs(features): ${cmd} — ${descMap[cmd] || 'update documentation'} [${branch}]`;
 
   try {
     execFileSync('git', ['add', env.FEATURE_DIR, '.Systematize/memory/'], { cwd: env.REPO_ROOT, stdio: 'pipe' });

@@ -1,5 +1,12 @@
 ---
 description: Fast-track for small projects — combines systematize and clarify in one streamlined pass, then hands off to the mandatory workflow gates.
+command_name: quickstart
+command_family: Admin
+command_stage: onboarding
+command_requirement_level: optional
+command_visibility: optional
+command_execution_mode: hybrid
+runtime_command: setup-quickstart
 ---
 
 ## User Input
@@ -9,6 +16,13 @@ $ARGUMENTS
 ```
 
 You **MUST** consider the user input before proceeding (if not empty).
+
+## Surface Role
+
+- **المسار السريع**: هذا الأمر هو المسار المختصر للميزات الصغيرة والنماذج الأولية.
+- ليس هو نقطة البداية الافتراضية.
+- المدخل الرسمي على الأسطح الظاهرة للمستخدم يبقى `/syskit.guide`.
+- استخدمه فقط عندما يكون تقليل النطاق والسرعة مطلوبين صراحة.
 
 ## Pre-Check
 

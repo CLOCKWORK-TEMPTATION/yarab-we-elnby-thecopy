@@ -1,15 +1,39 @@
-# Systematize KIT — دليل التوسعات (Extensions)
+# Systematize Framework — دليل التوسعات (Extensions)
 
 ## الهيكل
 
 ```
 extensions/
 ├── README.md              # هذا الملف
-├── commands/              # أوامر مخصصة (ملفات .md)
+├── commands/              # أوامر مخصصة مباشرة بصيغة legacy
 │   └── .gitkeep
-└── templates/             # قوالب مخصصة (تُكتشف تلقائياً بواسطة Resolve-Template)
-    └── .gitkeep
+├── templates/             # قوالب مخصصة مباشرة بصيغة legacy
+│   └── .gitkeep
+└── <extension-name>/      # توسعة مثبتة فعليًا
+    ├── extension.json
+    ├── commands/
+    └── templates/
 ```
+
+## كتالوج الحزم
+
+الحزم القابلة للتركيب لا تُعرّف داخل هذا المجلد مباشرة، بل تأتي من:
+
+```text
+.Systematize/extension-packages/
+```
+
+التثبيت يعني نسخ الحزمة من الكتالوج إلى:
+
+```text
+.Systematize/extensions/<extension-name>/
+```
+
+بهذا يصبح لدينا فصل واضح بين:
+
+- الحزم المتاحة للتركيب
+- التوسعات المثبتة فعليًا
+- الأوامر والقوالب الحرة بصيغة legacy
 
 ## إضافة أمر مخصص
 
@@ -69,6 +93,14 @@ hooks:
 ```
 
 ## أمثلة الاستخدام
+
+### مثال 0: تثبيت توسعة جاهزة من الكتالوج
+
+```text
+node .Systematize/scripts/node/cli.mjs list-extensions --json
+node .Systematize/scripts/node/cli.mjs install-extension export --json
+node .Systematize/scripts/node/cli.mjs remove-extension export --json
+```
 
 ### مثال 1: إضافة أمر مراجعة مخصص
 
@@ -208,4 +240,3 @@ hooks:
 - تأكد من أن اسم القالب يطابق القالب الأساسي تماماً
 - تحقق من الموقع: `extensions/templates/` (بدون اسم preset)
 - تحقق من الأولوية: هل هناك `overrides/` أو `presets/` أعلى؟
-

@@ -1,7 +1,7 @@
 // تسجيل تحليلات — مكافئ record-analytics.ps1
 import { join } from 'path';
 import { getFeaturePathsEnv, parseArgs, readJsonFile, writeJsonFile } from './common.mjs';
-import { getSyskitRuntimeConfig } from './configuration.mjs';
+import { isOptionalCapabilityEnabled } from './configuration.mjs';
 
 function normalizeAnalyticsState(rawState) {
   const base = rawState || {};
@@ -45,11 +45,10 @@ export default async function main(argv) {
   }
 
   const env = getFeaturePathsEnv();
-  const runtimeConfig = getSyskitRuntimeConfig(env.REPO_ROOT);
   const branch = opts.branch || env.CURRENT_BRANCH;
   const analyticsPath = join(env.REPO_ROOT, '.Systematize/memory/analytics.json');
 
-  if (runtimeConfig.analytics_enabled === false && opts.event !== 'analytics_override') {
+  if (!isOptionalCapabilityEnabled('analytics', env.REPO_ROOT) && opts.event !== 'analytics_override') {
     const skipped = { branch, event: opts.event || null, recorded: false, reason: 'Analytics disabled in configuration' };
     if (opts.json) console.log(JSON.stringify(skipped, null, 2));
     else console.log('ℹ️ Analytics disabled in configuration');

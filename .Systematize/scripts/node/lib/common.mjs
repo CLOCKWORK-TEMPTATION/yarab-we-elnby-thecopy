@@ -1,14 +1,18 @@
-// Systematize KIT — دوال مشتركة (مكافئ common.ps1)
+// Systematize Framework — دوال مشتركة (مكافئ common.ps1)
 import { execSync } from 'child_process';
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from 'fs';
 import { join, resolve, dirname, basename } from 'path';
 import { createHash } from 'crypto';
 import { fileURLToPath } from 'url';
+import { readFlatYamlFile } from './config-parser.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-export const FEATURE_WORKSPACE_DIR = 'aminooof';
-export const LEGACY_FEATURE_WORKSPACE_DIR = Buffer.from('c3BlY3M=', 'base64').toString('utf8');
+export const FEATURE_WORKSPACE_DIR = 'features';
+export const LEGACY_FEATURE_WORKSPACE_DIRS = [
+  'aminooof',
+  Buffer.from('c3BlY3M=', 'base64').toString('utf8')
+];
 
 function hasNumberedFeatureDirs(rootDir) {
   if (!existsSync(rootDir)) return false;
@@ -33,19 +37,26 @@ function moveFeatureWorkspace(sourceDir, targetDir) {
 
 export function getFeatureWorkspaceRoot(repoRoot = getRepoRoot(), options = {}) {
   const nextRoot = join(repoRoot, FEATURE_WORKSPACE_DIR);
-  const legacyRoot = join(repoRoot, LEGACY_FEATURE_WORKSPACE_DIR);
   const nextExists = existsSync(nextRoot);
-  const legacyExists = existsSync(legacyRoot);
+  const existingLegacyRoots = LEGACY_FEATURE_WORKSPACE_DIRS
+    .map((name) => join(repoRoot, name))
+    .filter((candidate) => existsSync(candidate));
   const mutating = options.mutating === true;
   const ensureExists = options.ensureExists === true;
 
-  if (nextExists && legacyExists) {
+  if (existingLegacyRoots.length > 1) {
+    const conflictingRoots = [nextRoot, ...existingLegacyRoots].filter((item, index, array) => array.indexOf(item) === index);
     throw new Error(
-      `Conflicting workflow roots detected. Resolve manually before continuing:\n- ${nextRoot}\n- ${legacyRoot}`
+      `Conflicting workflow roots detected. Resolve manually before continuing:\n- ${conflictingRoots.join('\n- ')}`
     );
   }
 
-  if (legacyExists && !nextExists) {
+  if (nextExists && existingLegacyRoots.length === 1) {
+    return nextRoot;
+  }
+
+  if (existingLegacyRoots.length === 1 && !nextExists) {
+    const [legacyRoot] = existingLegacyRoots;
     if (mutating) {
       moveFeatureWorkspace(legacyRoot, nextRoot);
       return nextRoot;
@@ -83,8 +94,17 @@ export function getRepoRoot() {
     const result = execSync('git rev-parse --show-toplevel', { encoding: 'utf8', stdio: ['pipe','pipe','pipe'] }).trim();
     return result;
   } catch {
-    // Fallback: ابحث عن .Systematize من مسار السكريبت
-    let current = resolve(__dirname, '../../..');
+    // Fallback 1: ابحث عن .Systematize أو .git من مسار التنفيذ الحالي
+    let current = resolve(process.cwd());
+    while (current !== dirname(current)) {
+      if (existsSync(join(current, '.Systematize')) || existsSync(join(current, '.git'))) {
+        return current;
+      }
+      current = dirname(current);
+    }
+
+    // Fallback 2: ابحث عن .Systematize من مسار السكريبت
+    current = resolve(__dirname, '../../..');
     while (current !== dirname(current)) {
       if (existsSync(join(current, '.Systematize')) || existsSync(join(current, '.git'))) {
         return current;
@@ -100,7 +120,7 @@ export function getCurrentBranch() {
   try {
     return execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf8', stdio: ['pipe','pipe','pipe'] }).trim();
   } catch {
-    // Fallback: آخر feature من aminooof/
+    // Fallback: آخر feature من مجلد features/
     try {
       const featureRoot = getFeatureWorkspaceRoot(getRepoRoot());
       if (existsSync(featureRoot)) {
@@ -135,7 +155,7 @@ export function getFeaturePathsEnv(options = {}) {
     CURRENT_BRANCH: branch,
     HAS_GIT: hasGit(),
     FEATURE_ROOT: featureRoot,
-    AMINOOOF_DIR: featureDir,
+    FEATURES_DIR: featureDir,
     FEATURE_DIR: featureDir,
     FEATURE_SYS: join(featureDir, 'sys.md'),
     IMPL_PLAN: join(featureDir, 'plan.md'),
@@ -149,7 +169,7 @@ export function getFeaturePathsEnv(options = {}) {
 
 // === دوال v2 ===
 
-export function getAllAminooofDirs(repoRoot, options = {}) {
+export function getAllFeatureDirs(repoRoot, options = {}) {
   const featureRoot = getFeatureWorkspaceRoot(repoRoot || getRepoRoot(), options);
   if (!existsSync(featureRoot)) return [];
   return readdirSync(featureRoot)
@@ -253,25 +273,7 @@ export function getFeatureProgress(featureDir) {
 
 export function getSyskitConfig(repoRoot) {
   const configPath = join(repoRoot || getRepoRoot(), '.Systematize/config/syskit-config.yml');
-  if (!existsSync(configPath)) return null;
-  const content = readFileSync(configPath, 'utf8');
-  const config = {};
-  for (const line of content.split('\n')) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#')) continue;
-    const match = trimmed.match(/^([^:]+):\s*(.*)$/);
-    if (match) {
-      let [, key, val] = match;
-      key = key.trim();
-      val = val.trim().replace(/^["']|["']$/g, '');
-      if (val === 'true') val = true;
-      else if (val === 'false') val = false;
-      else if (val === 'null') val = null;
-      else if (/^\d+$/.test(val)) val = parseInt(val, 10);
-      config[key] = val;
-    }
-  }
-  return config;
+  return readFlatYamlFile(configPath);
 }
 
 export function readFileOrEmpty(filePath) {
@@ -314,6 +316,90 @@ export function parseArgs(argv) {
 }
 
 // === جديد — 5 دوال إضافية (المرحلة 2.0) ===
+
+export function getPresetRegistry(repoRoot = getRepoRoot()) {
+  const registryPath = join(repoRoot, '.Systematize', 'presets', '.registry');
+  if (!existsSync(registryPath)) return null;
+
+  try {
+    return JSON.parse(readFileSync(registryPath, 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+export function getActivePresetName(repoRoot = getRepoRoot(), preferredPreset = null) {
+  if (preferredPreset && preferredPreset !== 'null') return preferredPreset;
+
+  const registry = getPresetRegistry(repoRoot);
+  if (registry?.active_preset) return registry.active_preset;
+
+  const config = getSyskitConfig(repoRoot);
+  if (config?.default_preset && config.default_preset !== 'null') {
+    return config.default_preset;
+  }
+
+  return null;
+}
+
+export function resolveCoreTemplate(repoRoot, templateName) {
+  const basePath = join(repoRoot, '.Systematize', 'templates');
+  const overridePath = join(basePath, 'overrides', `${templateName}.md`);
+  if (existsSync(overridePath)) return overridePath;
+
+  const corePath = join(basePath, `${templateName}.md`);
+  if (existsSync(corePath)) return corePath;
+
+  const extDir = join(repoRoot, '.Systematize', 'extensions');
+  if (existsSync(extDir)) {
+    const exts = readdirSync(extDir).filter(d => !d.startsWith('.')).sort();
+    for (const ext of exts) {
+      const candidate = join(extDir, ext, 'templates', `${templateName}.md`);
+      if (existsSync(candidate)) return candidate;
+    }
+  }
+
+  return null;
+}
+
+export function resolveActivePresetTemplate(repoRoot, templateName, options = {}) {
+  const presetName = getActivePresetName(repoRoot, options.preset || null);
+  if (!presetName) return null;
+
+  const candidate = join(repoRoot, '.Systematize', 'presets', presetName, 'templates', `${templateName}.md`);
+  return existsSync(candidate) ? candidate : null;
+}
+
+export function composeTemplateWithActivePreset(repoRoot, templateName, options = {}) {
+  const baseTemplate = resolveCoreTemplate(repoRoot, templateName);
+  const presetTemplate = resolveActivePresetTemplate(repoRoot, templateName, options);
+
+  if (!baseTemplate && !presetTemplate) return null;
+
+  const layers = [];
+  let content = '';
+
+  if (baseTemplate) {
+    content = readFileSync(baseTemplate, 'utf8').trimEnd();
+    layers.push(baseTemplate);
+  }
+
+  if (presetTemplate && presetTemplate !== baseTemplate) {
+    const overlay = readFileSync(presetTemplate, 'utf8').trim();
+    if (overlay) {
+      content = content ? `${content}\n\n---\n\n${overlay}` : overlay;
+      layers.push(presetTemplate);
+    }
+  }
+
+  return {
+    content: `${content}\n`,
+    layers,
+    base_template: baseTemplate,
+    preset_template: presetTemplate,
+    preset_name: presetTemplate ? getActivePresetName(repoRoot, options.preset || null) : null
+  };
+}
 
 export function resolveTemplate(repoRoot, templateName) {
   // Priority Stack:

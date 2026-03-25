@@ -1,5 +1,12 @@
 ---
 description: Convert existing Task Cards from tasks.md into structured, dependency-ordered GitHub issues with labels, milestones, and full context.
+command_name: taskstoissues
+command_family: Integration
+command_stage: integration
+command_requirement_level: optional
+command_visibility: optional
+command_execution_mode: hybrid
+runtime_command: setup-taskstoissues
 tools: ['github/github-mcp-server/issue_write']
 handoffs:
   - label: Re-analyze After Conversion

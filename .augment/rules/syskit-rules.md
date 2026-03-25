@@ -1,6 +1,6 @@
 # the copy Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-03-18
+Auto-generated from all feature plans. Last updated: 2026-03-23
 Supported platforms: Auggie CLI
 
 
@@ -13,7 +13,7 @@ Supported platforms: Auggie CLI
 ```text
 commands/
 .Systematize/
-specs/
+features/
 ```
 
 ## Commands
@@ -35,8 +35,7 @@ Prefer the Systematize workflow: sys -> clarify -> constitution -> research -> p
 
 ## Recent Changes
 
-- bootstrap: Installed Systematize KIT
+- bootstrap: Installed Systematize Framework
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
-

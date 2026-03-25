@@ -2,7 +2,7 @@
 import { existsSync, readFileSync, statSync } from 'fs';
 import { join } from 'path';
 import { getFeatureDir, getFeaturePathsEnv, parseArgs, readJsonFile } from './common.mjs';
-import { getAlertsConfig, getSyskitRuntimeConfig } from './configuration.mjs';
+import { getAlertsConfig, isOptionalCapabilityEnabled } from './configuration.mjs';
 
 function readFileOrEmpty(filePath) {
   return existsSync(filePath) ? readFileSync(filePath, 'utf8') : '';
@@ -18,10 +18,9 @@ export default async function main(argv) {
   const env = getFeaturePathsEnv();
   const branch = opts.branch || env.CURRENT_BRANCH;
   const featureDir = opts.branch ? getFeatureDir(env.REPO_ROOT, opts.branch) : env.FEATURE_DIR;
-  const runtimeConfig = getSyskitRuntimeConfig(env.REPO_ROOT);
   const alertsConfig = getAlertsConfig(env.REPO_ROOT);
 
-  if (runtimeConfig.alerts_enabled === false) {
+  if (!isOptionalCapabilityEnabled('alerts', env.REPO_ROOT)) {
     const result = { branch, alerts: [], hasBlocking: false, totalAlerts: 0, message: 'Alerts disabled in configuration' };
     if (opts.json) console.log(JSON.stringify(result, null, 2));
     else console.log(`ℹ️ Alerts disabled for ${branch}`);

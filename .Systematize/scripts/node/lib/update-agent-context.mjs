@@ -31,12 +31,68 @@ function escapeRegex(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function getPlanField(fieldName, planContent) {
-  const pattern = new RegExp(`^\\*\\*${escapeRegex(fieldName)}\\*\\*:\\s*(.+)$`, 'm');
-  const match = planContent.match(pattern);
+function normalizePlanValue(value) {
+  const normalized = String(value || '').replace(/`/g, '').trim();
+  return ['NEEDS CLARIFICATION', 'N/A'].includes(normalized) ? '' : normalized;
+}
+
+function getSectionContent(planContent, headingPattern) {
+  const match = planContent.match(headingPattern);
   if (!match) return '';
-  const value = match[1].trim();
-  return ['NEEDS CLARIFICATION', 'N/A'].includes(value) ? '' : value;
+
+  const startIndex = match.index;
+  const remainder = planContent.slice(startIndex);
+  const nextHeading = remainder.match(/\n##\s+/);
+  if (!nextHeading) return remainder;
+  return remainder.slice(0, nextHeading.index);
+}
+
+function parseTechnicalContextTable(planContent) {
+  const technicalContextSection = getSectionContent(planContent, /^## 2\. Technical Context.*$/m);
+  if (!technicalContextSection) return {};
+
+  const values = {};
+  for (const line of technicalContextSection.split(/\r?\n/)) {
+    if (!line.trim().startsWith('|')) continue;
+    if (/^\|\s*-+/.test(line) || /^\|\s*Field\s*\|/i.test(line)) continue;
+
+    const cells = line.split('|').slice(1, -1).map((cell) => cell.trim());
+    if (cells.length < 2) continue;
+
+    const key = cells[0].replace(/\*\*/g, '').trim();
+    const value = normalizePlanValue(cells[1]);
+    if (key && value) {
+      values[key] = value;
+    }
+  }
+
+  return values;
+}
+
+function parseAgentContextSeed(planContent) {
+  const seedSection = getSectionContent(planContent, /^### 2\.1 Agent Context Seed.*$/m);
+  if (!seedSection) return {};
+
+  const values = {};
+  const fieldPattern = /^\*\*([^*]+)\*\*:\s*(.+)$/gm;
+  let match;
+  while ((match = fieldPattern.exec(seedSection)) !== null) {
+    const key = match[1].trim();
+    const value = normalizePlanValue(match[2]);
+    if (key && value) {
+      values[key] = value;
+    }
+  }
+
+  return values;
+}
+
+function getPlanField(fieldName, planContent) {
+  const tableValues = parseTechnicalContextTable(planContent);
+  if (tableValues[fieldName]) return tableValues[fieldName];
+
+  const seedValues = parseAgentContextSeed(planContent);
+  return seedValues[fieldName] || '';
 }
 
 function getProjectStructure(projectType) {
@@ -159,6 +215,26 @@ OPTIONS:
   const framework = getPlanField('Primary Dependencies', planContent);
   const database = getPlanField('Storage', planContent);
   const projectType = getPlanField('Project Type', planContent);
+  const testingFramework = getPlanField('Testing Framework', planContent);
+  const targetPlatform = getPlanField('Target Platform', planContent);
+
+  const missingCriticalFields = [
+    ['Language/Version', language],
+    ['Primary Dependencies', framework],
+    ['Storage', database],
+    ['Testing Framework', testingFramework],
+    ['Target Platform', targetPlatform],
+    ['Project Type', projectType]
+  ]
+    .filter(([, value]) => !value)
+    .map(([field]) => field);
+
+  if (missingCriticalFields.length > 0) {
+    console.error(`ERROR: Missing critical plan fields: ${missingCriticalFields.join(', ')}`);
+    console.error('Populate the Technical Context table or the Agent Context Seed before updating agent context.');
+    process.exit(1);
+  }
+
   const projectName = repoRoot.split(/[\\/]/).pop() || 'Project';
   const now = new Date().toISOString().slice(0, 10);
   const templateContent = readFileSync(templatePath, 'utf8');

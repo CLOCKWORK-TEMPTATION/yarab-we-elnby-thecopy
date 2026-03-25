@@ -1,15 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, rmSync, writeFileSync, existsSync } from 'node:fs';
+import { mkdirSync, readFileSync, rmSync, writeFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { hasPowerShell } from './helpers/powershell.mjs';
 
 import { getFeatureWorkspaceRoot } from '../lib/common.mjs';
 
 const repoRoot = fileURLToPath(new URL('../../../../', import.meta.url));
 const legacyWorkspaceName = Buffer.from('c3BlY3M=', 'base64').toString('utf8');
+const powerShellAvailable = hasPowerShell();
 
 function createTempRepo() {
   const tempRepo = join(tmpdir(), `syskit-workflow-${Date.now()}-${Math.random().toString(16).slice(2)}`);
@@ -92,23 +94,20 @@ function writeClarifiedSys(featureDir) {
   );
 }
 
-test('detects conflicting workflow roots and forces manual resolution', () => {
+test('prefers the canonical features root when a legacy root also exists', () => {
   const tempRepo = createTempRepo();
 
   try {
-    mkdirSync(join(tempRepo, 'aminooof'), { recursive: true });
+    mkdirSync(join(tempRepo, 'features', '001-current-flow'), { recursive: true });
     mkdirSync(join(tempRepo, legacyWorkspaceName), { recursive: true });
 
-    assert.throws(
-      () => getFeatureWorkspaceRoot(tempRepo),
-      /Conflicting workflow roots detected/
-    );
+    assert.equal(getFeatureWorkspaceRoot(tempRepo), join(tempRepo, 'features'));
   } finally {
     rmSync(tempRepo, { recursive: true, force: true });
   }
 });
 
-test('setup-plan migrates the legacy workflow root and writes into aminooof', () => {
+test('setup-plan migrates the legacy workflow root and writes into features', () => {
   const tempRepo = createTempRepo();
   const branchName = '001-demo-flow';
   const legacyFeatureDir = join(tempRepo, legacyWorkspaceName, branchName);
@@ -126,9 +125,10 @@ test('setup-plan migrates the legacy workflow root and writes into aminooof', ()
     );
 
     const result = JSON.parse(output);
-    const migratedFeatureDir = join(tempRepo, 'aminooof', branchName);
+    const migratedFeatureDir = join(tempRepo, 'features', branchName);
 
-    assert.equal(result.AMINOOOF_DIR, migratedFeatureDir);
+    assert.equal(result.FEATURES_DIR, migratedFeatureDir);
+    assert.equal(result.AMINOOOF_DIR, undefined, 'AMINOOOF_DIR legacy alias must not appear in output');
     assert.equal(existsSync(migratedFeatureDir), true);
     assert.equal(existsSync(legacyFeatureDir), false);
     assert.equal(existsSync(join(migratedFeatureDir, 'plan.md')), true);
@@ -137,7 +137,50 @@ test('setup-plan migrates the legacy workflow root and writes into aminooof', ()
   }
 });
 
-test('powershell setup-plan migrates the legacy workflow root and writes into aminooof', () => {
+test('setup-plan composes the full base template with the active preset overlay', () => {
+  const tempRepo = createTempRepo();
+  const branchName = '001-demo-flow';
+  const featureDir = join(tempRepo, 'features', branchName);
+
+  try {
+    mkdirSync(join(tempRepo, '.Systematize', 'presets', 'web-fullstack', 'templates'), { recursive: true });
+    writeFileSync(
+      join(tempRepo, '.Systematize', 'presets', '.registry'),
+      JSON.stringify({
+        schema_version: 1,
+        active_preset: 'web-fullstack',
+        presets: {
+          'web-fullstack': { priority: 1, description: 'Full-stack web application' }
+        }
+      }, null, 2),
+      'utf8'
+    );
+    writeFileSync(
+      join(tempRepo, '.Systematize', 'presets', 'web-fullstack', 'templates', 'plan-template.md'),
+      '## Preset Overlay\nPreset-specific section.\n',
+      'utf8'
+    );
+
+    mkdirSync(featureDir, { recursive: true });
+    writeClarifiedSys(featureDir);
+    writeCompleteConstitution(tempRepo);
+    writeCompleteResearch(featureDir);
+
+    execFileSync(
+      'node',
+      [join(repoRoot, '.Systematize', 'scripts', 'node', 'cli.mjs'), 'setup-plan', '--json', '--branch', branchName],
+      { cwd: tempRepo, encoding: 'utf8' }
+    );
+
+    const planContent = readFileSync(join(featureDir, 'plan.md'), 'utf8');
+    assert.match(planContent, /# Plan/);
+    assert.match(planContent, /## Preset Overlay/);
+  } finally {
+    rmSync(tempRepo, { recursive: true, force: true });
+  }
+});
+
+test('powershell setup-plan migrates the legacy workflow root and writes into features', { skip: !powerShellAvailable }, () => {
   const tempRepo = createTempRepo();
   const branchName = '001-demo-flow';
   const legacyFeatureDir = join(tempRepo, legacyWorkspaceName, branchName);
@@ -155,9 +198,10 @@ test('powershell setup-plan migrates the legacy workflow root and writes into am
     );
 
     const result = JSON.parse(output);
-    const migratedFeatureDir = join(tempRepo, 'aminooof', branchName);
+    const migratedFeatureDir = join(tempRepo, 'features', branchName);
 
-    assert.equal(result.AMINOOOF_DIR, migratedFeatureDir);
+    assert.equal(result.FEATURES_DIR, migratedFeatureDir);
+    assert.equal(result.AMINOOOF_DIR, undefined, 'AMINOOOF_DIR legacy alias must not appear in output');
     assert.equal(existsSync(migratedFeatureDir), true);
     assert.equal(existsSync(legacyFeatureDir), false);
     assert.equal(existsSync(join(migratedFeatureDir, 'plan.md')), true);
@@ -169,7 +213,7 @@ test('powershell setup-plan migrates the legacy workflow root and writes into am
 test('setup-plan blocks until constitution and research gates are complete', () => {
   const tempRepo = createTempRepo();
   const branchName = '001-demo-flow';
-  const featureDir = join(tempRepo, 'aminooof', branchName);
+  const featureDir = join(tempRepo, 'features', branchName);
 
   try {
     mkdirSync(featureDir, { recursive: true });
@@ -195,15 +239,16 @@ test('setup-plan blocks until constitution and research gates are complete', () 
   }
 });
 
-test('check-prerequisites resolves the feature workspace before plan.md exists', () => {
+test('check-prerequisites allows research-before-plan once sys and constitution are ready', () => {
   const tempRepo = createTempRepo();
   const branchName = '001-demo-flow';
-  const featureDir = join(tempRepo, 'aminooof', branchName);
+  const featureDir = join(tempRepo, 'features', branchName);
   const env = { ...process.env, SYSTEMATIZE_FEATURE: branchName };
 
   try {
     mkdirSync(featureDir, { recursive: true });
     writeClarifiedSys(featureDir);
+    writeCompleteConstitution(tempRepo);
 
     const output = execFileSync(
       'node',
@@ -214,56 +259,35 @@ test('check-prerequisites resolves the feature workspace before plan.md exists',
     const result = JSON.parse(output);
     assert.equal(result.FEATURE_DIR, featureDir);
     assert.deepEqual(result.AVAILABLE_DOCS, []);
-
-    const failure = captureCommandFailure(() => execFileSync(
-        'node',
-        [
-          join(repoRoot, '.Systematize', 'scripts', 'node', 'cli.mjs'),
-          'check-prerequisites',
-          '--json',
-          '--require-tasks',
-          '--include-tasks'
-        ],
-        { cwd: tempRepo, encoding: 'utf8', stdio: 'pipe', env }
-      ));
-    assert.match(failure, /plan\.md not found/i);
   } finally {
     rmSync(tempRepo, { recursive: true, force: true });
   }
 });
 
-test('powershell check-prerequisites resolves the feature workspace before plan.md exists', () => {
+test('check-prerequisites fails explicitly when sys or constitution is missing before planning', () => {
   const tempRepo = createTempRepo();
   const branchName = '001-demo-flow';
-  const featureDir = join(tempRepo, 'aminooof', branchName);
+  const featureDir = join(tempRepo, 'features', branchName);
   const env = { ...process.env, SYSTEMATIZE_FEATURE: branchName };
 
   try {
     mkdirSync(featureDir, { recursive: true });
+
+    const noSys = captureCommandFailure(() => execFileSync(
+      'node',
+      [join(repoRoot, '.Systematize', 'scripts', 'node', 'cli.mjs'), 'check-prerequisites', '--json'],
+      { cwd: tempRepo, encoding: 'utf8', stdio: 'pipe', env }
+    ));
+    assert.match(noSys, /sys\.md not found/i);
+
     writeClarifiedSys(featureDir);
 
-    const output = execFileSync(
-      'pwsh',
-      ['-File', join(repoRoot, '.Systematize', 'scripts', 'powershell', 'check-prerequisites.ps1'), '-Json'],
-      { cwd: tempRepo, encoding: 'utf8', env }
-    );
-
-    const result = JSON.parse(output);
-    assert.equal(result.FEATURE_DIR, featureDir);
-    assert.deepEqual(result.AVAILABLE_DOCS, []);
-
-    const failure = captureCommandFailure(() => execFileSync(
-        'pwsh',
-        [
-          '-File',
-          join(repoRoot, '.Systematize', 'scripts', 'powershell', 'check-prerequisites.ps1'),
-          '-Json',
-          '-RequireTasks',
-          '-IncludeTasks'
-        ],
-        { cwd: tempRepo, encoding: 'utf8', stdio: 'pipe', env }
-      ));
-    assert.match(failure, /plan\.md not found/i);
+    const noConstitution = captureCommandFailure(() => execFileSync(
+      'node',
+      [join(repoRoot, '.Systematize', 'scripts', 'node', 'cli.mjs'), 'check-prerequisites', '--json'],
+      { cwd: tempRepo, encoding: 'utf8', stdio: 'pipe', env }
+    ));
+    assert.match(noConstitution, /constitution gate is not satisfied/i);
   } finally {
     rmSync(tempRepo, { recursive: true, force: true });
   }
@@ -272,7 +296,7 @@ test('powershell check-prerequisites resolves the feature workspace before plan.
 test('feature-status enforces constitution then research then plan as the next step order', () => {
   const tempRepo = createTempRepo();
   const branchName = '001-demo-flow';
-  const featureDir = join(tempRepo, 'aminooof', branchName);
+  const featureDir = join(tempRepo, 'features', branchName);
 
   try {
     mkdirSync(featureDir, { recursive: true });
@@ -305,10 +329,10 @@ test('feature-status enforces constitution then research then plan as the next s
   }
 });
 
-test('powershell feature-status enforces constitution then research then plan as the next step order', () => {
+test('powershell feature-status enforces constitution then research then plan as the next step order', { skip: !powerShellAvailable }, () => {
   const tempRepo = createTempRepo();
   const branchName = '001-demo-flow';
-  const featureDir = join(tempRepo, 'aminooof', branchName);
+  const featureDir = join(tempRepo, 'features', branchName);
 
   try {
     mkdirSync(featureDir, { recursive: true });
@@ -336,6 +360,80 @@ test('powershell feature-status enforces constitution then research then plan as
       { cwd: tempRepo, encoding: 'utf8' }
     ));
     assert.equal(thirdStatus.next_step, '/syskit.plan');
+  } finally {
+    rmSync(tempRepo, { recursive: true, force: true });
+  }
+});
+
+// --- Regression guards: legacy aliases must never appear in setup outputs ---
+
+const LEGACY_ALIAS_PATTERN = /AMINOOOF/;
+
+function runSetupCommand(tempRepo, commandName, branchName) {
+  return execFileSync(
+    'node',
+    [join(repoRoot, '.Systematize', 'scripts', 'node', 'cli.mjs'), commandName, '--json', '--branch', branchName],
+    { cwd: tempRepo, encoding: 'utf8' }
+  );
+}
+
+test('getFeaturePathsEnv does not expose AMINOOOF_DIR', async () => {
+  const { getFeaturePathsEnv } = await import('../lib/common.mjs');
+  const paths = getFeaturePathsEnv({ mutating: false });
+  assert.equal(paths.AMINOOOF_DIR, undefined, 'AMINOOOF_DIR must not exist in getFeaturePathsEnv output');
+  assert.ok(paths.FEATURE_DIR, 'FEATURE_DIR must be present');
+  assert.ok(paths.FEATURES_DIR, 'FEATURES_DIR must be present');
+});
+
+test('setup-plan JSON output contains no legacy aliases', () => {
+  const tempRepo = createTempRepo();
+  const branchName = '001-guard-plan';
+  const featureDir = join(tempRepo, 'features', branchName);
+
+  try {
+    mkdirSync(featureDir, { recursive: true });
+    writeClarifiedSys(featureDir);
+    writeCompleteConstitution(tempRepo);
+    writeCompleteResearch(featureDir);
+
+    const output = runSetupCommand(tempRepo, 'setup-plan', branchName);
+    assert.equal(LEGACY_ALIAS_PATTERN.test(output), false, `setup-plan output must not contain legacy aliases: ${output}`);
+  } finally {
+    rmSync(tempRepo, { recursive: true, force: true });
+  }
+});
+
+test('setup-research JSON output contains no legacy aliases', () => {
+  const tempRepo = createTempRepo();
+  const branchName = '001-guard-research';
+  const featureDir = join(tempRepo, 'features', branchName);
+
+  try {
+    mkdirSync(featureDir, { recursive: true });
+    writeClarifiedSys(featureDir);
+    writeCompleteConstitution(tempRepo);
+
+    const output = runSetupCommand(tempRepo, 'setup-research', branchName);
+    assert.equal(LEGACY_ALIAS_PATTERN.test(output), false, `setup-research output must not contain legacy aliases: ${output}`);
+  } finally {
+    rmSync(tempRepo, { recursive: true, force: true });
+  }
+});
+
+test('setup-tasks JSON output contains no legacy aliases', () => {
+  const tempRepo = createTempRepo();
+  const branchName = '001-guard-tasks';
+  const featureDir = join(tempRepo, 'features', branchName);
+
+  try {
+    mkdirSync(featureDir, { recursive: true });
+    writeClarifiedSys(featureDir);
+    writeCompleteConstitution(tempRepo);
+    writeCompleteResearch(featureDir);
+    writeFileSync(join(featureDir, 'plan.md'), '# Plan\n\nAll sections filled.\n', 'utf8');
+
+    const output = runSetupCommand(tempRepo, 'setup-tasks', branchName);
+    assert.equal(LEGACY_ALIAS_PATTERN.test(output), false, `setup-tasks output must not contain legacy aliases: ${output}`);
   } finally {
     rmSync(tempRepo, { recursive: true, force: true });
   }

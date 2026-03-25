@@ -39,10 +39,10 @@ function generateBranchName(description) {
   return cleanBranchName(description).split('-').filter(Boolean).slice(0, 3).join('-');
 }
 
-function getHighestNumberFromAminooof(aminooofDir) {
+function getHighestNumberFromFeatureWorkspace(featureWorkspaceDir) {
   let highest = 0;
-  if (existsSync(aminooofDir)) {
-    for (const d of readdirSync(aminooofDir)) {
+  if (existsSync(featureWorkspaceDir)) {
+    for (const d of readdirSync(featureWorkspaceDir)) {
       const m = d.match(/^(\d+)/);
       if (m) highest = Math.max(highest, parseInt(m[1]));
     }
@@ -63,11 +63,11 @@ function getHighestNumberFromBranches() {
   return highest;
 }
 
-function getNextBranchNumber(aminooofDir) {
+function getNextBranchNumber(featureWorkspaceDir) {
   // Fetch remotes
   try { execSync('git fetch --all --prune', { stdio: 'pipe' }); } catch { /* ignore */ }
   const highestBranch = getHighestNumberFromBranches();
-  const highestWorkspace = getHighestNumberFromAminooof(aminooofDir);
+  const highestWorkspace = getHighestNumberFromFeatureWorkspace(featureWorkspaceDir);
   return Math.max(highestBranch, highestWorkspace) + 1;
 }
 
@@ -97,7 +97,7 @@ EXAMPLES:
     process.exit(1);
   }
 
-  const aminooofDir = getFeatureWorkspaceRoot(repoRoot, { mutating: true, ensureExists: true });
+  const featureWorkspaceDir = getFeatureWorkspaceRoot(repoRoot, { mutating: true, ensureExists: true });
 
   // Generate branch name
   const branchSuffix = opts['short-name']
@@ -108,8 +108,8 @@ EXAMPLES:
   let number = opts.number ? parseInt(opts.number) : 0;
   if (number === 0) {
     number = hasGit()
-      ? getNextBranchNumber(aminooofDir)
-      : getHighestNumberFromAminooof(aminooofDir) + 1;
+      ? getNextBranchNumber(featureWorkspaceDir)
+      : getHighestNumberFromFeatureWorkspace(featureWorkspaceDir) + 1;
   }
 
   const featureNum = String(number).padStart(3, '0');
@@ -146,7 +146,7 @@ EXAMPLES:
   }
 
   // Create feature directory and sys.md
-  const featureDir = join(aminooofDir, branchName);
+  const featureDir = join(featureWorkspaceDir, branchName);
   mkdirSync(featureDir, { recursive: true });
 
   const templatePath = resolveTemplate(repoRoot, 'sys-template');

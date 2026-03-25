@@ -1,0 +1,247 @@
+{
+  "schema_version": 1,
+  "product_name": "Systematize Framework for Software Project Governance",
+  "generated_documents": {
+    "runtime_map": "docs/COMMAND_RUNTIME_MAP.md"
+  },
+  "families": {
+    "Gate": "بوابة حوكمة تتحكم في الانتقال بين مراحل العمل.",
+    "Inspection": "أمر فحص أو رقابة أو متابعة حالة.",
+    "Portfolio": "أمر تقارير أو رؤية تجميعية فوقية.",
+    "Admin": "أمر تهيئة أو تشغيل إداري أو تجربة إرشادية.",
+    "Integration": "أمر يربط الإطار بتكامل خارجي اختياري."
+  },
+  "commands": [
+    {
+      "name": "systematize",
+      "file": "commands/syskit.systematize.md",
+      "family": "Gate",
+      "stage": "phase-01",
+      "requirement_level": "mandatory",
+      "execution_mode": "strong-hybrid",
+      "visibility": "primary",
+      "runtime_command": "setup-systematize",
+      "notes": "العقد الحاكم الأول لصياغة وثيقة sys."
+    },
+    {
+      "name": "clarify",
+      "file": "commands/syskit.clarify.md",
+      "family": "Gate",
+      "stage": "phase-02",
+      "requirement_level": "mandatory",
+      "execution_mode": "strong-hybrid",
+      "visibility": "primary",
+      "runtime_command": "setup-clarify",
+      "notes": "يعالج الغموض قبل تثبيت الدستور."
+    },
+    {
+      "name": "constitution",
+      "file": "commands/syskit.constitution.md",
+      "family": "Gate",
+      "stage": "phase-03",
+      "requirement_level": "mandatory",
+      "execution_mode": "runtime-backed",
+      "visibility": "primary",
+      "runtime_command": "generate-constitution",
+      "notes": "أمر حوكمي مدعوم بمحرك يولد الدستور."
+    },
+    {
+      "name": "research",
+      "file": "commands/syskit.research.md",
+      "family": "Gate",
+      "stage": "phase-04",
+      "requirement_level": "mandatory",
+      "execution_mode": "runtime-backed",
+      "visibility": "primary",
+      "runtime_command": "setup-research",
+      "notes": "يجهز البحث لكنه يبقى موجّهًا حوكميًا."
+    },
+    {
+      "name": "plan",
+      "file": "commands/syskit.plan.md",
+      "family": "Gate",
+      "stage": "phase-05",
+      "requirement_level": "mandatory",
+      "execution_mode": "runtime-backed",
+      "visibility": "primary",
+      "runtime_command": "setup-plan",
+      "notes": "يربط التخطيط بالبوابات السابقة."
+    },
+    {
+      "name": "tasks",
+      "file": "commands/syskit.tasks.md",
+      "family": "Gate",
+      "stage": "phase-06",
+      "requirement_level": "mandatory",
+      "execution_mode": "runtime-backed",
+      "visibility": "primary",
+      "runtime_command": "setup-tasks",
+      "notes": "يفصل التنفيذ إلى مهام تحت الحوكمة."
+    },
+    {
+      "name": "checklist",
+      "file": "commands/syskit.checklist.md",
+      "family": "Gate",
+      "stage": "phase-07",
+      "requirement_level": "conditional",
+      "execution_mode": "runtime-backed",
+      "visibility": "optional",
+      "runtime_command": "setup-checklist",
+      "notes": "طبقة مراجعة قبل التنفيذ أو التسليم."
+    },
+    {
+      "name": "review",
+      "file": "commands/syskit.review.md",
+      "family": "Gate",
+      "stage": "phase-08",
+      "requirement_level": "mandatory",
+      "execution_mode": "strong-hybrid",
+      "visibility": "primary",
+      "runtime_command": "setup-review",
+      "notes": "يبقى قرارًا حوكميًا لا أمر تشغيل."
+    },
+    {
+      "name": "implement",
+      "file": "commands/syskit.implement.md",
+      "family": "Gate",
+      "stage": "phase-09",
+      "requirement_level": "mandatory",
+      "execution_mode": "strong-hybrid",
+      "visibility": "primary",
+      "runtime_command": "setup-implement",
+      "notes": "تنفيذ موجّه بشريًا أو عبر وكيل، لا أمر CLI مستقل."
+    },
+    {
+      "name": "status",
+      "file": "commands/syskit.status.md",
+      "family": "Inspection",
+      "stage": "inspection",
+      "requirement_level": "mandatory",
+      "execution_mode": "runtime-backed",
+      "visibility": "operational",
+      "runtime_command": "feature-status",
+      "notes": "فحص مباشر لحالة الميزة."
+    },
+    {
+      "name": "healthcheck",
+      "file": "commands/syskit.healthcheck.md",
+      "family": "Inspection",
+      "stage": "inspection",
+      "requirement_level": "mandatory",
+      "execution_mode": "runtime-backed",
+      "visibility": "operational",
+      "runtime_command": "healthcheck",
+      "notes": "فحص جودة وتتبع صحة المخرجات."
+    },
+    {
+      "name": "analyze",
+      "file": "commands/syskit.analyze.md",
+      "family": "Inspection",
+      "stage": "deep-inspection",
+      "requirement_level": "optional",
+      "execution_mode": "hybrid",
+      "visibility": "optional",
+      "runtime_command": "setup-analyze",
+      "notes": "تحليل عميق مع سياسات منفصلة عن التنفيذ."
+    },
+    {
+      "name": "sync",
+      "file": "commands/syskit.sync.md",
+      "family": "Inspection",
+      "stage": "change-control",
+      "requirement_level": "optional",
+      "execution_mode": "runtime-backed",
+      "visibility": "operational",
+      "runtime_command": "update-sync-state",
+      "notes": "تحكم في المزامنة وحالة التغييرات."
+    },
+    {
+      "name": "diff",
+      "file": "commands/syskit.diff.md",
+      "family": "Inspection",
+      "stage": "change-control",
+      "requirement_level": "optional",
+      "execution_mode": "runtime-backed",
+      "visibility": "optional",
+      "runtime_command": "setup-diff",
+      "notes": "مقارنة تنفيذية بين الحالة الحالية وآخر خط مزامنة معروف."
+    },
+    {
+      "name": "dashboard",
+      "file": "commands/syskit.dashboard.md",
+      "family": "Portfolio",
+      "stage": "reporting",
+      "requirement_level": "optional",
+      "execution_mode": "runtime-backed",
+      "visibility": "optional",
+      "runtime_command": "export-dashboard",
+      "notes": "طبقة فوقية للتجميع وليس من قلب الحوكمة."
+    },
+    {
+      "name": "metrics",
+      "file": "commands/syskit.metrics.md",
+      "family": "Portfolio",
+      "stage": "reporting",
+      "requirement_level": "optional",
+      "execution_mode": "runtime-backed",
+      "visibility": "optional",
+      "runtime_command": "record-analytics",
+      "notes": "يعتمد على بيانات التحليلات الاختيارية."
+    },
+    {
+      "name": "export",
+      "file": "commands/syskit.export.md",
+      "family": "Portfolio",
+      "stage": "reporting",
+      "requirement_level": "optional",
+      "execution_mode": "runtime-backed",
+      "visibility": "optional",
+      "runtime_command": "export-dashboard",
+      "notes": "قدرة تقريرية اختيارية."
+    },
+    {
+      "name": "init",
+      "file": "commands/syskit.init.md",
+      "family": "Admin",
+      "stage": "bootstrap",
+      "requirement_level": "mandatory",
+      "execution_mode": "runtime-backed",
+      "visibility": "primary",
+      "runtime_command": "init",
+      "notes": "أمر الإدارة التأسيسي للقلب."
+    },
+    {
+      "name": "quickstart",
+      "file": "commands/syskit.quickstart.md",
+      "family": "Admin",
+      "stage": "onboarding",
+      "requirement_level": "optional",
+      "execution_mode": "hybrid",
+      "visibility": "optional",
+      "runtime_command": "setup-quickstart",
+      "notes": "طبقة تهيئة ذهنية للمستخدم."
+    },
+    {
+      "name": "guide",
+      "file": "commands/syskit.guide.md",
+      "family": "Admin",
+      "stage": "onboarding",
+      "requirement_level": "optional",
+      "execution_mode": "hybrid",
+      "visibility": "primary",
+      "runtime_command": "setup-guide",
+      "notes": "شرح وإرشاد لا تشغيل مباشر."
+    },
+    {
+      "name": "taskstoissues",
+      "file": "commands/syskit.taskstoissues.md",
+      "family": "Integration",
+      "stage": "integration",
+      "requirement_level": "optional",
+      "execution_mode": "hybrid",
+      "visibility": "optional",
+      "runtime_command": "setup-taskstoissues",
+      "notes": "تكامل خارجي اختياري رسميًا."
+    }
+  ]
+}

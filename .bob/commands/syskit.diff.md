@@ -1,5 +1,12 @@
 ---
 description: Compare current artifacts against a previous snapshot to detect changes and their impact across the feature documentation.
+command_name: diff
+command_family: Inspection
+command_stage: change-control
+command_requirement_level: optional
+command_visibility: optional
+command_execution_mode: runtime-backed
+runtime_command: setup-diff
 ---
 
 ## User Input

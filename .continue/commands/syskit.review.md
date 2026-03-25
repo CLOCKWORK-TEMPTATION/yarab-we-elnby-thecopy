@@ -1,5 +1,12 @@
 ---
 description: Peer review gate between task planning and implementation — analyzes sys.md, plan.md, and tasks.md from an external reviewer perspective to catch issues before coding begins.
+command_name: review
+command_family: Gate
+command_stage: phase-08
+command_requirement_level: mandatory
+command_visibility: primary
+command_execution_mode: strong-hybrid
+runtime_command: setup-review
 handoffs:
   - label: Start Implementation
     agent: syskit.implement

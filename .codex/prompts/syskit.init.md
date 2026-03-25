@@ -1,5 +1,12 @@
 ---
-description: Bootstrap a repository with Systematize KIT assets, templates, scripts, commands, and platform-specific guidance files before any feature workflow starts.
+description: Bootstrap a repository with Systematize Framework assets, templates, scripts, commands, and platform-specific guidance files before any feature workflow starts.
+command_name: init
+command_family: Admin
+command_stage: bootstrap
+command_requirement_level: mandatory
+command_visibility: primary
+command_execution_mode: runtime-backed
+runtime_command: init
 ---
 
 ## User Input
@@ -15,6 +22,13 @@ You **MUST** consider the user input before proceeding (if not empty).
 Initialize the current repository as a Systematize-enabled workspace.
 
 This command is the **first step** before `/syskit.systematize`, `/syskit.plan`, or `/syskit.tasks`.
+
+## Surface Role
+
+- **التهيئة الأولى**: هذا الأمر هو مسار التهيئة على مستوى المستودع.
+- المدخل الرسمي على الأسطح الظاهرة للمستخدم يبقى `/syskit.guide`.
+- استخدم هذا الأمر عندما تكون آثار التهيئة غير موجودة، لا بوصفه نقطة البداية اليومية الافتراضية.
+- بعد نجاح التهيئة يكون الافتراضي هو `/syskit.systematize` بوصفه **المسار الكامل**، ولا يُستخدم `/syskit.quickstart` إلا عند طلب **المسار السريع** صراحة.
 
 ## Outline
 
@@ -49,7 +63,8 @@ This command is the **first step** before `/syskit.systematize`, `/syskit.plan`,
    - platform-specific files such as `CLAUDE.md`, `AGENTS.md`, `.cursor/rules/*`, `.github/copilot-instructions.md`, `.continue/rules/*`, `.amazonq/rules/*`, `.vscode/*`
 
 5. **Report next step**:
-   - If bootstrap succeeded, guide the user to `/syskit.guide` or `/syskit.systematize`
+   - If bootstrap succeeded, recommend `/syskit.systematize` as the default next step
+   - Mention `/syskit.quickstart` only when the user explicitly wants the quick path
    - If some files were skipped because they already existed, summarize the skipped set clearly
    - If reinstall happened, summarize the target root, whether reinstall occurred, how many platforms were selected, created and overwritten counts, and where the snapshot was written
 

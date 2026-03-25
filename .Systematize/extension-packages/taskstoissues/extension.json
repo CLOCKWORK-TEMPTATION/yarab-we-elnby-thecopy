@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "name": "taskstoissues",
+  "type": "capability",
+  "capability": "taskstoissues",
+  "description": "Integration capability for syncing generated tasks to external issue trackers.",
+  "install_by_default": false,
+  "runtime_flags": [
+    "taskstoissues_enabled"
+  ],
+  "runtime_commands": [],
+  "custom_commands": [],
+  "hooks": {}
+}

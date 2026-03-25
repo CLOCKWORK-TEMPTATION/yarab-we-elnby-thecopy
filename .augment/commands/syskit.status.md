@@ -1,5 +1,12 @@
 ---
 description: Show comprehensive status overview of a feature — phase progress, health score, and next recommended step.
+command_name: status
+command_family: Inspection
+command_stage: inspection
+command_requirement_level: mandatory
+command_visibility: operational
+command_execution_mode: runtime-backed
+runtime_command: feature-status
 handoffs:
   - label: Run Next Step
     agent: ""

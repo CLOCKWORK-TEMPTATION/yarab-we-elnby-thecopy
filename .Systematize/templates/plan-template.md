@@ -249,7 +249,7 @@
 ### 12.1 Documentation (this feature)
 
 ```text
-aminooof/[###-feature]/
+features/[###-feature]/
 ├── plan.md              # This file (/syskit.plan output)
 ├── research.md          # Required research input (/syskit.research — 13-section deep research)
 ├── AGENTS.md            # Phase 1 output
