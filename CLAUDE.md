@@ -270,3 +270,19 @@ apps/web/src/app/(main)/editor/
 - الملف `هقولك بعض الامثلة ...ini` ملف عربي — لا تتجاهله ولا تحذفه
 - لا تفترض أسماء السكريبتات — اقرأها من package.json الفعلي
 - لا تفترض بنية workspace — اقرأها من pnpm-workspace.yaml الفعلي
+
+## Supported Platforms
+- Claude Code
+
+## Active Technologies
+- JavaScript ESM على Node.js >=18 مع أغلفة PowerShell ووثائق Markdown + pnpm وturbo وsyskit-cli وقوالب .Systematize وأوامر commands/ (003-strict-code-review)
+- نظام ملفات محلي داخل المستودع فقط (003-strict-code-review)
+- JavaScript ESM on Node.js >=18 + pnpm + turbo + syskit templates + command markdown surfaces (003-strict-code-review)
+
+
+- local filesystem only (003-strict-code-review)
+
+## Recent Changes
+- 003-strict-code-review: Updated agent context
+
+

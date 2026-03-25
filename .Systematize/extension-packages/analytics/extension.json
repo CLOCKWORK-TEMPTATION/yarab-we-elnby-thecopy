@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "name": "analytics",
+  "type": "capability",
+  "capability": "analytics",
+  "description": "Portfolio capability for runtime analytics and usage tracking.",
+  "install_by_default": true,
+  "runtime_flags": [
+    "analytics_enabled"
+  ],
+  "runtime_commands": [
+    "record-analytics"
+  ],
+  "custom_commands": [],
+  "hooks": {}
+}

@@ -1,0 +1,14 @@
+# Systematize Framework — التكوين العام
+schema_version: 1
+
+version: "2.0"                          # metadata only
+constitution_profile: "standard"        # reserved for constitution authoring workflow (lean | standard | enterprise)
+auto_healthcheck: true                  # تشغيل healthcheck بعد كل أمر
+auto_commit: false                      # auto-commit بعد كل أمر
+auto_changelog: true                    # إضافة changelog entries تلقائي
+default_preset: null                    # preset افتراضي (null = اسأل)
+alerts_enabled: false                   # تفعيل نظام التنبيهات
+export_enabled: false                   # تفعيل طبقة التصدير والتقارير فوقية المستوى
+export_format: "markdown"              # reserved for export orchestration and command guidance defaults
+analytics_enabled: true                 # تتبع الأداء
+taskstoissues_enabled: false            # تفعيل تحويل المهام إلى قضايا تكاملية اختيارية
