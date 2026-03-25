@@ -1,8 +1,8 @@
 function groupFinding(finding) {
+  if (finding.type === 'out_of_scope') return 'خارج النطاق الحالي';
   if (finding.severity === 'critical') return 'يجب إصلاحه فورًا';
   if (finding.severity === 'high') return 'يجب إصلاحه قبل أي ميزة جديدة';
-  if (finding.severity === 'medium') return 'يمكن تأجيله';
-  return 'تحسينات اختيارية';
+  return 'يمكن تأجيله بشروط';
 }
 
 function listProblems(findings = []) {
@@ -13,8 +13,8 @@ export function buildRepairPriorityMap(findings = []) {
   const groups = {
     'يجب إصلاحه فورًا': [],
     'يجب إصلاحه قبل أي ميزة جديدة': [],
-    'يمكن تأجيله': [],
-    'تحسينات اختيارية': []
+    'يمكن تأجيله بشروط': [],
+    'خارج النطاق الحالي': []
   };
 
   for (const finding of findings) {
@@ -43,19 +43,19 @@ export function buildFivePhaseActionPlan(findings = []) {
     phase_3: {
       title: 'المرحلة 3: تنظيف المنطق المشترك',
       goal: 'تقليل التكرار والرخاوة في الطبقات المشتركة.',
-      scope: listProblems(findings.filter((finding) => finding.layer === 'shared')),
+      scope: listProblems(findings.filter((finding) => ['shared', 'shared_packages'].includes(finding.layer))),
       success: 'تنخفض الرخاوة في المنطق المشترك وتصبح العقود أوضح للصيانة.'
     },
     phase_4: {
       title: 'المرحلة 4: ضبط الواجهة والتكامل',
       goal: 'منع الفشل الصامت وتثبيت عقود التكامل وتجربة الحالات الحدية.',
-      scope: listProblems(findings.filter((finding) => ['frontend', 'integration'].includes(finding.layer))),
+      scope: listProblems(findings.filter((finding) => ['frontend', 'integration', 'frontend_backend_integration', 'editor_subtree', 'backend'].includes(finding.layer))),
       success: 'تظهر أخطاء التكامل والحالات الحدية بصورة صريحة ويمكن التحقق منها.'
     },
     phase_5: {
       title: 'المرحلة 5: رفع الجاهزية الإنتاجية',
       goal: 'تثبيت المراقبة والجاهزية والأمن التشغيلي قبل الاعتماد.',
-      scope: listProblems(findings.filter((finding) => ['production', 'performance', 'security'].includes(finding.layer))),
+      scope: listProblems(findings.filter((finding) => ['production', 'performance', 'security', 'security_production_readiness', 'documentation_drift'].includes(finding.layer))),
       success: 'تتحسن الجاهزية التشغيلية ولا تبقى مخاطر إنتاجية كبيرة غير مغطاة.'
     }
   };

@@ -1,62 +1,55 @@
-# Strict Engineering Review Report
-
-**Branch**: `[BRANCH]`
-**Date**: [DATE]
-**Reviewer**: [REVIEWER]
-**Artifacts Reviewed**: sys.md, plan.md, tasks.md
+# Review
 
 ## Executive Summary
-
-**Verdict**: [🟢/🟡/🔴] [VERDICT_TEXT]
-**Review Mode**: [REVIEW_MODE]
-**Confidence**: [CONFIDENCE]
-**Executive Judgment**: [EXECUTIVE_JUDGMENT]
-
-[EXECUTIVE_SUMMARY]
+- Scope: [SCOPE]
+- Review Mode: [REVIEW_MODE]
+- Confidence: [CONFIDENCE]
+- Executive Judgment: [EXECUTIVE_JUDGMENT]
+- **Verdict**: [🟢 APPROVED | 🟡 APPROVED WITH CONDITIONS | 🔴 CHANGES REQUIRED]
 
 ## Critical Issues Table
 
-| ID | الشدة | النوع | الطبقة | الموقع | الوصف | الأثر | الإصلاح |
-|----|-------|-------|--------|--------|-------|-------|---------|
-| [ID] | [SEVERITY] | [TYPE] | [LAYER] | [LOCATION] | [PROBLEM] | [IMPACT] | [FIX] |
+| ID | Severity | Type | Layer | Location | Problem | Evidence | Impact | Minimal Fix |
+|----|----------|------|-------|----------|---------|----------|--------|-------------|
+| [ID] | [SEVERITY] | [TYPE] | [LAYER] | [LOCATION] | [PROBLEM] | [EVIDENCE] | [IMPACT] | [MINIMAL_FIX] |
 
 ## Layer-by-Layer Findings
 
-### package.json and toolchain
+### Toolchain and Workspace
 
-[TOOLCHAIN_FINDINGS]
+[TOOLCHAIN_WORKSPACE_FINDINGS]
 
-### automated checks
+### Automated Checks
 
-[AUTOMATED_CHECKS]
+[AUTOMATED_CHECKS_FINDINGS]
 
-### dev vs production boundaries
+### Documentation Drift
 
-[DEV_PROD_FINDINGS]
+[DOCUMENTATION_DRIFT_FINDINGS]
 
-### server and API
-
-[SERVER_FINDINGS]
-
-### shared logic
-
-[SHARED_FINDINGS]
-
-### frontend
+### Frontend
 
 [FRONTEND_FINDINGS]
 
-### frontend-backend integration
+### Editor Subtree
 
-[INTEGRATION_FINDINGS]
+[EDITOR_SUBTREE_FINDINGS]
 
-### security
+### Backend
 
-[SECURITY_FINDINGS]
+[BACKEND_FINDINGS]
 
-### performance and production readiness
+### Shared Packages
 
-[READINESS_FINDINGS]
+[SHARED_PACKAGES_FINDINGS]
+
+### Frontend–Backend Integration
+
+[FRONTEND_BACKEND_INTEGRATION_FINDINGS]
+
+### Security and Production Readiness
+
+[SECURITY_PRODUCTION_READINESS_FINDINGS]
 
 ## Confidence and Coverage
 

@@ -101,7 +101,13 @@ test('setup-review generates the strict executive report without placeholders', 
     assert.match(reviewContent, /## Executive Summary/);
     assert.match(reviewContent, /## Critical Issues Table/);
     assert.match(reviewContent, /## Layer-by-Layer Findings/);
+    assert.match(reviewContent, /### Toolchain and Workspace/);
+    assert.match(reviewContent, /### Documentation Drift/);
+    assert.match(reviewContent, /### Editor Subtree/);
+    assert.match(reviewContent, /### Frontend–Backend Integration/);
+    assert.match(reviewContent, /### Security and Production Readiness/);
     assert.match(reviewContent, /\*\*Verdict\*\*:/);
+    assert.match(reviewContent, /\| ID \| Severity \| Type \| Layer \| Location \| Problem \| Evidence \| Impact \| Minimal Fix \|/);
     assert.equal(/\[[A-Z_]{3,}(?::[^\]]+)?\]/.test(reviewContent), false);
   } finally {
     rmSync(tempRepo, { recursive: true, force: true });

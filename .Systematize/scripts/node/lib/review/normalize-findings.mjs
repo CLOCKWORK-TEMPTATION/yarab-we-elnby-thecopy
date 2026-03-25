@@ -7,9 +7,11 @@ const SEVERITY_ORDER = {
 
 const TYPE_ORDER = {
   confirmed_error: 0,
-  potential_risk: 1,
-  design_weakness: 2,
-  suggested_improvement: 3
+  execution_gap: 1,
+  potential_risk: 2,
+  documentation_drift: 3,
+  design_weakness: 4,
+  out_of_scope: 5
 };
 
 function choosePreferred(left, right, orderMap) {

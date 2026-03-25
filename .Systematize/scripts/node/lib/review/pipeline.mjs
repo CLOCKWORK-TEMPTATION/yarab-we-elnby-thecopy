@@ -2,7 +2,9 @@ import { join } from 'node:path';
 import { createGateStatus } from './gate-status.mjs';
 import { createReviewRequestContext } from './request-context.mjs';
 import { deriveConfidenceModel } from './confidence-model.mjs';
+import { auditDocumentationDrift } from './documentation-drift-audit.mjs';
 import { auditDevProductionBoundaries } from './dev-prod-audit.mjs';
+import { auditEditorSubtree } from './editor-subtree-audit.mjs';
 import { auditFrontendAndIntegration } from './frontend-integration-audit.mjs';
 import { normalizeFindings } from './normalize-findings.mjs';
 import { runP1BaselineReview, inferAutomatedCheckFindings } from './p1-orchestrator.mjs';
@@ -119,11 +121,13 @@ export function runReviewPipeline(repoRoot, options = {}) {
   const featureDir = options.featureDir || join(repoRoot, 'features');
   const reviewFile = options.reviewFile || join(featureDir, 'review.md');
   const baseline = runP1BaselineReview(repoRoot, { execute: options.execute !== false });
+  const documentationDrift = auditDocumentationDrift(repoRoot);
   const devProd = auditDevProductionBoundaries(repoRoot);
+  const editorSubtree = auditEditorSubtree(repoRoot);
   const serverShared = auditServerAndSharedLogic(repoRoot);
   const frontendIntegration = auditFrontendAndIntegration(repoRoot);
   const securityReadiness = auditSecurityAndReadiness(repoRoot);
-  const skippedLayers = collectSkippedLayers(serverShared, frontendIntegration);
+  const skippedLayers = collectSkippedLayers(editorSubtree, serverShared, frontendIntegration);
 
   const confidenceModel = deriveConfidenceModel({
     checkResults: baseline.automated_checks.results,
@@ -133,15 +137,16 @@ export function runReviewPipeline(repoRoot, options = {}) {
   const allFindings = normalizeFindings([
     ...addReviewSection(baseline.toolchain.findings, 'toolchain'),
     ...addReviewSection(inferAutomatedCheckFindings(baseline.automated_checks.results), 'automated_checks'),
-    ...addReviewSection(devProd.findings, 'dev_vs_production'),
-    ...addReviewSection(serverShared.findings.filter((finding) => finding.layer === 'server'), 'server'),
-    ...addReviewSection(serverShared.findings.filter((finding) => finding.layer === 'shared'), 'shared'),
+    ...addReviewSection(documentationDrift.findings, 'documentation_drift'),
     ...addReviewSection(frontendIntegration.findings.filter((finding) => finding.layer === 'frontend'), 'frontend'),
-    ...addReviewSection(frontendIntegration.findings.filter((finding) => finding.layer === 'integration'), 'integration'),
-    ...addReviewSection(securityReadiness.findings.filter((finding) => finding.layer === 'security'), 'security'),
+    ...addReviewSection(editorSubtree.findings, 'editor_subtree'),
+    ...addReviewSection(serverShared.findings.filter((finding) => finding.layer === 'server'), 'backend'),
+    ...addReviewSection(serverShared.findings.filter((finding) => finding.layer === 'shared'), 'shared_packages'),
+    ...addReviewSection(frontendIntegration.findings.filter((finding) => finding.layer === 'integration'), 'frontend_backend_integration'),
+    ...addReviewSection(securityReadiness.findings.filter((finding) => finding.layer === 'security'), 'security_production_readiness'),
     ...addReviewSection(
-      securityReadiness.findings.filter((finding) => ['production', 'performance'].includes(finding.layer)),
-      'performance_production'
+      [...devProd.findings, ...securityReadiness.findings.filter((finding) => ['production', 'performance'].includes(finding.layer))],
+      'security_production_readiness'
     )
   ]);
 
@@ -156,10 +161,10 @@ export function runReviewPipeline(repoRoot, options = {}) {
     feature_dir: featureDir,
     requested_output: reviewFile,
     required_artifacts: ['sys.md', 'plan.md', 'tasks.md'],
-    requested_sections: [
-      'Executive Summary',
-      'Critical Issues Table',
-      'Layer-by-Layer Findings',
+      requested_sections: [
+        'Executive Summary',
+        'Critical Issues Table',
+        'Layer-by-Layer Findings',
       'Confidence and Coverage',
       'Repair Priority Map',
       'Action Plan'
@@ -189,7 +194,9 @@ export function runReviewPipeline(repoRoot, options = {}) {
     reviewed_artifacts: ['sys.md', 'plan.md', 'tasks.md'],
     evidence: [
       ...baseline.evidence,
+      ...documentationDrift.evidence,
       ...devProd.evidence,
+      ...editorSubtree.evidence,
       ...serverShared.evidence,
       ...frontendIntegration.evidence,
       ...securityReadiness.evidence
@@ -199,15 +206,15 @@ export function runReviewPipeline(repoRoot, options = {}) {
     findings: sortFindings(allFindings),
     critical_issues: sortFindings(allFindings.filter((finding) => ['critical', 'high'].includes(finding.severity))),
     sections: {
-      toolchain: filterSectionFindings(allFindings, 'toolchain', ['toolchain', 'config']),
+      toolchain_workspace: filterSectionFindings(allFindings, 'toolchain', ['toolchain', 'config', 'toolchain_workspace']),
       automated_checks: filterSectionFindings(allFindings, 'automated_checks'),
-      dev_vs_production: filterSectionFindings(allFindings, 'dev_vs_production', ['production']),
-      server: filterSectionFindings(allFindings, 'server', ['server']),
-      shared: filterSectionFindings(allFindings, 'shared', ['shared']),
+      documentation_drift: filterSectionFindings(allFindings, 'documentation_drift', ['documentation_drift']),
       frontend: filterSectionFindings(allFindings, 'frontend', ['frontend']),
-      integration: filterSectionFindings(allFindings, 'integration', ['integration']),
-      security: filterSectionFindings(allFindings, 'security', ['security']),
-      performance_production: filterSectionFindings(allFindings, 'performance_production', ['performance', 'production'])
+      editor_subtree: filterSectionFindings(allFindings, 'editor_subtree', ['editor_subtree']),
+      backend: filterSectionFindings(allFindings, 'backend', ['backend', 'server']),
+      shared_packages: filterSectionFindings(allFindings, 'shared_packages', ['shared_packages', 'shared']),
+      frontend_backend_integration: filterSectionFindings(allFindings, 'frontend_backend_integration', ['frontend_backend_integration', 'integration']),
+      security_production_readiness: filterSectionFindings(allFindings, 'security_production_readiness', ['security_production_readiness', 'security', 'performance', 'production'])
     },
     coverage: buildCoverageSummary({
       baseline,

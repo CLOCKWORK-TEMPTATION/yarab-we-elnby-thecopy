@@ -6,7 +6,9 @@ const TYPE_LABELS = {
   confirmed_error: 'خطأ مؤكد',
   potential_risk: 'خطر محتمل',
   design_weakness: 'ضعف تصميمي',
-  suggested_improvement: 'تحسين مقترح'
+  documentation_drift: 'انجراف توثيقي',
+  execution_gap: 'فجوة تنفيذ/تحقق',
+  out_of_scope: 'خارج النطاق'
 };
 
 const SEVERITY_LABELS = {
@@ -17,19 +19,23 @@ const SEVERITY_LABELS = {
 };
 
 const SECTION_TITLES = [
-  ['toolchain', 'package.json and toolchain'],
-  ['automated_checks', 'automated checks'],
-  ['dev_vs_production', 'dev vs production boundaries'],
-  ['server', 'server and API'],
-  ['shared', 'shared logic'],
+  ['toolchain_workspace', 'Toolchain and Workspace'],
+  ['automated_checks', 'Automated Checks'],
+  ['documentation_drift', 'Documentation Drift'],
   ['frontend', 'frontend'],
-  ['integration', 'frontend-backend integration'],
-  ['security', 'security'],
-  ['performance_production', 'performance and production readiness']
+  ['editor_subtree', 'Editor Subtree'],
+  ['backend', 'Backend'],
+  ['shared_packages', 'Shared Packages'],
+  ['frontend_backend_integration', 'Frontend–Backend Integration'],
+  ['security_production_readiness', 'Security and Production Readiness']
 ];
 
+function escapeCell(value) {
+  return String(value || '').replace(/\|/g, '\\|');
+}
+
 function formatFindingRow(finding) {
-  return `| ${finding.id} | ${SEVERITY_LABELS[finding.severity] || finding.severity} | ${TYPE_LABELS[finding.type] || finding.type} | ${finding.layer} | ${finding.location.replace(/\|/g, '\\|')} | ${finding.problem.replace(/\|/g, '\\|')} | ${finding.impact.replace(/\|/g, '\\|')} | ${finding.fix.replace(/\|/g, '\\|')} |`;
+  return `| ${escapeCell(finding.id)} | ${SEVERITY_LABELS[finding.severity] || finding.severity} | ${TYPE_LABELS[finding.type] || finding.type} | ${escapeCell(finding.layer)} | ${escapeCell(finding.location)} | ${escapeCell(finding.problem)} | ${escapeCell(finding.evidence)} | ${escapeCell(finding.impact)} | ${escapeCell(finding.fix)} |`;
 }
 
 function renderFindingsTable(findings = []) {
@@ -38,8 +44,8 @@ function renderFindingsTable(findings = []) {
   }
 
   return [
-    '| ID | الشدة | النوع | الطبقة | الموقع | الوصف | الأثر | الإصلاح |',
-    '|----|-------|-------|--------|--------|-------|-------|---------|',
+    '| ID | Severity | Type | Layer | Location | Problem | Evidence | Impact | Minimal Fix |',
+    '|----|----------|------|-------|----------|---------|----------|--------|-------------|',
     ...findings.map(formatFindingRow)
   ].join('\n');
 }
@@ -62,30 +68,26 @@ function renderCriticalIssues(findings = []) {
   }
 
   return [
-    '| ID | الشدة | النوع | الطبقة | الموقع | الوصف | الأثر | الإصلاح |',
-    '|----|-------|-------|--------|--------|-------|-------|---------|',
+    '| ID | Severity | Type | Layer | Location | Problem | Evidence | Impact | Minimal Fix |',
+    '|----|----------|------|-------|----------|---------|----------|--------|-------------|',
     ...findings.map(formatFindingRow)
   ].join('\n');
 }
 
 function renderCoverageLines(coverage) {
   const lines = [
-    `- ما تم فحصه: ${coverage.reviewed_artifacts.join('، ')}`,
-    `- ما تم تشغيله: ${coverage.executed_checks.length > 0 ? coverage.executed_checks.map((item) => item.command).join(' | ') : 'لم ينجح أي فحص تنفيذي كامل.'}`,
-    `- ما تعذر تشغيله: ${coverage.blocked_checks.length > 0 ? coverage.blocked_checks.map((item) => item.command || item.name).join(' | ') : 'لا يوجد.'}`,
-    `- ما لم يتوفر: ${coverage.unavailable_checks.length > 0 ? coverage.unavailable_checks.map((item) => item.name).join('، ') : 'لا يوجد.'}`
+    `- ما الذي تم التحقق منه فعليًا: ${coverage.reviewed_artifacts.join('، ')}`,
+    `- ما الذي تعذر تنفيذه: ${coverage.blocked_checks.length > 0 ? coverage.blocked_checks.map((item) => item.command || item.name).join(' | ') : 'لا يوجد.'}`,
+    `- ما الذي تم تعويضه بتحليل ساكن: ${coverage.unavailable_checks.length > 0 ? coverage.unavailable_checks.map((item) => item.name).join('، ') : 'لا يوجد.'}`,
+    `- ما الذي بقي خارج التغطية: ${coverage.skipped_layers.length > 0 ? coverage.skipped_layers.map((item) => `${item.layer}: ${item.reason}`).join(' | ') : 'لا يوجد.'}`
   ];
 
-  if (coverage.skipped_layers.length > 0) {
-    lines.push(`- الطبقات غير المقيمة بالكامل: ${coverage.skipped_layers.map((item) => `${item.layer}: ${item.reason}`).join(' | ')}`);
-  } else {
-    lines.push('- الطبقات غير المقيمة بالكامل: لا يوجد.');
-  }
+  lines.push(`- الأوامر التنفيذية التي أمكن تشغيلها: ${coverage.executed_checks.length > 0 ? coverage.executed_checks.map((item) => item.command).join(' | ') : 'لا توجد أوامر منفذة بنجاح أو بفشل قابل للقياس.'}`);
 
   if (coverage.confidence_reasons.length > 0) {
-    lines.push(`- أثر ذلك على الثقة: ${coverage.confidence_reasons.map((item) => `${item.message} (${item.evidence})`).join(' | ')}`);
+    lines.push(`- لماذا الثقة High أو Medium أو Low: ${coverage.confidence_reasons.map((item) => `${item.message} (${item.evidence})`).join(' | ')}`);
   } else {
-    lines.push('- أثر ذلك على الثقة: لا توجد فجوات تغطية تقلل الثقة ضمن الأدلة الحالية.');
+    lines.push('- لماذا الثقة High أو Medium أو Low: لا توجد فجوات تغطية تقلل الثقة ضمن الأدلة الحالية.');
   }
 
   return lines.join('\n');
@@ -95,8 +97,8 @@ function renderPriorityMap(priorityMap) {
   const groups = [
     'يجب إصلاحه فورًا',
     'يجب إصلاحه قبل أي ميزة جديدة',
-    'يمكن تأجيله',
-    'تحسينات اختيارية'
+    'يمكن تأجيله بشروط',
+    'خارج النطاق الحالي'
   ];
 
   const parts = [];
@@ -137,23 +139,16 @@ function renderActionPlan(actionPlan) {
 
 export function renderReviewFile(report) {
   const lines = [
-    '# Strict Engineering Review Report',
-    '',
-    `**Branch**: \`${report.request_context.branch}\``,
-    `**Date**: ${report.generated_at.slice(0, 10)}`,
-    '**Reviewer**: Codex',
-    `**Artifacts Reviewed**: ${report.reviewed_artifacts.join(', ')}`,
+    '# Review',
     '',
     '## Executive Summary',
-    `**Verdict**: ${report.gate_verdict}`,
-    `**Review Mode**: ${report.review_mode}`,
-    `**Confidence**: ${report.confidence}`,
-    `**Executive Judgment**: ${report.executive_judgment}`,
+    `- Scope: ${report.reviewed_artifacts.join(', ')} + root manifests + apps/web + apps/backend + packages + apps/web/src/app/(main)/editor`,
+    `- Review Mode: ${report.review_mode}`,
+    `- Confidence: ${report.confidence}`,
+    `- Executive Judgment: ${report.executive_judgment}`,
+    `- **Verdict**: ${report.gate_verdict}`,
     '',
-    'هذه المراجعة تعتمد على أدلة بنيوية وتشغيلية من المستودع الحالي وتعرض الحقيقة الهندسية كما هي ضمن حدود ما أمكن تشغيله فعليًا.',
-    'القرار التنفيذي يجب أن يُقرأ مع التغطية الفعلية ومع الموانع أو الطبقات غير المقيمة بالكامل.',
-    '',
-    'أخطر خمس مشكلات:',
+    'أخطر المشكلات المؤكدة ضمن حدود الأدلة الحالية:',
     ...(report.critical_issues.slice(0, 5).map((finding, index) => `${index + 1}. ${finding.problem}`)),
     ...(report.critical_issues.length === 0 ? ['1. لا توجد مشكلات حرجة أو عالية ضمن الأدلة الحالية.'] : []),
     '',

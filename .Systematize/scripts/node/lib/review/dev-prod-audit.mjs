@@ -61,7 +61,7 @@ export function auditDevProductionBoundaries(repoRoot) {
   if (scripts.build && !scripts.start && !scripts.preview) {
     findings.push(createFinding({
       id: 'FD-DP-003',
-      type: 'suggested_improvement',
+      type: 'design_weakness',
       severity: 'low',
       layer: 'production',
       location: packageJsonPath,

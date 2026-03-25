@@ -111,7 +111,7 @@ export function auditToolchain(repoRoot, inventory) {
   if (nextDependencyPresent && !inventory.governance_files.next_config) {
     findings.push(createFinding({
       id: `FD-TC-${String(findings.length + 3).padStart(3, '0')}`,
-      type: 'suggested_improvement',
+      type: 'design_weakness',
       severity: 'low',
       layer: 'toolchain',
       location: repoRoot,

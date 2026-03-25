@@ -2,7 +2,9 @@ export const FINDING_TYPES = Object.freeze([
   'confirmed_error',
   'potential_risk',
   'design_weakness',
-  'suggested_improvement'
+  'documentation_drift',
+  'execution_gap',
+  'out_of_scope'
 ]);
 
 export const FINDING_SEVERITIES = Object.freeze([
@@ -15,13 +17,21 @@ export const FINDING_SEVERITIES = Object.freeze([
 export const FINDING_LAYERS = Object.freeze([
   'config',
   'toolchain',
+  'documentation_drift',
   'server',
   'shared',
   'frontend',
   'integration',
   'security',
   'performance',
-  'production'
+  'production',
+  'editor_subtree',
+  'backend',
+  'shared_packages',
+  'frontend_backend_integration',
+  'security_production_readiness',
+  'automated_checks',
+  'toolchain_workspace'
 ]);
 
 function uniqueList(values = []) {
