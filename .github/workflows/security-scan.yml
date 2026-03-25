@@ -111,12 +111,12 @@ jobs:
 
       - name: Run npm audit
         run: |
-          cd frontend && npm audit --audit-level=high || echo "Frontend audit completed with warnings"
-          cd ../backend && npm audit --audit-level=high || echo "Backend audit completed with warnings"
+          cd apps/web && npm audit --audit-level=high || echo "Frontend audit completed with warnings"
+          cd ../../apps/backend && npm audit --audit-level=high || echo "Backend audit completed with warnings"
         continue-on-error: true
 
       - name: Run Snyk Security Scan
-        if: ${{ secrets.SNYK_TOKEN != '' }}
+        if: env.SNYK_TOKEN != ''
         uses: snyk/actions/node@master
         continue-on-error: true
         env:
