@@ -20,41 +20,24 @@ export interface AppConfig {
 }
 
 /**
- * يحصل على قيمة من كائن window بشكل آمن
- * 
- * السبب: نتجنب الأخطاء في بيئة الخادم حيث window غير متاح
- * 
- * @param key - اسم المفتاح
- * @returns القيمة أو undefined
- */
-const getWindowValue = (key: string): string | undefined => {
-  if (typeof window === 'undefined') return undefined;
-  const windowObj = window as unknown as Record<string, unknown>;
-  const value = windowObj[key];
-  return typeof value === 'string' ? value : undefined;
-};
-
-/**
  * يحصل على مفتاح API من مصادر متعددة بترتيب الأولوية
- * 
+ *
  * السبب: ندعم مصادر متعددة لمفتاح API لتوفير المرونة
  * في بيئات التطوير والإنتاج المختلفة
- * 
+ *
  * @returns مفتاح API أو سلسلة فارغة
  */
 export const getAPIKey = (): string => {
   // ترتيب الأولوية:
   // 1. متغير البيئة GEMINI_API_KEY
   // 2. متغير البيئة API_KEY (احتياطي)
-  // 3. المتغير العالمي في النافذة (للتطوير)
-  // 4. سلسلة فارغة
-  
-  const apiKey = 
-    process.env.GEMINI_API_KEY || 
-    process.env.API_KEY || 
-    getWindowValue('GEMINI_API_KEY') ||
+  // 3. سلسلة فارغة
+
+  const apiKey =
+    process.env.GEMINI_API_KEY ||
+    process.env.API_KEY ||
     '';
-  
+
   return apiKey;
 };
 

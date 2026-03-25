@@ -1,5 +1,8 @@
 // @the-copy/editor — main entry point
-// Re-exports all business logic extracted from the editor app
+// Contains the extracted editor business logic as a standalone workspace package.
+// These are real source files (classes, handlers, helpers, components, types, config)
+// that live in packages/editor/src/ — NOT re-exports from apps/web.
+// Consumed by apps/web and potentially other apps via workspace:* dependency.
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 export * from './types/types';

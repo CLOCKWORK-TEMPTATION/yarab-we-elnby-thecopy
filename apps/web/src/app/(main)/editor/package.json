@@ -2,7 +2,7 @@
   "name": "screenplay-editor",
   "private": true,
   "version": "1.0.0",
-  "packageManager": "pnpm@10.28.0",
+  "packageManager": "pnpm@10.32.1",
   "type": "module",
   "description": "محرر سيناريو عربي مبني على Tiptap v3",
   "scripts": {
