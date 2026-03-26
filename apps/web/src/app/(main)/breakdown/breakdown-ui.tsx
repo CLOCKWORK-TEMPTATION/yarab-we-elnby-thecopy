@@ -169,7 +169,7 @@ export function BreakdownInsightList({
       <CardContent>
         <ul className="space-y-2">
           {items.map((item, index) => (
-            <li key={`${title}-${index}`} className="flex items-start">
+            <li key={`${title}-${item}-${index}`} className="flex items-start">
               <span className={`mr-2 ${bulletClassName}`}>•</span>
               {item}
             </li>

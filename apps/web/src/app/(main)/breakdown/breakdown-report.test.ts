@@ -38,7 +38,7 @@ describe("readAnalysisReportFromStorage", () => {
     });
   });
 
-  it("يحوّل threatsToCoherence إلى threatsToCohesion قبل التحقق", () => {
+  it("يحوّل threatsToCoherence إلى threatsToCohesion قبل التحقق من الصحة", () => {
     const storage = {
       getItem: vi.fn().mockReturnValue(JSON.stringify(validStoredResults)),
     };
