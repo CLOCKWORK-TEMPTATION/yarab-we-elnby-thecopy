@@ -59,14 +59,14 @@ export function AppDock({
     : buttons;
 
   return (
-    <div className="app-dock pointer-events-none absolute left-0 right-0 top-0 z-50 flex justify-center pt-2">
+    <div className="app-dock pointer-events-none absolute left-0 right-0 top-0 z-40 flex justify-center pt-3">
       <div className="pointer-events-auto">
         <HoverBorderGradient
           as="div"
           duration={1}
           containerClassName="mx-auto rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.4)]"
-          className={`flex items-end rounded-[inherit] bg-neutral-900/80 ${
-            isMobile ? "h-14 gap-2 px-3 pb-2" : "h-16 gap-2 px-4 pb-3"
+          className={`flex items-center rounded-[inherit] bg-neutral-950/80 backdrop-blur-2xl ${
+            isMobile ? "h-14 gap-2 px-3" : "h-16 gap-3.5 px-5"
           }`}
         >
           {visibleButtons.map((button, index) => {
@@ -82,7 +82,7 @@ export function AppDock({
                   onClick={() => onAction(button.actionId)}
                 />
                 {showSeparator && (
-                  <div className="mx-3 mb-4 h-5 w-px bg-gradient-to-b from-transparent via-neutral-600/50 to-transparent" />
+                  <div className="mx-3 h-5 self-center w-px bg-gradient-to-b from-transparent via-neutral-600/50 to-transparent" />
                 )}
               </React.Fragment>
             );

@@ -1,5 +1,4 @@
 import React, { useMemo, useState } from "react";
-import { Search, Sparkles } from "lucide-react";
 import { HoverBorderGradient } from "../ui/hover-border-gradient";
 
 export interface AppSidebarSection {
@@ -49,23 +48,25 @@ export function AppSidebar({
 
   return (
     <aside
-      className="app-sidebar hidden w-72 flex-col p-6 lg:flex"
+      className="app-sidebar absolute inset-y-4 right-3 z-30 flex w-[15rem] flex-col sm:right-4 sm:w-[16rem] lg:right-8 lg:w-72 xl:right-10"
       data-testid="app-sidebar"
     >
       <HoverBorderGradient
         as="div"
         duration={1}
-        containerClassName="h-full w-full rounded-3xl"
-        className="flex h-full w-full flex-col items-stretch rounded-[inherit] bg-neutral-900/60 p-4 backdrop-blur-2xl"
+        containerClassName="h-full w-full rounded-3xl shadow-[0_30px_80px_-28px_rgba(0,0,0,0.92)]"
+        className="relative z-[2] flex h-full w-full flex-col items-stretch rounded-[inherit] bg-neutral-900/60 p-4 backdrop-blur-2xl"
       >
         <div className="group relative mb-8">
           <HoverBorderGradient
             as="div"
             duration={1}
             containerClassName="w-full rounded-xl group"
-            className="flex w-full items-center rounded-[inherit] bg-neutral-950 px-3 py-3"
+            className="flex w-full items-center gap-2 rounded-[inherit] bg-neutral-900/90 px-3 py-3"
           >
-            <Search className="size-[18px] text-neutral-500 transition-colors group-focus-within:text-primary" />
+            <span className="size-4 text-center text-[var(--muted-foreground)] transition-colors group-focus-within:text-[var(--brand)]">
+              ⌕
+            </span>
             <input
               id="sidebar-search"
               name="sidebar-search"
@@ -80,7 +81,7 @@ export function AppSidebar({
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
               data-testid="sidebar-search"
-              className="w-full border-none bg-transparent px-3 text-sm text-white placeholder:text-neutral-600 focus:outline-none"
+              className="w-full border-none bg-transparent text-[13px] text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] focus:outline-none"
             />
             <kbd className="hidden rounded bg-neutral-800 px-1.5 py-0.5 text-[10px] text-neutral-400 group-hover:block">
               ⌘K
@@ -182,9 +183,9 @@ export function AppSidebar({
             as="div"
             duration={1}
             containerClassName="w-full rounded-2xl"
-            className="from-primary/10 to-accent/10 flex w-full flex-col items-start rounded-[inherit] bg-gradient-to-br p-4"
+            className="flex w-full flex-col items-start rounded-[inherit] bg-neutral-900/90 p-4"
           >
-            <Sparkles className="text-primary mb-2 size-5" />
+            <span className="text-primary mb-2 text-base">✦</span>
             <p className="text-xs font-light leading-relaxed text-[var(--muted-foreground)]">
               تم تفعيل وضع التركيز الذكي. استمتع بتجربة كتابة خالية من المشتتات.
             </p>

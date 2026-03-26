@@ -14,7 +14,7 @@ export function AppFooter({
 }: AppFooterProps): React.JSX.Element {
   return (
     <footer
-      className="app-footer flex-shrink-0 border-t bg-[var(--card)] px-4 py-1.5 text-xs"
+      className="app-footer relative z-40 flex-shrink-0 border-t border-white/[0.04] bg-neutral-950/80 px-4 py-1 text-[11px] backdrop-blur-2xl"
       style={{ direction: "rtl" }}
     >
       <div className="flex items-center justify-between">

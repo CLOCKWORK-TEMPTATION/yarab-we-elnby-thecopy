@@ -554,7 +554,7 @@ export function App(): React.JSX.Element {
   /* ──────────────────────── JSX ──────────────────────── */
   return (
     <div
-      className="app-root selection:bg-primary/30 selection:text-primary-foreground flex h-screen flex-col overflow-hidden bg-neutral-950 font-['Cairo'] text-neutral-200"
+      className="app-root selection:bg-[var(--brand)]/30 flex h-screen flex-col overflow-hidden bg-[var(--background)] font-['Cairo'] text-[var(--foreground)]"
       dir="rtl"
       data-testid="app-root"
     >
@@ -614,7 +614,7 @@ export function App(): React.JSX.Element {
           }
         />
 
-        <main className="app-editor-main relative flex flex-1 flex-col overflow-hidden">
+        <main className="app-editor-main relative flex min-w-0 flex-1 flex-col overflow-hidden">
           <AppDock
             buttons={DOCK_BUTTONS}
             isMobile={isMobile}
@@ -623,8 +623,8 @@ export function App(): React.JSX.Element {
             }}
           />
 
-          <div className="app-editor-scroll flex flex-1 justify-center overflow-y-auto p-8 pt-24">
-            <div className="app-editor-shell relative -mt-8 w-full max-w-[850px] pb-20">
+          <div className="app-editor-scroll scrollbar-none flex flex-1 justify-center overflow-y-auto p-6 pt-20 sm:p-8 sm:pt-24 lg:pr-[24rem] xl:pr-[26rem]">
+            <div className="app-editor-shell relative mt-5 w-full max-w-[850px] pb-20 sm:mt-6 lg:mr-10 xl:mr-14">
               <div
                 ref={editorMountRef}
                 className="editor-area app-editor-host"
@@ -635,13 +635,11 @@ export function App(): React.JSX.Element {
         </main>
       </div>
 
-      <div className="relative z-50 flex-shrink-0 bg-neutral-950/80 backdrop-blur-md">
-        <AppFooter
-          stats={stats}
-          currentFormatLabel={currentFormatLabel}
-          isMobile={isMobile}
-        />
-      </div>
+      <AppFooter
+        stats={stats}
+        currentFormatLabel={currentFormatLabel}
+        isMobile={isMobile}
+      />
 
       <PipelineMonitor
         visible={showPipelineMonitor}
