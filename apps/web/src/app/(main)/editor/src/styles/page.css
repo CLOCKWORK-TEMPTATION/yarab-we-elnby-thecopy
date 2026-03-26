@@ -2,11 +2,11 @@
    منطقة التحرير والصفحة
    =================================== */
 .editor-area {
-  flex-grow: 1;
+  width: 100%;
   display: flex;
   justify-content: center;
-  padding: 30px 20px 60px;
-  overflow-y: auto;
+  padding: 0;
+  overflow: visible;
 }
 
 /* ===================================
@@ -14,15 +14,20 @@
    =================================== */
 .screenplay-sheet {
   width: var(--page-width) !important;
+  height: var(--page-height);
   min-height: var(--page-height);
-  background-color: var(--color-page-bg);
-  box-shadow: var(--shadow-page);
-  display: block !important;
+  background-color: #ffffff;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
   position: relative;
-  overflow: visible !important;
-  margin: 0 auto !important;
-  border-radius: 0 !important;
+  overflow: hidden;
+  margin: 0 auto;
+  border-radius: var(--radius-xl);
   padding: 0 !important;
+  color: black;
 }
 
 .screenplay-sheet.filmlane-sheet-paged {

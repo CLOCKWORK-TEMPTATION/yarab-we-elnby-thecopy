@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { Search, Sparkles } from "lucide-react";
 import { HoverBorderGradient } from "../ui/hover-border-gradient";
 
 export interface AppSidebarSection {
@@ -62,11 +63,9 @@ export function AppSidebar({
             as="div"
             duration={1}
             containerClassName="w-full rounded-xl group"
-            className="flex w-full items-center gap-2 rounded-[inherit] bg-neutral-900/90 px-3 py-3"
+            className="flex w-full items-center rounded-[inherit] bg-neutral-950 px-3 py-3"
           >
-            <span className="size-4 text-center text-[var(--muted-foreground)] transition-colors group-focus-within:text-[var(--brand)]">
-              ⌕
-            </span>
+            <Search className="size-[18px] text-neutral-500 transition-colors group-focus-within:text-primary" />
             <input
               id="sidebar-search"
               name="sidebar-search"
@@ -81,7 +80,7 @@ export function AppSidebar({
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
               data-testid="sidebar-search"
-              className="w-full border-none bg-transparent text-[13px] text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] focus:outline-none"
+              className="w-full border-none bg-transparent px-3 text-sm text-white placeholder:text-neutral-600 focus:outline-none"
             />
             <kbd className="hidden rounded bg-neutral-800 px-1.5 py-0.5 text-[10px] text-neutral-400 group-hover:block">
               ⌘K
@@ -183,9 +182,9 @@ export function AppSidebar({
             as="div"
             duration={1}
             containerClassName="w-full rounded-2xl"
-            className="flex w-full flex-col items-start rounded-[inherit] bg-neutral-900/90 p-4"
+            className="from-primary/10 to-accent/10 flex w-full flex-col items-start rounded-[inherit] bg-gradient-to-br p-4"
           >
-            <span className="text-primary mb-2 text-base">✦</span>
+            <Sparkles className="text-primary mb-2 size-5" />
             <p className="text-xs font-light leading-relaxed text-[var(--muted-foreground)]">
               تم تفعيل وضع التركيز الذكي. استمتع بتجربة كتابة خالية من المشتتات.
             </p>

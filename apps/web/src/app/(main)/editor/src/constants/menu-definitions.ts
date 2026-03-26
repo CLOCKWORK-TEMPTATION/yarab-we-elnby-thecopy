@@ -4,6 +4,7 @@
  *   مستخرجة من `App.tsx` لتطبيق مبدأ المسؤولية الواحدة.
  */
 import {
+  Film,
   Download,
   Upload,
   Save,
@@ -13,7 +14,6 @@ import {
   Redo2,
   Bold,
   Italic,
-  AlignLeft,
   AlignRight,
   AlignCenter,
   Stethoscope,
@@ -21,10 +21,7 @@ import {
   MessageSquare,
   FileText,
   List,
-  BookOpen,
   Settings,
-  Clapperboard,
-  CheckCircle,
 } from "lucide-react";
 import { insertMenuDefinitions, type EditorStyleFormatId } from "./insert-menu";
 import type {
@@ -127,7 +124,7 @@ export const HELP_MENU_ITEMS: readonly AppShellMenuItem[] = [
   },
 ];
 
-/** أقسام القائمة الرئيسية: ملف، تعديل، إضافة، تنسيق، أدوات، مساعدة */
+/** أقسام القائمة الرئيسية: ملف، تعديل، إدراج، تنسيق، أدوات، مساعدة */
 export const MENU_SECTIONS: readonly AppShellMenuSection[] = [
   {
     label: "ملف",
@@ -160,7 +157,7 @@ export const MENU_SECTIONS: readonly AppShellMenuSection[] = [
     ],
   },
   {
-    label: "إضافة",
+    label: "إدراج",
     items: INSERT_MENU_ITEMS,
   },
   {
@@ -180,13 +177,8 @@ export const MENU_SECTIONS: readonly AppShellMenuSection[] = [
 /** أزرار شريط Dock العائم */
 export const DOCK_BUTTONS: readonly AppDockButtonItem[] = [
   {
-    actionId: "export-classified",
-    icon: CheckCircle,
-    title: "موافقة واعتماد النص (تصدير TXT)",
-  },
-  {
     actionId: "quick-cycle-format",
-    icon: Clapperboard,
+    icon: Film,
     title: "تبديل التنسيق المباشر",
   },
   { actionId: "export-pdf", icon: Download, title: "تصدير PDF" },
@@ -206,7 +198,6 @@ export const DOCK_BUTTONS: readonly AppDockButtonItem[] = [
   { actionId: "italic", icon: Italic, title: "مائل" },
   { actionId: "align-right", icon: AlignRight, title: "محاذاة لليمين" },
   { actionId: "align-center", icon: AlignCenter, title: "توسيط" },
-  { actionId: "align-left", icon: AlignLeft, title: "محاذاة لليسار" },
   { actionId: "about", icon: Info, title: "عن المحرر" },
 ];
 
@@ -218,21 +209,21 @@ export const SIDEBAR_SECTIONS: readonly AppSidebarSection[] = [
     icon: FileText,
     items: [
       "سيناريو فيلم.docx",
-      "مسودة الحلقة الأولى.docx",
-      "مشاهد مُصنفة.docx",
+      "مسودة الحلقة 1.docx",
+      "ملاحظات المخرج.docx",
     ],
   },
   {
     id: "projects",
     label: "المشاريع",
     icon: List,
-    items: ["فيلم الرحلة", "مسلسل الحارة", "ورشة أفان تيتر"],
+    items: ["مسلسل الأخوة", "فيلم الرحلة", "مسلسل الحارة"],
   },
   {
     id: "library",
     label: "المكتبة",
-    icon: BookOpen,
-    items: ["قوالب المشاهد", "الشخصيات", "الملاحظات"],
+    icon: Upload,
+    items: ["القوالب", "الشخصيات", "المشاهد المحفوظة", "المفضلة"],
   },
   { id: "settings", label: "الإعدادات", icon: Settings, items: [] },
 ] as const;
