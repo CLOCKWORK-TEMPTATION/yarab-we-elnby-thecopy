@@ -121,6 +121,7 @@ export const useHeroAnimation = (
       )
 
       // Phase 3: Card Animation Setup - performance optimized
+      // Split into two groups: right group (4 cards) from bottom-right, left group (3 cards) from top-left
       // phase3Images defined in outer scope
 
       // performance optimization: add will-change for cards
@@ -128,26 +129,54 @@ export const useHeroAnimation = (
         gsap.set(img, { willChange: "transform, opacity" })
       })
 
-      phase3Images.forEach((img, i) => {
-        const staggerDelay = i * 0.12 // reduced delay for faster speed
+      // Group A: indices 3-6 (center + right side) — enter from bottom-right
+      const rightGroup = phase3Images.slice(3, 7)
+      // Group B: indices 0-2 (left side) — enter from top-left
+      const leftGroup = phase3Images.slice(0, 3)
+
+      // Right group (4 cards): enter from bottom-right, sweep upward to upper-right area
+      rightGroup.forEach((img, i) => {
+        const staggerDelay = i * 0.12
 
         tl.fromTo(
           img,
-          { y: "120vh", rotation: 0, opacity: 0 },
+          { top: "130%", left: "75%", x: 0, y: 0, rotation: 0, opacity: 0 },
           {
-            y: 0,
+            top: "20%",
+            left: "90%",
             opacity: 1,
-            duration: 0.7, // reduced duration for faster speed
+            duration: 0.7,
             ease: "power2.out",
-            force3D: true, // force GPU acceleration
+            force3D: true,
           },
-          2.5 + staggerDelay, // timing optimization
+          2.5 + staggerDelay,
+        )
+      })
+
+      // Left group (3 cards): enter from top-left, sweep downward to lower-left area — same start time
+      leftGroup.forEach((img, i) => {
+        const staggerDelay = i * 0.12
+
+        tl.fromTo(
+          img,
+          { top: "-40%", left: "20%", x: 0, y: 0, rotation: 0, opacity: 0 },
+          {
+            top: "80%",
+            left: "10%",
+            opacity: 1,
+            duration: 0.7,
+            ease: "power2.out",
+            force3D: true,
+          },
+          2.5 + staggerDelay,
         )
       })
 
       tl.to(
         ".phase-3-img",
         {
+          x: 0,
+          y: 0,
           top: (i) => (i < responsiveValues.cardPositions.length ? (responsiveValues.cardPositions[i]?.top || "50%") : "100vh"),
           left: (i) => (i < responsiveValues.cardPositions.length ? (responsiveValues.cardPositions[i]?.left || "50%") : "50%"),
 

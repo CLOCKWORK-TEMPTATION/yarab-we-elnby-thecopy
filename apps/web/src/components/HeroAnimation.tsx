@@ -45,11 +45,9 @@ export const HeroAnimation = () => {
 
         {/* Original Unified Entity - Clickable Portal to /ui */}
         <div className="frozen-container relative w-full h-full flex items-center justify-center origin-center pointer-events-none">
-          <Link
-            href="/ui"
+          <div
             id="center-unified-entity"
-            aria-label="فتح قائمة أدوات النسخة"
-            className="unified-entity relative w-full h-full flex items-center justify-center block pointer-events-auto focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FFD700]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black rounded-2xl"
+            className="unified-entity relative w-full h-full flex items-center justify-center pointer-events-none"
           >
             {/* V-Shape Container */}
             <div className="v-shape-container absolute top-0 left-0 w-full h-full m-0 p-0">
@@ -60,9 +58,10 @@ export const HeroAnimation = () => {
                   const zIndex = 10010 - distanceFromCenter
 
                   return (
-                    <div
+                    <Link
+                      href="/ui"
                       key={`v-card-${i}`}
-                      className="phase-3-img hero-vcard absolute origin-center"
+                      className="phase-3-img hero-vcard absolute origin-center pointer-events-auto cursor-pointer"
                       style={{
                         width: `${responsiveValues.cardWidth}px`,
                         height: `${responsiveValues.cardHeight}px`,
@@ -84,7 +83,7 @@ export const HeroAnimation = () => {
                         })()}
                         <div className="hero-card-sheen absolute inset-0 pointer-events-none" />
                       </div>
-                    </div>
+                    </Link>
                   )
                 })}
               </div>
@@ -115,7 +114,7 @@ export const HeroAnimation = () => {
                 </div>
               </div>
             </div>
-          </Link>
+          </div>
         </div>
       </div>
 

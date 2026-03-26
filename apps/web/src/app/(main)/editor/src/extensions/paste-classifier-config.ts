@@ -93,6 +93,66 @@ export const REVIEWABLE_AGENT_TYPES = new Set<LineType>([
   "basmala",
 ]);
 
+// ─── Agent Review Constants ──────────────────────────────────────
+
+export const AGENT_REVIEW_MODEL: string =
+  (process.env.NEXT_PUBLIC_AGENT_REVIEW_MODEL as string | undefined)?.trim() ||
+  (process.env.AGENT_REVIEW_MODEL as string | undefined)?.trim() ||
+  "anthropic:claude-sonnet-4-6";
+
+export const AGENT_REVIEW_DEADLINE_MS = 120_000;
+export const AGENT_REVIEW_MAX_ATTEMPTS = 3;
+export const AGENT_REVIEW_MAX_RATIO = 0.05;
+export const AGENT_REVIEW_MIN_TIMEOUT_MS = 5_000;
+export const AGENT_REVIEW_MAX_TIMEOUT_MS = 60_000;
+export const AGENT_REVIEW_RETRY_DELAY_MS = 1_000;
+
+export const AGENT_REVIEW_FAIL_OPEN: boolean = (() => {
+  const v =
+    (
+      process.env.NEXT_PUBLIC_AGENT_REVIEW_FAIL_OPEN as string | undefined
+    )?.trim() ||
+    (process.env.VITE_AGENT_REVIEW_FAIL_OPEN as string | undefined)?.trim();
+  if (!v) return false;
+  return v === "true" || v === "1";
+})();
+
+const resolveAgentReviewEndpoint = (): string => {
+  const raw =
+    (
+      process.env.NEXT_PUBLIC_AGENT_REVIEW_BACKEND_URL as string | undefined
+    )?.trim() ||
+    (
+      process.env.VITE_FILE_IMPORT_BACKEND_URL as string | undefined
+    )?.trim() ||
+    (process.env.NODE_ENV === "development"
+      ? "http://127.0.0.1:8787/api/agent-review"
+      : "");
+  if (!raw) return "";
+  const normalized = normalizeEndpoint(raw);
+  if (
+    normalized.endsWith("/api/file-extract") ||
+    normalized.endsWith("/api/agent-review")
+  ) {
+    const base = normalized.replace(/\/api\/[^/]+$/, "");
+    return `${base}/api/agent-review`;
+  }
+  return `${normalized}/api/agent-review`;
+};
+
+export const AGENT_REVIEW_ENDPOINT = resolveAgentReviewEndpoint();
+
+export const VALID_AGENT_DECISION_TYPES = new Set<LineType>([
+  "action",
+  "dialogue",
+  "character",
+  "scene_header_top_line",
+  "scene_header_3",
+  "transition",
+  "parenthetical",
+  "basmala",
+]);
+
 // ─── Final Review Constants ──────────────────────────────────────
 export const FINAL_REVIEW_ENDPOINT = resolveFinalReviewEndpoint();
 export const FINAL_REVIEW_MAX_RATIO = 0.05;
