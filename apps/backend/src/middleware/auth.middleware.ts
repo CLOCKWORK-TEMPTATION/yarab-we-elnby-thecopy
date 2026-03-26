@@ -1,19 +1,16 @@
 import { Request, Response, NextFunction } from 'express';
 import { authService } from '@/services/auth.service';
-import type { User } from '@/db/schema';
 
 /**
- * واجهة الطلب المصادق عليه
+ * نوع الطلب المصادق عليه
  * 
  * @description
- * توسيع لواجهة Request من Express لتشمل بيانات المستخدم بعد التحقق من الهوية
+ * اسم مستعار لـ Request — الخصائص userId و user مُعرّفة عبر module augmentation
+ * في global.d.ts، لذا كل Request يحملها تلقائياً بعد مرور وسيط المصادقة.
+ * 
+ * @deprecated استخدم Request مباشرة — هذا الاسم المستعار للتوافق مع الكود القديم فقط
  */
-export interface AuthRequest extends Request {
-  /** معرف المستخدم الفريد */
-  userId?: string;
-  /** بيانات المستخدم كاملة (بدون كلمة المرور) */
-  user?: Omit<User, 'passwordHash'>;
-}
+export type AuthRequest = Request;
 
 /**
  * استخراج قيمة المعرّف من معاملات الطلب بشكل آمن
@@ -31,26 +28,28 @@ export function getParamAsString(paramValue: string | string[] | undefined): str
   return paramValue;
 }
 
-export const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const authMiddleware = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
     const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
 
     if (!token) {
-      return res.status(401).json({ success: false, error: 'غير مصرح - يرجى تسجيل الدخول' });
+      res.status(401).json({ success: false, error: 'غير مصرح - يرجى تسجيل الدخول' });
+      return;
     }
 
     const { userId } = authService.verifyToken(token);
     const user = await authService.getUserById(userId);
     
     if (!user) {
-      return res.status(401).json({ success: false, error: 'المستخدم غير موجود' });
+      res.status(401).json({ success: false, error: 'المستخدم غير موجود' });
+      return;
     }
 
     req.userId = userId;
-    req.user = user;
-    return next();
+    req.user = user as Express.Request['user'];
+    next();
   } catch (error) {
-    return res.status(401).json({ success: false, error: 'رمز التحقق غير صالح' });
+    res.status(401).json({ success: false, error: 'رمز التحقق غير صالح' });
   }
 };

@@ -3,7 +3,7 @@ import { TaskType } from "@core/enums";
 import { AIAgentConfig } from "@core/types";
 
 const agentRegistry = new Map<TaskType, AIAgentConfig>(
-  AGENT_CONFIGS.map((config): readonly [string, AIAgentConfig] => [
+  AGENT_CONFIGS.map((config: AIAgentConfig): readonly [string, AIAgentConfig] => [
     config.id as any,
     config,
   ]) as any

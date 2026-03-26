@@ -15,7 +15,6 @@ const enabledApps = getEnabledApps()
 
 // Create mapping for grid cells (0-15, excluding center cells 5, 6, 9, 10)
 // This gives us 12 available cells for apps (grid shows first 12 apps)
-// For all 13 apps, use the /apps-overview page
 const availableGridCells = [0, 1, 2, 3, 4, 7, 8, 11, 12, 13, 14, 15]
 
 // Map apps to grid cells
@@ -52,7 +51,7 @@ export default function UILauncherPage() {
             href="/apps-overview"
             className="text-xs md:text-sm text-[#FFD700]/80 hover:text-[#FFD700] transition-colors flex items-center gap-1"
           >
-            <span>عرض جميع التطبيقات (13)</span>
+            <span>{`عرض جميع التطبيقات (${enabledApps.length})`}</span>
             <span>→</span>
           </Link>
         </div>

@@ -146,7 +146,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run ESLint
-        run: pnpm --filter frontend lint
+        run: pnpm --filter @the-copy/web lint
         continue-on-error: false
 
   lint-backend:
@@ -220,7 +220,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run TypeCheck
-        run: pnpm --filter frontend typecheck
+        run: pnpm --filter @the-copy/web type-check
 
   typecheck-backend:
     name: 📝 TypeCheck Backend
@@ -295,7 +295,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run Tests
-        run: pnpm --filter frontend test
+        run: pnpm --filter @the-copy/web test
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
@@ -401,7 +401,7 @@ jobs:
             ${{ runner.os }}-nextjs-
 
       - name: Build Frontend
-        run: pnpm --filter frontend build
+        run: pnpm --filter @the-copy/web build
         env:
           NODE_ENV: production
           NEXT_TELEMETRY_DISABLED: 1
@@ -511,7 +511,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Install Playwright browsers
-        run: pnpm --filter frontend exec playwright install --with-deps chromium
+        run: pnpm --filter @the-copy/web exec playwright install --with-deps chromium
 
       - name: Download frontend build
         uses: actions/download-artifact@v4
@@ -520,7 +520,7 @@ jobs:
           path: apps/web/.next
 
       - name: Run E2E tests
-        run: pnpm --filter frontend e2e
+        run: pnpm --filter @the-copy/web e2e
         env:
           CI: true
 

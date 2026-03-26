@@ -1,5 +1,4 @@
 #!/usr/bin/env sh
 
-# Pre-push hook disabled — frontend directory not present in current structure
-# Re-enable when project structure includes frontend/
-exit 0
+echo "Running pre-push verification..."
+pnpm prepush:verify

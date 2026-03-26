@@ -16,15 +16,32 @@ const envSchema = z.object({
   RATE_LIMIT_WINDOW_MS: z.string().default('900000').transform(Number), // 15 minutes
   RATE_LIMIT_MAX_REQUESTS: z.string().default('100').transform(Number),
   // Redis Configuration (for caching and job queues)
+  FRONTEND_URL: z.string().optional(),
+  REDIS_ENABLED: z.string().optional(),
   REDIS_URL: z.string().optional(),
   REDIS_HOST: z.string().optional().default('localhost'),
   REDIS_PORT: z.string().optional().default('6379').transform(Number),
   REDIS_PASSWORD: z.string().optional(),
+  REDIS_SENTINEL_ENABLED: z.string().optional(),
+  REDIS_SENTINELS: z.string().optional(),
+  REDIS_MASTER_NAME: z.string().optional(),
+  REDIS_SENTINEL_PASSWORD: z.string().optional(),
   // Sentry Configuration (for error tracking and performance monitoring)
   SENTRY_DSN: z.string().optional(),
   SENTRY_ORG: z.string().optional(),
   SENTRY_PROJECT: z.string().optional(),
   SENTRY_AUTH_TOKEN: z.string().optional(),
+  SENTRY_RELEASE: z.string().optional(),
+  SENTRY_SERVER_NAME: z.string().optional(),
+  SENTRY_TRACES_SAMPLE_RATE: z.string().optional(),
+  SENTRY_PROFILES_SAMPLE_RATE: z.string().optional(),
+  SENTRY_SUPPRESS_TURBOPACK_WARNING: z.string().optional(),
+  SENTRY_SUPPRESS_GLOBAL_ERROR_HANDLER_FILE_WARNING: z.string().optional(),
+  TRACING_ENABLED: z.string().optional(),
+  SERVICE_NAME: z.string().optional(),
+  FILE_IMPORT_HOST: z.string().optional(),
+  FILE_IMPORT_PORT: z.string().optional(),
+  LOG_LEVEL: z.string().optional(),
 });
 
 const parsedEnv = envSchema.parse(process.env);

@@ -39,7 +39,7 @@ class AIAgentOrchestraManager {
    * Initialize the complete AI Agent Orchestra with cutting-edge capabilities
    */
   private initializeAgentOrchestra(): void {
-    AGENT_CONFIGS.forEach((config) => {
+    AGENT_CONFIGS.forEach((config: AIAgentConfig) => {
       this.agents.set(config.id as any, config);
     });
   }
@@ -52,17 +52,17 @@ class AIAgentOrchestraManager {
       const collaborators = new Set<TaskType>();
 
       // Direct collaborations
-      agent.collaboratesWith?.forEach((collaboratorId) => {
+      agent.collaboratesWith?.forEach((collaboratorId: string) => {
         collaborators.add(collaboratorId as any);
       });
 
       // Dependencies
-      agent.dependsOn?.forEach((dependencyId) => {
+      agent.dependsOn?.forEach((dependencyId: string) => {
         collaborators.add(dependencyId as any);
       });
 
       // Enhanced agents
-      agent.enhances?.forEach((enhancedId) => {
+      agent.enhances?.forEach((enhancedId: string) => {
         collaborators.add(enhancedId as any);
       });
 
@@ -128,7 +128,7 @@ class AIAgentOrchestraManager {
       const agent = this.agents.get(taskType);
       if (agent) {
         // Process dependencies first
-        agent.dependsOn?.forEach((dep) => dfs(dep as any));
+        agent.dependsOn?.forEach((dep: string) => dfs(dep as any));
         result.push(taskType);
       }
     };

@@ -510,10 +510,10 @@ function calculateEvidenceOverlap(args: DebateArgument[]): number {
   let overlapCount = 0;
   let totalComparisons = 0;
 
-  for (let i = 0; i < arguments.length; i++) {
-    for (let j = i + 1; j < arguments.length; j++) {
-      const evidence1 = arguments[i].evidence;
-      const evidence2 = arguments[j].evidence;
+  for (let i = 0; i < args.length; i++) {
+    for (let j = i + 1; j < args.length; j++) {
+      const evidence1 = args[i].evidence;
+      const evidence2 = args[j].evidence;
 
       evidence1.forEach(e1 => {
         evidence2.forEach(e2 => {

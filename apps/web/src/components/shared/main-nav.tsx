@@ -8,7 +8,6 @@ import {
   Pen,
   PenSquare,
   Sparkles,
-  Rocket,
   Film,
 } from "lucide-react";
 import {
@@ -47,11 +46,6 @@ const menuItems = [
     href: "/brain-storm-ai",
     label: "الورشة",
     icon: BrainCircuit,
-  },
-  {
-    href: "/new",
-    label: "جديد",
-    icon: Rocket,
   },
 ];
 

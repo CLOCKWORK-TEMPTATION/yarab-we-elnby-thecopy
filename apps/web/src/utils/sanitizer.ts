@@ -70,8 +70,8 @@ export function sanitizeFilename(filename: string): string {
  */
 export const CSP_CONFIG = {
   'default-src': "'self'",
-  'script-src': "'self' 'unsafe-inline'",
-  'style-src': "'self' 'unsafe-inline' fonts.googleapis.com",
+  'script-src': "'self'",
+  'style-src': "'self' fonts.googleapis.com",
   'font-src': "'self' fonts.gstatic.com",
   'img-src': "'self' data: blob:",
   'connect-src': "'self' generativelanguage.googleapis.com",

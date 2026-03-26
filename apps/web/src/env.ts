@@ -13,6 +13,34 @@ const serverSchema = z.object({
   // Gemini API Keys - Server-side only for security
   GEMINI_API_KEY_STAGING: z.string().optional(),
   GEMINI_API_KEY_PROD: z.string().optional(),
+  AGENT_REVIEW_MODEL: z.string().optional(),
+  FINAL_REVIEW_MODEL: z.string().optional(),
+  AI_DOUBT_ENABLED: z.string().optional(),
+  ALLOWED_DEV_ORIGIN: z.string().optional(),
+  FILE_IMPORT_HOST: z.string().optional(),
+  FILE_IMPORT_PORT: z.string().optional(),
+  LOG_LEVEL: z.string().optional(),
+  SKIP_ENV_VALIDATION: z.string().optional(),
+  TRACING_ENABLED: z.string().optional(),
+  SERVICE_NAME: z.string().optional(),
+  ANALYZE: z.string().optional(),
+  PDF_EXTRACTOR_MODE: z.string().optional(),
+  MISTRAL_PAGEWISE_CORRECTION_ENABLED: z.string().optional(),
+  PDF_OCR_AGENT_ENABLED: z.string().optional(),
+  PDF_OCR_AGENT_TIMEOUT_MS: z.string().optional(),
+  PDF_OCR_AGENT_PAGES: z.string().optional(),
+  PDF_OCR_AGENT_CLASSIFY_ENABLED: z.string().optional(),
+  PDF_OCR_AGENT_ENHANCE_ENABLED: z.string().optional(),
+  PDF_OCR_ENABLE_VISION_PROOFREAD: z.string().optional(),
+  OPEN_PDF_AGENT_VERIFY_FOOTPRINT: z.string().optional(),
+  OPEN_PDF_AGENT_ENABLE_MCP_STAGE: z.string().optional(),
+  MISTRAL_HTTP_TIMEOUT_MS: z.string().optional(),
+  MISTRAL_HTTP_MAX_RETRIES: z.string().optional(),
+  MISTRAL_HTTP_RETRY_BASE_MS: z.string().optional(),
+  MISTRAL_BATCH_TIMEOUT_SEC: z.string().optional(),
+  MISTRAL_BATCH_POLL_INTERVAL_SEC: z.string().optional(),
+  VITE_FILE_IMPORT_BACKEND_URL: z.string().optional(),
+  VITE_AGENT_REVIEW_FAIL_OPEN: z.string().optional(),
 
   // Sentry server configuration
   SENTRY_DSN: z.string().optional(),
@@ -35,12 +63,30 @@ const clientSchema = z.object({
   NEXT_PUBLIC_APP_ENV: z
     .enum(["development", "staging", "production"])
     .default("staging"),
+  NEXT_PUBLIC_ENVIRONMENT: z.string().optional(),
+  NEXT_PUBLIC_API_URL: z.string().optional(),
+  NEXT_PUBLIC_BACKEND_URL: z.string().optional(),
+  NEXT_PUBLIC_FILE_IMPORT_BACKEND_URL: z.string().optional(),
+  NEXT_PUBLIC_FINAL_REVIEW_BACKEND_URL: z.string().optional(),
+  NEXT_PUBLIC_AI_DOUBT_ENABLED: z.string().optional(),
+  NEXT_PUBLIC_ENABLE_CDN: z.string().optional(),
+  NEXT_PUBLIC_CDN_URL: z.string().optional(),
+  NEXT_PUBLIC_TRACING_ENABLED: z.string().optional(),
+  NEXT_PUBLIC_SERVICE_NAME: z.string().optional(),
+  NEXT_PUBLIC_APP_VERSION: z.string().optional(),
 
   // Sentry client configuration
   NEXT_PUBLIC_SENTRY_DSN: z.string().optional(),
 
   // Gemini API Key for client-side (if needed)
   NEXT_PUBLIC_GEMINI_API_KEY: z.string().optional(),
+  NEXT_PUBLIC_FIREBASE_API_KEY: z.string().optional(),
+  NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: z.string().optional(),
+  NEXT_PUBLIC_FIREBASE_PROJECT_ID: z.string().optional(),
+  NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: z.string().optional(),
+  NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: z.string().optional(),
+  NEXT_PUBLIC_FIREBASE_APP_ID: z.string().optional(),
+  NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: z.string().optional(),
 });
 
 /**

@@ -19,10 +19,6 @@ export default function RootLayout({
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <head>
         <meta
-          httpEquiv="Content-Security-Policy"
-          content="media-src 'self' https://cdn.pixabay.com https://*.pixabay.com blob: data:;"
-        />
-        <meta
           httpEquiv="Cache-Control"
           content="no-cache, no-store, must-revalidate"
         />

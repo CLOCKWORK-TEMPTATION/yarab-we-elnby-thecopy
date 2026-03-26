@@ -75,7 +75,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build Frontend
-        run: pnpm --filter frontend build
+        run: pnpm --filter @the-copy/web build
         env:
           NODE_ENV: production
           NEXT_TELEMETRY_DISABLED: 1

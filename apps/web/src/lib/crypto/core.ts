@@ -9,6 +9,9 @@
  * 4. DEK عشوائي لكل مستند ويُلف بواسطة KEK
  */
 
+// نوع مساعد لتوافق Uint8Array مع Web Crypto API في TypeScript 5.7+
+type CryptoBuffer = Uint8Array<ArrayBuffer>;
+
 // ثوابت التشفير
 export const CRYPTO_CONSTANTS = {
   // KDF (Key Derivation Function)
@@ -59,15 +62,15 @@ export interface AADParams {
 /**
  * توليد ملح عشوائي
  */
-export function generateSalt(): Uint8Array {
-  return crypto.getRandomValues(new Uint8Array(CRYPTO_CONSTANTS.SALT_LENGTH));
+export function generateSalt(): CryptoBuffer {
+  return crypto.getRandomValues(new Uint8Array(CRYPTO_CONSTANTS.SALT_LENGTH)) as CryptoBuffer;
 }
 
 /**
  * توليد IV عشوائي
  */
-export function generateIV(): Uint8Array {
-  return crypto.getRandomValues(new Uint8Array(CRYPTO_CONSTANTS.AES_IV_LENGTH));
+export function generateIV(): CryptoBuffer {
+  return crypto.getRandomValues(new Uint8Array(CRYPTO_CONSTANTS.AES_IV_LENGTH)) as CryptoBuffer;
 }
 
 /**
@@ -107,7 +110,7 @@ export async function deriveKEK(
   return await crypto.subtle.deriveKey(
     {
       name: 'PBKDF2',
-      salt: salt,
+      salt: salt as CryptoBuffer,
       iterations: CRYPTO_CONSTANTS.KDF_ITERATIONS,
       hash: CRYPTO_CONSTANTS.KDF_HASH,
     },
@@ -142,7 +145,7 @@ export async function deriveAuthVerifier(
   const verifierBits = await crypto.subtle.deriveBits(
     {
       name: 'PBKDF2',
-      salt: salt,
+      salt: salt as CryptoBuffer,
       iterations: CRYPTO_CONSTANTS.KDF_ITERATIONS,
       hash: CRYPTO_CONSTANTS.KDF_HASH,
     },
@@ -150,16 +153,16 @@ export async function deriveAuthVerifier(
     256 // 256 بت
   );
   
-  return new Uint8Array(verifierBits);
+  return new Uint8Array(verifierBits) as CryptoBuffer;
 }
 
 /**
  * بناء AAD من المعلمات
  */
-export function buildAAD(params: AADParams): Uint8Array {
+export function buildAAD(params: AADParams): CryptoBuffer {
   const encoder = new TextEncoder();
   const aadString = `${params.userId}:${params.docId}:${params.version}`;
-  return encoder.encode(aadString);
+  return encoder.encode(aadString) as CryptoBuffer;
 }
 
 /**
@@ -177,8 +180,8 @@ export async function encryptData(
   const ciphertext = await crypto.subtle.encrypt(
     {
       name: 'AES-GCM',
-      iv: iv,
-      additionalData: aad,
+      iv: iv as CryptoBuffer,
+      additionalData: aad as CryptoBuffer,
       tagLength: CRYPTO_CONSTANTS.AES_TAG_LENGTH,
     },
     dek,
@@ -202,8 +205,8 @@ export async function decryptData(
   const decrypted = await crypto.subtle.decrypt(
     {
       name: 'AES-GCM',
-      iv: params.iv,
-      additionalData: aad,
+      iv: params.iv as CryptoBuffer,
+      additionalData: aad as CryptoBuffer,
       tagLength: CRYPTO_CONSTANTS.AES_TAG_LENGTH,
     },
     dek,
@@ -229,7 +232,7 @@ export async function wrapDEK(
     kek,
     {
       name: 'AES-GCM',
-      iv: iv,
+      iv: iv as CryptoBuffer,
       tagLength: CRYPTO_CONSTANTS.AES_TAG_LENGTH,
     }
   );
@@ -251,7 +254,7 @@ export async function unwrapDEK(
     kek,
     {
       name: 'AES-GCM',
-      iv: iv,
+      iv: iv as CryptoBuffer,
       tagLength: CRYPTO_CONSTANTS.AES_TAG_LENGTH,
     },
     {
@@ -352,14 +355,14 @@ export function base64ToArrayBuffer(base64: string): ArrayBuffer {
   for (let i = 0; i < binary.length; i++) {
     bytes[i] = binary.charCodeAt(i);
   }
-  return bytes.buffer;
+  return bytes.buffer as ArrayBuffer;
 }
 
 /**
  * تحويل Uint8Array إلى Base64
  */
 export function uint8ArrayToBase64(array: Uint8Array): string {
-  return arrayBufferToBase64(array.buffer);
+  return arrayBufferToBase64(array.buffer as ArrayBuffer);
 }
 
 /**

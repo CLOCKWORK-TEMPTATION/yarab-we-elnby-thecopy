@@ -17,10 +17,16 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
 
   // Redis (all optional - graceful degradation)
+  FRONTEND_URL: z.string().optional(),
+  REDIS_ENABLED: z.string().optional(),
   REDIS_URL: z.string().optional(),
   REDIS_HOST: z.string().optional(),
   REDIS_PORT: z.string().optional(),
   REDIS_PASSWORD: z.string().optional(),
+  REDIS_SENTINEL_ENABLED: z.string().optional(),
+  REDIS_SENTINELS: z.string().optional(),
+  REDIS_MASTER_NAME: z.string().optional(),
+  REDIS_SENTINEL_PASSWORD: z.string().optional(),
 
   // Monitoring (all optional)
   SENTRY_DSN: z.string().optional(),
@@ -29,8 +35,15 @@ const envSchema = z.object({
   SENTRY_AUTH_TOKEN: z.string().optional(),
   SENTRY_RELEASE: z.string().optional(),
   SENTRY_SERVER_NAME: z.string().optional(),
+  SENTRY_TRACES_SAMPLE_RATE: z.string().optional(),
+  SENTRY_PROFILES_SAMPLE_RATE: z.string().optional(),
   SENTRY_SUPPRESS_TURBOPACK_WARNING: z.string().optional(),
   SENTRY_SUPPRESS_GLOBAL_ERROR_HANDLER_FILE_WARNING: z.string().optional(),
+  TRACING_ENABLED: z.string().optional(),
+  SERVICE_NAME: z.string().optional(),
+  FILE_IMPORT_HOST: z.string().optional(),
+  FILE_IMPORT_PORT: z.string().optional(),
+  LOG_LEVEL: z.string().optional(),
 
   // CORS
   CORS_ORIGIN: z.string().min(1),

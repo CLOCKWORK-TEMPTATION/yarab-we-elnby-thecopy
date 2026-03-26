@@ -10,10 +10,11 @@
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/server.js",
     "test": "vitest",
+    "test:config": "vitest run src/config/env.test.ts",
     "test:coverage": "vitest run --coverage",
     "test:mongodb": "tsx scripts/test-mongodb-connection.ts",
-    "lint": "eslint src --ext .ts --max-warnings=0",
-    "lint:fix": "eslint src --ext .ts --fix",
+    "lint": "eslint src --max-warnings=0",
+    "lint:fix": "eslint src --fix",
     "type-check": "tsc --noEmit --skipLibCheck",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
@@ -87,7 +88,7 @@
     "socket.io": "^4.8.3",
     "uuid": "^13.0.0",
     "winston": "^3.11.0",
-    "zod": "^4.3.2"
+    "zod": "3.25.76"
   },
   "devDependencies": {
     "@types/compression": "^1.7.5",

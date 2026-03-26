@@ -4,17 +4,29 @@
  */
 
 declare global {
-    // توسيع namespace Express لإضافة خاصية user إلى Request
-    // Extend Express namespace to add user property to Request
+    // توسيع namespace Express لإضافة خصائص المصادقة إلى Request
+    // Extend Express namespace to add authentication properties to Request
     namespace Express {
         interface Request {
-            // بيانات المستخدم المصادق - يتم تعيينها بواسطة middleware المصادقة
-            // Authenticated user data - set by authentication middleware
+            /** معرف المستخدم الفريد — يُعيّنه وسيط المصادقة */
+            userId?: string;
+            /** بيانات المستخدم كاملة (بدون كلمة المرور) — يُعيّنها وسيط المصادقة */
             user?: {
                 id: string;
                 email: string;
-                firstName?: string;
-                lastName?: string;
+                passwordHash?: never; // منع تسرب الهاش عبر النوع
+                firstName?: string | null;
+                lastName?: string | null;
+                profileImageUrl?: string | null;
+                mfaEnabled?: boolean;
+                mfaSecret?: string | null;
+                authVerifierHash?: string | null;
+                kdfSalt?: string | null;
+                publicKey?: string | null;
+                createdAt?: Date;
+                updatedAt?: Date;
+                lastLogin?: Date | null;
+                accountStatus?: string;
             };
         }
     }

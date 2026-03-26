@@ -1,3 +1,9 @@
+/**
+ * السجل المركزي للتطبيقات المعروضة داخل المنصة.
+ *
+ * يجب أن يبقى هذا الملف هو المصدر المرجعي للمسارات المفعّلة ووصفها المختصر،
+ * لأن مشغّل التطبيقات وصفحة الاستعراض العامة يعتمدان عليه مباشرة.
+ */
 export interface PlatformApp {
   id: string;
   name: string;
@@ -11,6 +17,14 @@ export interface PlatformApp {
   badge?: string;
 }
 
+/**
+ * قائمة التطبيقات التي تعرضها المنصة للمستخدم النهائي.
+ *
+ * أي إضافة أو إزالة هنا تؤثر مباشرة على:
+ * - صفحة مشغّل التطبيقات
+ * - صفحة الاستعراض العام
+ * - وثائق السطح العام للمستودع
+ */
 export const platformApps: PlatformApp[] = [
   {
     id: "breakdown",
@@ -114,6 +128,30 @@ export const platformApps: PlatformApp[] = [
     enabled: true
   },
   {
+    id: "arabic-creative-writing-studio",
+    name: "Arabic Creative Writing Studio",
+    nameAr: "استوديو الكتابة العربية",
+    description: "بيئة كتابة عربية متخصصة بالتجريب والتحرير وصناعة المسودات الإبداعية",
+    icon: "✒️",
+    path: "/arabic-creative-writing-studio",
+    color: "from-fuchsia-600 to-rose-600",
+    category: "creative",
+    enabled: true,
+    badge: "Arabic"
+  },
+  {
+    id: "arabic-prompt-engineering-studio",
+    name: "Arabic Prompt Engineering Studio",
+    nameAr: "استوديو هندسة التوجيهات",
+    description: "تحليل التوجيهات العربية ومقارنتها وبناء قوالب عملية قابلة لإعادة الاستخدام",
+    icon: "🧪",
+    path: "/arabic-prompt-engineering-studio",
+    color: "from-sky-600 to-indigo-600",
+    category: "analysis",
+    enabled: true,
+    badge: "Prompt Lab"
+  },
+  {
     id: "brainstorm",
     name: "Brain Storm AI",
     nameAr: "عصف ذهني بالذكاء الاصطناعي",
@@ -134,6 +172,18 @@ export const platformApps: PlatformApp[] = [
     color: "from-slate-600 to-gray-600",
     category: "production",
     enabled: true
+  },
+  {
+    id: "metrics-dashboard",
+    name: "Metrics Dashboard",
+    nameAr: "لوحة المقاييس",
+    description: "مراقبة صحة النظام والأداء والموارد من واجهة تشغيل واحدة",
+    icon: "📊",
+    path: "/metrics-dashboard",
+    color: "from-emerald-600 to-teal-600",
+    category: "management",
+    enabled: true,
+    badge: "Ops"
   },
   {
     id: "breakapp",
@@ -161,19 +211,30 @@ export const platformApps: PlatformApp[] = [
   }
 ];
 
-// Helper functions
+/**
+ * يعيد تعريف تطبيق واحد حسب المعرّف الداخلي.
+ */
 export function getAppById(id: string): PlatformApp | undefined {
   return platformApps.find(app => app.id === id);
 }
 
+/**
+ * يعيد جميع التطبيقات المنتمية إلى فئة واحدة دون تصفية حالة التفعيل.
+ */
 export function getAppsByCategory(category: PlatformApp["category"]): PlatformApp[] {
   return platformApps.filter(app => app.category === category);
 }
 
+/**
+ * يعيد التطبيقات المفعلة فقط داخل فئة محددة.
+ */
 export function getEnabledAppsByCategory(category: PlatformApp["category"]): PlatformApp[] {
   return platformApps.filter(app => app.category === category && app.enabled);
 }
 
+/**
+ * يعيد جميع التطبيقات المفعلة التي يجب أن تظهر للمستخدم حاليًا.
+ */
 export function getEnabledApps(): PlatformApp[] {
   return platformApps.filter(app => app.enabled);
 }

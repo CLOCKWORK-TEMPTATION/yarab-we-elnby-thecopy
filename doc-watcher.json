@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "name": "the-copy-doc-watcher",
+  "description": "إعدادات مراقبة وتحديث التوثيق التلقائي لمستودع النسخة",
+  "watch": {
+    "directories": [
+      "apps/web/src",
+      "apps/backend/src",
+      "packages",
+      "scripts"
+    ],
+    "extensions": [
+      ".ts",
+      ".tsx",
+      ".md",
+      ".json",
+      ".ps1",
+      ".sh"
+    ],
+    "ignore": [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/.turbo/**",
+      "**/.next/**",
+      "**/output/**",
+      "**/redis/**"
+    ]
+  },
+  "docs": {
+    "baseDir": "docs",
+    "mapping": {
+      "architecture": {
+        "output": "docs/ARCHITECTURE.md",
+        "triggers": [
+          "apps/backend/src/server.ts",
+          "apps/backend/src/mcp-server.ts",
+          "apps/web/src/app/(main)/layout.tsx",
+          "apps/web/src/app/page.tsx",
+          "apps/web/src/config/apps.config.ts"
+        ],
+        "description": "تحديث المعمارية عند تغيير نقاط الدخول أو الخوادم"
+      },
+      "api": {
+        "output": "docs/API_REFERENCE.md",
+        "triggers": [
+          "apps/web/src/app/api/**/route.ts",
+          "apps/backend/src/routes/**",
+          "apps/backend/src/controllers/**",
+          "packages/*/src/index.ts"
+        ],
+        "description": "تحديث مرجع الواجهات البرمجية عند تعديل المسارات"
+      },
+      "relations": {
+        "output": "docs/FILE_RELATIONS.md",
+        "triggers": [
+          "package.json",
+          "pnpm-workspace.yaml",
+          "apps/*/package.json",
+          "packages/*/package.json",
+          "tsconfig.json",
+          "apps/*/tsconfig.json"
+        ],
+        "description": "تحديث علاقات الملفات عند تغيير التبعيات أو الحزم"
+      },
+      "progress": {
+        "output": "docs/PROGRESS.md",
+        "triggers": [
+          "**/*"
+        ],
+        "description": "تحديث حالة التقدم بناءً على التغييرات العامة"
+      },
+      "tree": {
+        "output": "docs/_project_tree.txt",
+        "description": "تحديث هيكل المشروع المختصر"
+      }
+    }
+  },
+  "hooks": {
+    "onUpdate": "pnpm audit:code",
+    "onDocChange": "pnpm lint"
+  },
+  "settings": {
+    "debounceMs": 2000,
+    "language": "ar",
+    "autoCommit": false,
+    "notifyOnUpdate": true
+  }
+}

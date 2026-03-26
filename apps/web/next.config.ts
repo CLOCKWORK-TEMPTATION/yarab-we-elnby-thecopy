@@ -103,6 +103,9 @@ const nextConfig = {
   },
 
   experimental: {
+    sri: {
+      algorithm: "sha256",
+    },
     optimizePackageImports: [
       "@radix-ui/react-accordion",
       "@radix-ui/react-alert-dialog",
@@ -140,10 +143,6 @@ const nextConfig = {
   async headers() {
     const isDev = process.env.NODE_ENV !== "production";
 
-    // Dynamic CSP based on CDN configuration
-    const cdnDomain = cdnUrl ? new URL(cdnUrl).hostname : null;
-    const cdnCsp = cdnDomain ? ` ${cdnUrl}` : "";
-
     // In development: force no-cache on all routes so browser always fetches fresh content
     if (isDev) {
       return [
@@ -172,25 +171,6 @@ const nextConfig = {
       {
         source: "/(.*)",
         headers: [
-          {
-            key: "Content-Security-Policy",
-            value: [
-              "default-src 'self'",
-              `script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://www.gstatic.com https://*.googleapis.com https://*.sentry.io${cdnCsp}`,
-              "worker-src 'self' blob:",
-              "child-src 'self' blob:",
-              `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com${cdnCsp}`,
-              `font-src 'self' https://fonts.gstatic.com${cdnCsp}`,
-              `img-src 'self' data: blob: https: https://placehold.co https://images.unsplash.com https://picsum.photos https://www.gstatic.com https://*.googleapis.com${cdnCsp}`,
-              "media-src 'self' https://cdn.pixabay.com https://*.pixabay.com blob: data:",
-              "connect-src 'self' https://apis.google.com https://*.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://*.sentry.io http://localhost:4318 http://127.0.0.1:8787 http://localhost:8787 wss: ws:",
-              "frame-src 'self' https://apis.google.com https://*.googleapis.com",
-              "object-src 'none'",
-              "base-uri 'self'",
-              "form-action 'self'",
-              "frame-ancestors 'none'",
-            ].join("; "),
-          },
           {
             key: "Strict-Transport-Security",
             value: "max-age=31536000; includeSubDomains; preload",

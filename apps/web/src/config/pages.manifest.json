@@ -11,6 +11,11 @@
       "title": "تحليل"
     },
     {
+      "slug": "apps-overview",
+      "path": "/apps-overview",
+      "title": "apps-overview"
+    },
+    {
       "slug": "arabic-creative-writing-studio",
       "path": "/arabic-creative-writing-studio",
       "title": "استوديو الكتابة الإبداعية"
@@ -69,11 +74,6 @@
       "slug": "metrics-dashboard",
       "path": "/metrics-dashboard",
       "title": "metrics-dashboard"
-    },
-    {
-      "slug": "new",
-      "path": "/new",
-      "title": "جديد"
     },
     {
       "slug": "styleIST",

@@ -41,7 +41,7 @@ export default function AppsOverviewPage() {
             منصة النسخة
           </h1>
           <p className="text-xl md:text-2xl text-gray-300 mb-2">
-            مجموعة شاملة من 13 تطبيقاً متخصصاً
+            {`مجموعة شاملة من ${enabledApps.length} تطبيقاً متخصصاً`}
           </p>
           <p className="text-lg text-gray-400">
             للإنتاج السينمائي والدرامي العربي

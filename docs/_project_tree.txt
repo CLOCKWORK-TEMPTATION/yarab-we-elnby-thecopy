@@ -1,0 +1,76 @@
+.
+├─ apps
+│  ├─ backend
+│  │  ├─ drizzle
+│  │  ├─ public
+│  │  ├─ scripts
+│  │  ├─ src
+│  │  │  ├─ agents
+│  │  │  ├─ config
+│  │  │  ├─ controllers
+│  │  │  ├─ db
+│  │  │  ├─ middleware
+│  │  │  ├─ queues
+│  │  │  ├─ services
+│  │  │  ├─ test
+│  │  │  ├─ mcp-server.ts
+│  │  │  └─ server.ts
+│  │  └─ package.json
+│  └─ web
+│     ├─ convex
+│     ├─ public
+│     ├─ scripts
+│     ├─ src
+│     │  ├─ ai
+│     │  ├─ app
+│     │  │  ├─ (auth)
+│     │  │  ├─ (main)
+│     │  │  ├─ api
+│     │  │  ├─ ui
+│     │  │  ├─ layout.tsx
+│     │  │  └─ page.tsx
+│     │  ├─ components
+│     │  ├─ config
+│     │  ├─ hooks
+│     │  ├─ lib
+│     │  ├─ orchestration
+│     │  ├─ styles
+│     │  ├─ types
+│     │  └─ utils
+│     ├─ tests
+│     └─ package.json
+├─ packages
+│  ├─ actorai
+│  ├─ art-director
+│  ├─ brain-storm-ai
+│  ├─ breakapp
+│  ├─ breakdown
+│  ├─ budget
+│  ├─ cinefit
+│  ├─ cinematography
+│  ├─ creative-writing
+│  ├─ directors-studio
+│  ├─ editor
+│  ├─ prompt-engineering
+│  ├─ shared
+│  │  └─ src
+│  │     ├─ ai
+│  │     ├─ auth
+│  │     ├─ cache
+│  │     ├─ db
+│  │     ├─ schemas
+│  │     ├─ types
+│  │     └─ utils
+│  ├─ styleist
+│  ├─ tsconfig
+│  └─ ui
+│     └─ src
+│        └─ components
+├─ public
+├─ redis
+├─ scripts
+│  ├─ database
+│  └─ deploy
+├─ package.json
+├─ pnpm-workspace.yaml
+└─ .env.example

@@ -77,16 +77,18 @@ app.use(csrfProtection);
 // Additional CSRF Protection - validates Origin/Referer for state-changing requests
 // This provides defense-in-depth alongside the token-based csrfProtection middleware
 // SECURITY: This middleware runs AFTER csrfProtection to add an additional layer
-app.use((req, res, next) => {
+app.use((req, res, next): void => {
   // Only check state-changing methods
   if (!['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
-    return next();
+    next();
+    return;
   }
 
   // Skip for health endpoints and metrics
   const safePaths = ['/health', '/api/health', '/metrics'];
   if (safePaths.some(path => req.path.startsWith(path))) {
-    return next();
+    next();
+    return;
   }
 
   const origin = req.get('Origin');
@@ -115,13 +117,15 @@ app.use((req, res, next) => {
         path: sanitizedPath,
         method: sanitizedMethod,
       });
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         error: 'طلب غير مصرح به',
         code: 'CSRF_MISSING_ORIGIN'
       });
+      return;
     }
-    return next();
+    next();
+    return;
   }
 
   // Validate Origin
@@ -129,11 +133,12 @@ app.use((req, res, next) => {
     if (!allowedOrigins.some(allowed => origin === allowed || origin.startsWith(allowed as string))) {
       const sanitizedOrigin = origin.replace(/[^\w\-\:\.]/g, '');
       logger.warn('CSRF: Origin mismatch', { origin: sanitizedOrigin });
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         error: 'طلب غير مصرح به',
         code: 'CSRF_ORIGIN_MISMATCH'
       });
+      return;
     }
   }
 
@@ -145,19 +150,21 @@ app.use((req, res, next) => {
       if (!allowedOrigins.some(allowed => refererOrigin === allowed || refererOrigin.startsWith(allowed as string))) {
         const sanitizedReferer = refererOrigin.replace(/[^\w\-\:\.]/g, '');
         logger.warn('CSRF: Referer mismatch', { referer: sanitizedReferer });
-        return res.status(403).json({
+        res.status(403).json({
           success: false,
           error: 'طلب غير مصرح به',
           code: 'CSRF_REFERER_MISMATCH'
         });
+        return;
       }
     } catch (err) {
       logger.warn('CSRF: Invalid Referer URL');
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         error: 'طلب غير مصرح به',
         code: 'CSRF_INVALID_REFERER'
       });
+      return;
     }
   }
 
@@ -382,31 +389,33 @@ app.get('/api/waf/blocked-ips', authMiddleware, (_req, res) => {
   }
 });
 
-app.post('/api/waf/block-ip', authMiddleware, csrfProtection, (req, res) => {
+app.post('/api/waf/block-ip', authMiddleware, csrfProtection, (req, res): void => {
   try {
     const { ip, reason } = req.body;
     if (!ip) {
-      return res.status(400).json({ success: false, error: 'IP address required' });
+      res.status(400).json({ success: false, error: 'IP address required' });
+      return;
     }
     blockIP(ip, reason);
-    return res.json({ success: true, message: `IP ${ip} blocked successfully` });
+    res.json({ success: true, message: `IP ${ip} blocked successfully` });
   } catch (error) {
     logger.error('Failed to block IP:', error);
-    return res.status(500).json({ success: false, error: 'Failed to block IP' });
+    res.status(500).json({ success: false, error: 'Failed to block IP' });
   }
 });
 
-app.post('/api/waf/unblock-ip', authMiddleware, csrfProtection, (req, res) => {
+app.post('/api/waf/unblock-ip', authMiddleware, csrfProtection, (req, res): void => {
   try {
     const { ip } = req.body;
     if (!ip) {
-      return res.status(400).json({ success: false, error: 'IP address required' });
+      res.status(400).json({ success: false, error: 'IP address required' });
+      return;
     }
     unblockIP(ip);
-    return res.json({ success: true, message: `IP ${ip} unblocked successfully` });
+    res.json({ success: true, message: `IP ${ip} unblocked successfully` });
   } catch (error) {
     logger.error('Failed to unblock IP:', error);
-    return res.status(500).json({ success: false, error: 'Failed to unblock IP' });
+    res.status(500).json({ success: false, error: 'Failed to unblock IP' });
   }
 });
 
