@@ -33,27 +33,48 @@ export default function BreakdownContent() {
   const [error, setError] = useState<string | null>(null);
 
   /**
-   * يجلب تقرير التحليل من الخادم
+   * يجلب تقرير التحليل من sessionStorage
    * 
-   * السبب: نستخدم Zod للتحقق من صحة البيانات
-   * ونوفر معالجة أخطاء واضحة للمستخدم
+   * السبب: خط أنابيب التحليل (stations-pipeline) يحفظ النتائج
+   * في sessionStorage بعد التحليل. نقرأ من هناك ونستخرج
+   * تقرير المحطة 7 (التقرير النهائي) مع التحقق بـ Zod.
    */
-  const fetchReport = useCallback(async () => {
+  const fetchReport = useCallback(() => {
     try {
-      const res = await fetch("/analysis_output/final-report.json");
+      const storedResults = sessionStorage.getItem("stationAnalysisResults");
       
-      if (!res.ok) {
-        throw new Error(`فشل في تحميل التقرير: ${res.status}`);
+      if (!storedResults) {
+        setError('لم يتم العثور على نتائج تحليل. يرجى تشغيل التحليل أولاً.');
+        setLoading(false);
+        return;
       }
       
-      const data = await res.json();
+      const parsed = JSON.parse(storedResults);
+      
+      // استخراج تقرير المحطة 7 (التقرير النهائي)
+      const station7 = parsed?.stationOutputs?.station7;
+      const finalReport = station7?.finalReport;
+      
+      if (!finalReport) {
+        setError('لم يتم العثور على التقرير النهائي. يرجى التأكد من اكتمال جميع المحطات.');
+        setLoading(false);
+        return;
+      }
+      
+      // تحويل أسماء الحقول لتتوافق مع المخطط المتوقع
+      const reportData = {
+        ...finalReport,
+        // Station7 يستخدم threatsToCoherence بينما المخطط يتوقع threatsToCohesion
+        threatsToCohesion: finalReport.threatsToCoherence ?? finalReport.threatsToCohesion ?? [],
+      };
       
       // التحقق من صحة البيانات باستخدام Zod
-      const validationResult = validateAnalysisReport(data);
+      const validationResult = validateAnalysisReport(reportData);
       
       if (!validationResult.success) {
         logError('BreakdownContent.fetchReport', new Error(validationResult.error));
         setError('تنسيق التقرير غير صحيح');
+        setLoading(false);
         return;
       }
       

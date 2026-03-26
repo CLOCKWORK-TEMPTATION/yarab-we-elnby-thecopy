@@ -762,10 +762,39 @@ ${allIssues.map((issue, i) => `${i + 1}. ${issue.description} (نوع: ${issue.c
       const markdownReport = this.generateMarkdownReport(output);
       await saveText(`${this.outputDir}/final-report.md`, markdownReport);
 
-      logger.info("[S7] All text report formats saved successfully");
+      // حفظ نسخة JSON للاستخدام في واجهة breakdown
+      const jsonReport = this.generateJsonReport(output);
+      await saveText(`${this.outputDir}/final-report.json`, jsonReport);
+
+      logger.info("[S7] All report formats saved successfully");
     } catch (error) {
       logger.error("[S7] Error saving reports:", error);
     }
+  }
+
+  private generateJsonReport(output: Station7Output): string {
+    const { finalReport, scoreMatrix } = output;
+    const report = {
+      executiveSummary: finalReport.executiveSummary,
+      overallAssessment: {
+        narrativeQualityScore: finalReport.overallAssessment.narrativeQualityScore,
+        structuralIntegrityScore: finalReport.overallAssessment.structuralIntegrityScore,
+        characterDevelopmentScore: finalReport.overallAssessment.characterDevelopmentScore,
+        conflictEffectivenessScore: finalReport.overallAssessment.conflictEffectivenessScore,
+        overallScore: finalReport.overallAssessment.overallScore,
+        rating: finalReport.overallAssessment.rating,
+      },
+      strengthsAnalysis: finalReport.strengthsAnalysis,
+      weaknessesIdentified: finalReport.weaknessesIdentified,
+      opportunitiesForImprovement: finalReport.opportunitiesForImprovement,
+      threatsToCohesion: finalReport.threatsToCoherence,
+      detailedFindings: {
+        scoreMatrix,
+        audienceResonance: finalReport.audienceResonance,
+        finalRecommendations: finalReport.finalRecommendations,
+      },
+    };
+    return JSON.stringify(report, null, 2);
   }
 
   private generateHumanReadableReport(output: Station7Output): string {
