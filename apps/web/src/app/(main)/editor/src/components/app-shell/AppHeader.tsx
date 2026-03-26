@@ -1,12 +1,12 @@
 import React from "react";
-import { User } from "lucide-react";
+import { User, type LucideIcon } from "lucide-react";
 import { HoverBorderGradient } from "../ui/hover-border-gradient";
 
 export interface AppShellMenuItem {
   label: string;
   actionId: string;
   shortcut?: string;
-  icon?: React.ElementType;
+  icon?: LucideIcon;
   iconGlyph?: string;
   disabled?: boolean;
 }

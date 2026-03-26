@@ -13,7 +13,6 @@ import {
   Redo2,
   Bold,
   Italic,
-  AlignLeft,
   AlignRight,
   AlignCenter,
   Stethoscope,
@@ -24,7 +23,6 @@ import {
   BookOpen,
   Settings,
   Clapperboard,
-  CheckCircle,
 } from "lucide-react";
 import { insertMenuDefinitions, type EditorStyleFormatId } from "./insert-menu";
 import type {
@@ -180,11 +178,6 @@ export const MENU_SECTIONS: readonly AppShellMenuSection[] = [
 /** أزرار شريط Dock العائم */
 export const DOCK_BUTTONS: readonly AppDockButtonItem[] = [
   {
-    actionId: "export-classified",
-    icon: CheckCircle,
-    title: "موافقة واعتماد النص (تصدير TXT)",
-  },
-  {
     actionId: "quick-cycle-format",
     icon: Clapperboard,
     title: "تبديل التنسيق المباشر",
@@ -206,7 +199,6 @@ export const DOCK_BUTTONS: readonly AppDockButtonItem[] = [
   { actionId: "italic", icon: Italic, title: "مائل" },
   { actionId: "align-right", icon: AlignRight, title: "محاذاة لليمين" },
   { actionId: "align-center", icon: AlignCenter, title: "توسيط" },
-  { actionId: "align-left", icon: AlignLeft, title: "محاذاة لليسار" },
   { actionId: "about", icon: Info, title: "عن المحرر" },
 ];
 
@@ -226,13 +218,13 @@ export const SIDEBAR_SECTIONS: readonly AppSidebarSection[] = [
     id: "projects",
     label: "المشاريع",
     icon: List,
-    items: ["فيلم الرحلة", "مسلسل الحارة", "ورشة أفان تيتر"],
+    items: ["مسلسل الأخوة", "فيلم الرحلة", "مسلسل الحارة"],
   },
   {
     id: "library",
     label: "المكتبة",
     icon: BookOpen,
-    items: ["قوالب المشاهد", "الشخصيات", "الملاحظات"],
+    items: ["القوالب", "الشخصيات", "المشاهد المحفوظة", "المفضلة"],
   },
   { id: "settings", label: "الإعدادات", icon: Settings, items: [] },
 ] as const;

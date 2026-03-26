@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 
-const BrainStormContent = dynamic(() => import("./brain-storm-content"), {
+const BrainStormContent = dynamic(() => import("./src/components/BrainStormContent"), {
   loading: () => (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       <div className="flex items-center justify-center min-h-[400px]">

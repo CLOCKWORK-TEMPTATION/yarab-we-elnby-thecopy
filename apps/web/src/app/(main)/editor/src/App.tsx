@@ -43,6 +43,11 @@ import {
   classificationTypeOptions,
   colors,
   DOCK_BUTTONS,
+  EDITOR_CANVAS_LEFT_PADDING_PX,
+  EDITOR_CANVAS_RIGHT_PADDING_PX,
+  EDITOR_CANVAS_TOP_OFFSET_PX,
+  EDITOR_CANVAS_WIDTH_PX,
+  EDITOR_SHELL_STAGE_WIDTH_PX,
   fonts,
   formatClassMap,
   FORMAT_LABEL_BY_TYPE,
@@ -559,12 +564,13 @@ export function App(): React.JSX.Element {
       data-testid="app-root"
     >
       <BackgroundGrid />
-
       <AppHeader
         menuSections={MENU_SECTIONS}
         activeMenu={activeMenu}
         onToggleMenu={(sectionLabel) =>
-          setActiveMenu((prev) => (prev === sectionLabel ? null : sectionLabel))
+          setActiveMenu((prev) =>
+            prev === sectionLabel ? null : sectionLabel
+          )
         }
         onAction={(actionId) => {
           void dispatchMenuAction(actionId as MenuActionId);
@@ -575,64 +581,84 @@ export function App(): React.JSX.Element {
       />
 
       <div
-        className="app-main relative z-10 flex flex-1 overflow-hidden"
+        className="app-main relative z-10 flex flex-1 overflow-x-auto overflow-y-hidden"
         suppressHydrationWarning
       >
-        <AppSidebar
-          sections={SIDEBAR_SECTIONS}
-          openSectionId={openSidebarItem}
-          onToggleSection={(sectionId) =>
-            setOpenSidebarItem((prev) =>
-              prev === sectionId ? null : sectionId
-            )
-          }
-          onItemAction={(sectionId, itemLabel) => {
-            void handleSidebarItemAction(sectionId, itemLabel, actionDeps);
-          }}
-          settingsPanel={
-            <SettingsPanel
-              typingSystemSettings={typingSystemSettings}
-              onTypingModeChange={handleTypingModeChange}
-              onLiveIdleMinutesChange={handleLiveIdleMinutesChange}
-              onRunExportClassified={() => {
-                void runExport("classified", actionDeps, "النص_المصنف");
-              }}
-              onRunProcessNow={() => {
-                void runDocumentThroughPasteWorkflow({
-                  source: "manual-deferred",
-                  reviewProfile: "interactive",
-                  policyProfile: "strict-structure",
-                });
-              }}
-              lockedEditorFontLabel={LOCKED_EDITOR_FONT_LABEL}
-              lockedEditorSizeLabel={LOCKED_EDITOR_SIZE_LABEL}
-              supportedLegacyFormatCount={SUPPORTED_LEGACY_FORMAT_COUNT}
-              classifierOptionCount={CLASSIFIER_OPTION_COUNT}
-              actionBlockSpacing={ACTION_BLOCK_SPACING}
-              hasFileImportBackend={hasFileImportBackend}
-            />
-          }
-        />
-
-        <main className="app-editor-main relative flex min-w-0 flex-1 flex-col overflow-hidden">
-          <AppDock
-            buttons={DOCK_BUTTONS}
+        <div
+          className="app-stage relative flex min-h-full min-w-full flex-1"
+          style={{ minWidth: `${EDITOR_SHELL_STAGE_WIDTH_PX}px` }}
+        >
+          <AppSidebar
+            sections={SIDEBAR_SECTIONS}
+            openSectionId={openSidebarItem}
             isMobile={isMobile}
-            onAction={(actionId) => {
-              void dispatchMenuAction(actionId as MenuActionId);
+            onToggleSection={(sectionId) =>
+              setOpenSidebarItem((prev) =>
+                prev === sectionId ? null : sectionId
+              )
+            }
+            onItemAction={(sectionId, itemLabel) => {
+              void handleSidebarItemAction(sectionId, itemLabel, actionDeps);
             }}
+            settingsPanel={
+              <SettingsPanel
+                typingSystemSettings={typingSystemSettings}
+                onTypingModeChange={handleTypingModeChange}
+                onLiveIdleMinutesChange={handleLiveIdleMinutesChange}
+                onRunExportClassified={() => {
+                  void runExport("classified", actionDeps, "النص_المصنف");
+                }}
+                onRunProcessNow={() => {
+                  void runDocumentThroughPasteWorkflow({
+                    source: "manual-deferred",
+                    reviewProfile: "interactive",
+                    policyProfile: "strict-structure",
+                  });
+                }}
+                lockedEditorFontLabel={LOCKED_EDITOR_FONT_LABEL}
+                lockedEditorSizeLabel={LOCKED_EDITOR_SIZE_LABEL}
+                supportedLegacyFormatCount={SUPPORTED_LEGACY_FORMAT_COUNT}
+                classifierOptionCount={CLASSIFIER_OPTION_COUNT}
+                actionBlockSpacing={ACTION_BLOCK_SPACING}
+                hasFileImportBackend={hasFileImportBackend}
+              />
+            }
           />
 
-          <div className="app-editor-scroll scrollbar-none flex flex-1 justify-center overflow-y-auto p-6 pt-20 sm:p-8 sm:pt-24 lg:pr-[24rem] xl:pr-[26rem]">
-            <div className="app-editor-shell relative mt-5 w-full max-w-[850px] pb-20 sm:mt-6 lg:mr-10 xl:mr-14">
+          <main className="app-editor-main relative flex min-w-0 flex-1 flex-col overflow-hidden">
+            <AppDock
+              buttons={DOCK_BUTTONS}
+              isMobile={isMobile}
+              onAction={(actionId) => {
+                void dispatchMenuAction(actionId as MenuActionId);
+              }}
+            />
+
+            <div
+              className="app-editor-scroll scrollbar-none flex flex-1 justify-center overflow-x-hidden overflow-y-auto"
+              style={{
+                paddingTop: `${EDITOR_CANVAS_TOP_OFFSET_PX}px`,
+                paddingRight: `${EDITOR_CANVAS_RIGHT_PADDING_PX}px`,
+                paddingLeft: `${EDITOR_CANVAS_LEFT_PADDING_PX}px`,
+                paddingBottom: "80px",
+              }}
+            >
               <div
-                ref={editorMountRef}
-                className="editor-area app-editor-host"
-                data-testid="editor-area"
-              />
+                className="app-editor-shell relative mx-auto w-full pb-20"
+                style={{
+                  maxWidth: `${EDITOR_CANVAS_WIDTH_PX}px`,
+                  minWidth: `${EDITOR_CANVAS_WIDTH_PX}px`,
+                }}
+              >
+                <div
+                  ref={editorMountRef}
+                  className="editor-area app-editor-host"
+                  data-testid="editor-area"
+                />
+              </div>
             </div>
-          </div>
-        </main>
+          </main>
+        </div>
       </div>
 
       <AppFooter

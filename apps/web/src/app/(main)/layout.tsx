@@ -1,5 +1,8 @@
+"use client";
+
 import { Logo } from "@/components/logo";
 import { MainNav } from "@/components/main-nav";
+import { usePathname } from "next/navigation";
 import {
   SidebarProvider,
   Sidebar,
@@ -15,6 +18,12 @@ export default function MainLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+
+  if (pathname.startsWith("/editor")) {
+    return <>{children}</>;
+  }
+
   return (
     <SidebarProvider>
       <Sidebar>

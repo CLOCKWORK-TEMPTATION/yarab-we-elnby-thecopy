@@ -1,16 +1,23 @@
 import React, { useMemo, useState } from "react";
+import type { LucideIcon } from "lucide-react";
 import { HoverBorderGradient } from "../ui/hover-border-gradient";
+import {
+  EDITOR_SHELL_SIDEBAR_BOTTOM_PX,
+  EDITOR_SHELL_SIDEBAR_RIGHT_PX,
+  EDITOR_SHELL_SIDEBAR_TOP_PX,
+} from "../../constants/shell-layout";
 
 export interface AppSidebarSection {
   id: string;
   label: string;
-  icon: React.ElementType;
+  icon: LucideIcon;
   items: readonly string[];
 }
 
 export interface AppSidebarProps {
   sections: readonly AppSidebarSection[];
   openSectionId: string | null;
+  isMobile: boolean;
   onToggleSection: (sectionId: string) => void;
   onItemAction: (sectionId: string, itemLabel: string) => void;
   settingsPanel: React.ReactNode;
@@ -19,6 +26,7 @@ export interface AppSidebarProps {
 export function AppSidebar({
   sections,
   openSectionId,
+  isMobile: _isMobile,
   onToggleSection,
   onItemAction,
   settingsPanel,
@@ -42,13 +50,17 @@ export function AppSidebar({
 
   const hasAnySearchResult =
     normalizedQuery.length === 0 ||
-    visibleSections.some(
-      (section) => section.filteredItems.length > 0 || section.id === "settings"
-    );
+    visibleSections.some((section) => section.filteredItems.length > 0);
 
   return (
     <aside
-      className="app-sidebar absolute inset-y-4 right-3 z-30 flex w-[15rem] flex-col sm:right-4 sm:w-[16rem] lg:right-8 lg:w-72 xl:right-10"
+      className="app-sidebar fixed z-30 flex w-72 flex-col"
+      style={{
+        top: `${EDITOR_SHELL_SIDEBAR_TOP_PX}px`,
+        right: `${EDITOR_SHELL_SIDEBAR_RIGHT_PX}px`,
+        bottom: `${EDITOR_SHELL_SIDEBAR_BOTTOM_PX}px`,
+      }}
+      data-layout-mode="fixed-desktop"
       data-testid="app-sidebar"
     >
       <HoverBorderGradient

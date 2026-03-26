@@ -6,3 +6,4 @@ export * from "./format-mappings";
 export * from "./insert-menu";
 export * from "./menu-definitions";
 export * from "./page";
+export * from "./shell-layout";

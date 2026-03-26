@@ -555,6 +555,7 @@ export default function BrainStormContent() {
           updateAgentState(proposal.agentId, {
             status: "completed",
             lastMessage: `ثقة: ${(proposal.confidence * 100).toFixed(0)}%`,
+            progress: proposal.confidence * 100,
           });
 
           setDebateMessages((prev) => [
@@ -571,17 +572,39 @@ export default function BrainStormContent() {
       }
 
       // إضافة القرار النهائي إن وجد
-      if (debateResult.finalDecision) {
+      if (debateResult.consensus || debateResult.finalDecision) {
         setDebateMessages((prev) => [
           ...prev,
           {
             agentId: "judge",
             agentName: "الحكم",
-            message: `${debateResult.finalDecision}\n\n${debateResult.judgeReasoning}`,
+            message: `${debateResult.finalDecision}\n\n📋 السبب: ${debateResult.judgeReasoning}`,
             timestamp: new Date(),
             type: "decision",
           },
         ]);
+      }
+
+      // حفظ نتائج النقاش في الجلسة
+      setCurrentSession((prev) =>
+        prev
+          ? {
+              ...prev,
+              results: {
+                ...prev.results,
+                [`phase${session.phase}Debate`]: debateResult,
+              },
+            }
+          : null
+      );
+
+      // الانتقال للمرحلة التالية تلقائياً بعد ثانيتين
+      if (session.phase < 5) {
+        setTimeout(() => {
+          const nextPhase = (session.phase + 1) as BrainstormPhase;
+          setActivePhase(nextPhase);
+          setCurrentSession((prev) => (prev ? { ...prev, phase: nextPhase } : null));
+        }, 2000);
       }
     } catch (err) {
       // تحديث رسالة الخطأ الرئيسية وحالات الوكلاء
@@ -714,7 +737,10 @@ export default function BrainStormContent() {
         {/* معلومات الجلسة الحالية */}
         {currentSession && (
           <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-blue-600">الجلسة: {currentSession.brief}</p>
+            <p className="text-blue-600 font-medium">الجلسة: {currentSession.brief}</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              الحالة: {currentSession.status} | المرحلة: {currentSession.phase}
+            </p>
           </div>
         )}
       </div>
@@ -845,6 +871,40 @@ export default function BrainStormContent() {
             </CardContent>
           </Card>
         </div>
+      </div>
+
+      {/* شبكة المميزات */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
+        {[
+          {
+            icon: <Brain className="w-6 h-6" />,
+            title: "ذكاء اصطناعي متقدم",
+            desc: `${agentStats.total} وكيل متخصص`,
+          },
+          {
+            icon: <Layers className="w-6 h-6" />,
+            title: "5 فئات متنوعة",
+            desc: "أساسي، تحليل، إبداع، تنبؤ، متقدم",
+          },
+          {
+            icon: <Zap className="w-6 h-6" />,
+            title: "نظام نقاش ذكي",
+            desc: "تعاون حقيقي بين الوكلاء",
+          },
+          {
+            icon: <Shield className="w-6 h-6" />,
+            title: "جودة مضمونة",
+            desc: `${agentStats.withSelfReflection} وكيل بتأمل ذاتي`,
+          },
+        ].map((feature, index) => (
+          <Card key={index} className="hover:shadow-md transition-shadow">
+            <CardContent className="p-6">
+              <div className="text-blue-500 mb-4">{feature.icon}</div>
+              <h3 className="font-bold mb-2">{feature.title}</h3>
+              <p className="text-sm text-muted-foreground">{feature.desc}</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
     </div>
   );
