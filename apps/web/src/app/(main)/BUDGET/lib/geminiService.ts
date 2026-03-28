@@ -44,13 +44,24 @@ export class GeminiService {
    * 
    * @description
    * يُهيئ الاتصال بـ Gemini API باستخدام مفتاح API
-   * من متغيرات البيئة
+   * من متغيرات البيئة الخادم فقط
    */
   constructor() {
-    const apiKey = process.env.VITE_GEMINI_API_KEY || 
-                   process.env.GEMINI_API_KEY || 
-                   process.env.API_KEY || 
-                   process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    /**
+     * ترتيب البحث عن مفتاح API (خادم فقط)
+     * السبب: NEXT_PUBLIC_* يكشف المفتاح للعميل — خطر أمني
+     * VITE_* ينتمي لـ Vite وليس Next.js
+     */
+    const apiKey = process.env.GEMINI_API_KEY;
+    
+    if (!apiKey && typeof window === 'undefined') {
+      // تسجيل تحذير على الخادم فقط
+      console.warn(
+        '[GeminiService] مفتاح GEMINI_API_KEY غير موجود في متغيرات البيئة. ' +
+        'يرجى إضافة GEMINI_API_KEY في ملف .env'
+      );
+    }
+    
     if (apiKey) {
       this.ai = new GoogleGenAI({ apiKey });
     }
@@ -90,7 +101,7 @@ export class GeminiService {
         }
       });
 
-      const text = response.text();
+      const text = response.text;
       if (!text) throw new Error("لم يتم استلام استجابة من الذكاء الاصطناعي");
 
       const cleanedText = this.cleanJsonResponse(text);
@@ -228,7 +239,7 @@ export class GeminiService {
     });
 
     try {
-      const result = JSON.parse(this.cleanJsonResponse(response.text() || '{}')) as AIAnalysis;
+      const result = JSON.parse(this.cleanJsonResponse(response.text || '{}')) as AIAnalysis;
       return result;
     } catch (parseError: unknown) {
       const errorDetails = parseError instanceof Error ? parseError.message : 'Unknown parse error';
@@ -361,8 +372,8 @@ export class GeminiService {
       .trim()
       .replace(/^[^{]*/, '')
       .replace(/[^}]*$/, '')
-      .replace(/\n/g, '')
-      .replace(/\s{2,}/g, ' ');
+      .replace(/\\n/g, '')
+      .replace(/\\s{2,}/g, ' ');
   }
 
   /**
@@ -552,7 +563,7 @@ export class GeminiService {
       }
     });
 
-    return JSON.parse(this.cleanJsonResponse(response.text() || '{}')) as Record<string, unknown>;
+    return JSON.parse(this.cleanJsonResponse(response.text || '{}')) as Record<string, unknown>;
   }
 
   /**
@@ -622,7 +633,7 @@ export class GeminiService {
       }
     });
 
-    return JSON.parse(this.cleanJsonResponse(response.text() || '{}')) as Record<string, unknown>;
+    return JSON.parse(this.cleanJsonResponse(response.text || '{}')) as Record<string, unknown>;
   }
 }
 

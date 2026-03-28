@@ -12,9 +12,10 @@
 
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
-import { BarChart3, Clock, AlertTriangle, TrendingUp, Plus } from "lucide-react";
+import { useState, useCallback, useEffect, useMemo } from "react";
+import { BarChart3, Clock, AlertTriangle, TrendingUp, Plus, CheckCircle2, TimerReset } from "lucide-react";
 import type { ApiResponse } from "../types";
+import { fetchArtDirectorJson } from "../lib/api-client";
 
 /**
  * واجهة بيانات نموذج تسجيل الوقت
@@ -52,6 +53,20 @@ interface PieItem {
   color: string;
 }
 
+interface ProductivityAnalysis {
+  period: string;
+  department: string;
+  totalHours: number;
+  taskCount: number;
+  delayHours: number;
+  completionRate: number;
+}
+
+interface ProductivitySummaryResponse {
+  chartData: ChartItem[];
+  pieData: PieItem[];
+}
+
 /**
  * القيم الافتراضية لنموذج تسجيل الوقت
  */
@@ -70,25 +85,14 @@ const DEFAULT_DELAY_FORM: DelayFormData = {
   hoursLost: "",
 };
 
-/**
- * بيانات الرسم البياني التجريبية
- */
-const MOCK_CHART_DATA: readonly ChartItem[] = [
-  { name: "تصميم", hours: 45, color: "#e94560" },
-  { name: "بناء", hours: 32, color: "#4ade80" },
-  { name: "طلاء", hours: 18, color: "#fbbf24" },
-  { name: "إضاءة", hours: 12, color: "#60a5fa" },
-  { name: "اجتماعات", hours: 8, color: "#a78bfa" },
-] as const;
-
-/**
- * بيانات الدائرة التجريبية
- */
-const PIE_DATA: readonly PieItem[] = [
-  { name: "مكتمل", value: 65, color: "#4ade80" },
-  { name: "قيد التنفيذ", value: 25, color: "#fbbf24" },
-  { name: "متأخر", value: 10, color: "#ef4444" },
-] as const;
+const EMPTY_ANALYSIS: ProductivityAnalysis = {
+  period: "weekly",
+  department: "all",
+  totalHours: 0,
+  taskCount: 0,
+  delayHours: 0,
+  completionRate: 0,
+};
 
 /**
  * مكون شريط التقدم
@@ -344,6 +348,57 @@ function RecommendationsList({ recommendations }: RecommendationsListProps) {
   );
 }
 
+interface MetricCardProps {
+  title: string;
+  value: string;
+  icon: typeof Clock;
+  color: string;
+}
+
+function MetricCard({ title, value, icon: Icon, color }: MetricCardProps) {
+  return (
+    <div className="art-card">
+      <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
+        <div
+          style={{
+            background: `${color}20`,
+            color,
+            padding: "10px",
+            borderRadius: "12px",
+            display: "inline-flex",
+          }}
+        >
+          <Icon size={20} aria-hidden="true" />
+        </div>
+        <div>
+          <div style={{ color: "var(--art-text-muted)", fontSize: "13px" }}>{title}</div>
+          <div style={{ fontSize: "24px", fontWeight: 700 }}>{value}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface EmptyChartStateProps {
+  message: string;
+}
+
+function EmptyChartState({ message }: EmptyChartStateProps) {
+  return (
+    <div
+      style={{
+        padding: "24px",
+        borderRadius: "12px",
+        background: "rgba(255,255,255,0.05)",
+        color: "var(--art-text-muted)",
+        textAlign: "center",
+      }}
+    >
+      {message}
+    </div>
+  );
+}
+
 /**
  * دالة مساعدة للتحقق من صحة الرقم
  */
@@ -360,6 +415,9 @@ export default function Productivity() {
   const [showTimeForm, setShowTimeForm] = useState(false);
   const [showDelayForm, setShowDelayForm] = useState(false);
   const [recommendations, setRecommendations] = useState<string[]>([]);
+  const [chartData, setChartData] = useState<ChartItem[]>([]);
+  const [pieData, setPieData] = useState<PieItem[]>([]);
+  const [analysis, setAnalysis] = useState<ProductivityAnalysis>(EMPTY_ANALYSIS);
   const [timeForm, setTimeForm] = useState<TimeFormData>(DEFAULT_TIME_FORM);
   const [delayForm, setDelayForm] = useState<DelayFormData>(DEFAULT_DELAY_FORM);
   const [error, setError] = useState<string | null>(null);
@@ -368,9 +426,50 @@ export default function Productivity() {
    * أقصى عدد ساعات للرسم البياني
    */
   const maxHours = useMemo(
-    () => Math.max(...MOCK_CHART_DATA.map((item) => item.hours)),
-    []
+    () => Math.max(...chartData.map((item) => item.hours), 1),
+    [chartData]
   );
+
+  const loadSummary = useCallback(async () => {
+    const summary = await fetchArtDirectorJson<ApiResponse<ProductivitySummaryResponse>>(
+      "/productivity/summary"
+    );
+
+    if (!summary.success || !summary.data) {
+      throw new Error(summary.error ?? "فشل في تحميل ملخص الإنتاجية");
+    }
+
+    setChartData(summary.data.chartData);
+    setPieData(summary.data.pieData);
+  }, []);
+
+  const loadAnalysis = useCallback(async () => {
+    const summary = await fetchArtDirectorJson<ApiResponse<ProductivityAnalysis>>(
+      "/analyze/productivity",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      }
+    );
+
+    if (!summary.success || !summary.data) {
+      throw new Error(summary.error ?? "فشل في تحميل مؤشرات الإنتاجية");
+    }
+
+    setAnalysis(summary.data);
+  }, []);
+
+  const refreshProductivity = useCallback(async () => {
+    setError(null);
+
+    try {
+      await Promise.all([loadSummary(), loadAnalysis()]);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "حدث خطأ أثناء تحديث البيانات";
+      setError(errorMessage);
+    }
+  }, [loadAnalysis, loadSummary]);
 
   /**
    * تسجيل وقت العمل
@@ -391,7 +490,7 @@ export default function Productivity() {
     }
     
     try {
-      const response = await fetch("/api/productivity/log-time", {
+      const data = await fetchArtDirectorJson<ApiResponse>("/productivity/log-time", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -401,11 +500,10 @@ export default function Productivity() {
         }),
       });
       
-      const data: ApiResponse = await response.json();
-      
       if (data.success) {
         setShowTimeForm(false);
         setTimeForm(DEFAULT_TIME_FORM);
+        await refreshProductivity();
       } else {
         setError(data.error ?? "فشل في تسجيل الوقت");
       }
@@ -413,7 +511,7 @@ export default function Productivity() {
       const errorMessage = err instanceof Error ? err.message : "حدث خطأ أثناء التسجيل";
       setError(errorMessage);
     }
-  }, [timeForm]);
+  }, [refreshProductivity, timeForm]);
 
   /**
    * الإبلاغ عن تأخير
@@ -434,7 +532,7 @@ export default function Productivity() {
     }
     
     try {
-      const response = await fetch("/api/productivity/report-delay", {
+      const data = await fetchArtDirectorJson<ApiResponse>("/productivity/report-delay", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -444,11 +542,10 @@ export default function Productivity() {
         }),
       });
       
-      const data: ApiResponse = await response.json();
-      
       if (data.success) {
         setShowDelayForm(false);
         setDelayForm(DEFAULT_DELAY_FORM);
+        await refreshProductivity();
       } else {
         setError(data.error ?? "فشل في الإبلاغ عن التأخير");
       }
@@ -456,7 +553,7 @@ export default function Productivity() {
       const errorMessage = err instanceof Error ? err.message : "حدث خطأ أثناء الإبلاغ";
       setError(errorMessage);
     }
-  }, [delayForm]);
+  }, [delayForm, refreshProductivity]);
 
   /**
    * تحميل التوصيات
@@ -465,13 +562,14 @@ export default function Productivity() {
     setError(null);
     
     try {
-      const response = await fetch("/api/productivity/recommendations", {
+      const data = await fetchArtDirectorJson<ApiResponse<{ recommendations: string[] }>>(
+        "/productivity/recommendations",
+        {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
-      });
-      
-      const data: ApiResponse<{ recommendations: string[] }> = await response.json();
+        }
+      );
       
       if (data.success && data.data?.recommendations) {
         setRecommendations(data.data.recommendations);
@@ -497,6 +595,10 @@ export default function Productivity() {
   const handleDelayFormChange = useCallback((data: Partial<DelayFormData>) => {
     setDelayForm((prev) => ({ ...prev, ...data }));
   }, []);
+
+  useEffect(() => {
+    void refreshProductivity();
+  }, [refreshProductivity]);
 
   return (
     <div className="art-director-page">
@@ -532,6 +634,33 @@ export default function Productivity() {
         </div>
       )}
 
+      <div className="art-grid-4" style={{ gap: "16px", marginBottom: "24px" }}>
+        <MetricCard
+          title="إجمالي الساعات"
+          value={`${analysis.totalHours} ساعة`}
+          icon={Clock}
+          color="#60a5fa"
+        />
+        <MetricCard
+          title="المهام المكتملة"
+          value={`${analysis.taskCount}`}
+          icon={CheckCircle2}
+          color="#4ade80"
+        />
+        <MetricCard
+          title="الساعات المهدرة"
+          value={`${analysis.delayHours} ساعة`}
+          icon={TimerReset}
+          color="#f97316"
+        />
+        <MetricCard
+          title="معدل الإنجاز"
+          value={`${analysis.completionRate}%`}
+          icon={TrendingUp}
+          color="#a78bfa"
+        />
+      </div>
+
       {/* نموذج تسجيل الوقت */}
       {showTimeForm && (
         <TimeForm
@@ -559,20 +688,28 @@ export default function Productivity() {
       <div className="art-grid-2" style={{ gap: "24px" }}>
         <div className="art-card">
           <h3 style={{ marginBottom: "20px" }}>توزيع ساعات العمل</h3>
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            {MOCK_CHART_DATA.map((item, index) => (
-              <ProgressBar key={index} item={item} maxHours={maxHours} />
-            ))}
-          </div>
+          {chartData.length === 0 ? (
+            <EmptyChartState message="لا توجد سجلات وقت بعد. أضف أول مهمة لبدء التحليل." />
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              {chartData.map((item) => (
+                <ProgressBar key={item.name} item={item} maxHours={maxHours} />
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="art-card">
           <h3 style={{ marginBottom: "20px" }}>حالة المهام</h3>
-          <div style={{ display: "flex", justifyContent: "center", gap: "24px", flexWrap: "wrap" }}>
-            {PIE_DATA.map((item, index) => (
-              <PieChartItem key={index} item={item} />
-            ))}
-          </div>
+          {pieData.length === 0 ? (
+            <EmptyChartState message="ستظهر حالة المهام هنا بعد تسجيل الوقت أو التأخيرات." />
+          ) : (
+            <div style={{ display: "flex", justifyContent: "center", gap: "24px", flexWrap: "wrap" }}>
+              {pieData.map((item) => (
+                <PieChartItem key={item.name} item={item} />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

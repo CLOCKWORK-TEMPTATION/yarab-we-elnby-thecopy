@@ -12,9 +12,10 @@
 
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { Boxes, Recycle, Leaf, Plus } from "lucide-react";
 import type { SetPiece, SustainabilityReport, ApiResponse } from "../types";
+import { fetchArtDirectorJson } from "../lib/api-client";
 
 /**
  * واجهة بيانات نموذج قطعة الديكور
@@ -274,18 +275,17 @@ export default function Sets() {
     setError(null);
     
     try {
-      const response = await fetch("/api/sets/add-piece", {
+      const data = await fetchArtDirectorJson<ApiResponse>("/sets/add-piece", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
       
-      const data: ApiResponse = await response.json();
-      
       if (data.success) {
         setShowAddForm(false);
         setFormData(DEFAULT_FORM_DATA);
-        loadInventory();
+        await loadInventory();
+        await loadSustainabilityReport();
       } else {
         setError(data.error ?? "فشل في إضافة القطعة");
       }
@@ -304,13 +304,14 @@ export default function Sets() {
     setError(null);
     
     try {
-      const response = await fetch("/api/sets/inventory", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
-      
-      const data: ApiResponse<{ pieces: SetPiece[] }> = await response.json();
+      const data = await fetchArtDirectorJson<ApiResponse<{ pieces: SetPiece[] }>>(
+        "/sets/inventory",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        }
+      );
       
       if (data.success && data.data?.pieces) {
         setPieces(data.data.pieces);
@@ -331,13 +332,14 @@ export default function Sets() {
     setError(null);
     
     try {
-      const response = await fetch("/api/sets/sustainability-report", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
-      
-      const data: ApiResponse<SustainabilityReport> = await response.json();
+      const data = await fetchArtDirectorJson<ApiResponse<SustainabilityReport>>(
+        "/sets/sustainability-report",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        }
+      );
       
       if (data.success && data.data) {
         setReport(data.data);
@@ -377,6 +379,11 @@ export default function Sets() {
 
     return pieces.map((piece) => <SetPieceCard key={piece.id} piece={piece} />);
   }, [pieces]);
+
+  useEffect(() => {
+    void loadInventory();
+    void loadSustainabilityReport();
+  }, [loadInventory, loadSustainabilityReport]);
 
   return (
     <div className="art-director-page">

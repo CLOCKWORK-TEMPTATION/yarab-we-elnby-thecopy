@@ -1,15 +1,15 @@
 import { STATIC_REPORT_PATH } from "../../domain/constants";
 import { logError } from "../../domain/errors";
 import {
-  type AnalysisReportOutput,
-  validateAnalysisReport,
+  type BreakdownReportOutput,
+  validateBreakdownReport,
 } from "../../domain/schemas";
 import {
   readAnalysisReportFromStorage,
   type ReadAnalysisReportResult,
 } from "./report-storage";
 
-export async function fetchStaticReport(): Promise<AnalysisReportOutput> {
+export async function fetchStaticReport(): Promise<BreakdownReportOutput> {
   const response = await fetch(STATIC_REPORT_PATH);
 
   if (!response.ok) {
@@ -17,7 +17,7 @@ export async function fetchStaticReport(): Promise<AnalysisReportOutput> {
   }
 
   const data = await response.json();
-  const validationResult = validateAnalysisReport(data);
+  const validationResult = validateBreakdownReport(data);
 
   if (!validationResult.success) {
     throw new Error(validationResult.error);
@@ -29,7 +29,7 @@ export async function fetchStaticReport(): Promise<AnalysisReportOutput> {
 export async function loadAnalysisReport(
   storage: Storage | undefined
 ): Promise<{
-  report: AnalysisReportOutput | null;
+  report: BreakdownReportOutput | null;
   storageResult: ReadAnalysisReportResult | null;
 }> {
   const storedReportResult =
@@ -38,7 +38,10 @@ export async function loadAnalysisReport(
       : readAnalysisReportFromStorage(storage);
 
   if (storedReportResult?.success) {
-    return { report: storedReportResult.data, storageResult: storedReportResult };
+    return {
+      report: storedReportResult.data,
+      storageResult: storedReportResult,
+    };
   }
 
   try {

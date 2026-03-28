@@ -12,7 +12,7 @@
 
 "use client";
 
-import { useState, useCallback, useMemo, type ReactNode, type ChangeEvent } from "react";
+import { useState, useCallback, useMemo, type ChangeEvent } from "react";
 import { Play, Loader2 } from "lucide-react";
 import { toolConfigs, type ToolId, type ToolInput } from "../core/toolConfigs";
 import { usePlugins } from "../hooks";
@@ -330,7 +330,7 @@ function ToolWorkspace({
  * المكون الرئيسي لصفحة الأدوات
  */
 export default function Tools() {
-  const { plugins } = usePlugins();
+  const { plugins, error: pluginsError } = usePlugins();
   const [selectedTool, setSelectedTool] = useState<ToolId | null>(null);
   const [formData, setFormData] = useState<FormData>({});
   const [result, setResult] = useState<ExecutionResult | null>(null);
@@ -415,6 +415,8 @@ export default function Tools() {
           <p>تشغيل واختبار أدوات CineArchitect</p>
         </div>
       </header>
+
+      {pluginsError && <ErrorAlert message={pluginsError} />}
 
       {/* تخطيط الأدوات */}
       <div className="art-tools-layout">

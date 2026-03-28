@@ -14,14 +14,6 @@
 import dynamic from "next/dynamic";
 
 /**
- * مكون V0 - يُحمّل بشكل كسول
- * السبب: تقليل حجم الحزمة الأولية وتحسين وقت التحميل
- */
-const V0Component = dynamic(() => import("@/components/v0-component"), {
-  ssr: false,
-});
-
-/**
  * مكون المحطات السبع - يُحمّل بشكل كسول مع مؤشر تحميل
  * السبب: المكون ثقيل ويحتوي على منطق معقد، لذا نؤخر تحميله
  */
@@ -53,9 +45,6 @@ const SevenStations = dynamic(() => import("./seven-stations"), {
  */
 export default function AnalysisPage() {
   return (
-    <div>
-      <V0Component />
-      <SevenStations />
-    </div>
+    <SevenStations />
   );
 }

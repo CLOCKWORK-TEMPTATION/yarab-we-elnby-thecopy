@@ -12,7 +12,7 @@
 
 "use client";
 
-import { useMemo, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   Palette,
   MapPin,
@@ -24,7 +24,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { usePlugins } from "../hooks";
-import type { PluginInfo } from "../types";
+import type { ApiResponse, PluginInfo } from "../types";
+import { fetchArtDirectorJson } from "../lib/api-client";
 
 /**
  * أنواع التبويبات للتنقل
@@ -58,6 +59,15 @@ interface Stat {
   label: string;
   value: string;
   color: string;
+}
+
+interface DashboardSummary {
+  projectsActive: number;
+  locationsCount: number;
+  setsCount: number;
+  completedTasks: number;
+  pluginsCount: number;
+  lastUpdated: string;
 }
 
 /**
@@ -95,16 +105,14 @@ const QUICK_ACTIONS: readonly QuickAction[] = [
   },
 ] as const;
 
-/**
- * قائمة الإحصائيات
- * تعرض ملخص حالة المشروع الحالي
- */
-const STATS: readonly Stat[] = [
-  { icon: Sparkles, label: "مشاريع نشطة", value: "3", color: "#e94560" },
-  { icon: MapPin, label: "مواقع مسجلة", value: "12", color: "#4ade80" },
-  { icon: Boxes, label: "ديكورات", value: "28", color: "#fbbf24" },
-  { icon: CheckCircle2, label: "مهام مكتملة", value: "156", color: "#60a5fa" },
-] as const;
+const EMPTY_SUMMARY: DashboardSummary = {
+  projectsActive: 0,
+  locationsCount: 0,
+  setsCount: 0,
+  completedTasks: 0,
+  pluginsCount: 0,
+  lastUpdated: "",
+};
 
 /**
  * مكون بطاقة الإحصائية
@@ -214,6 +222,18 @@ function LoadingState() {
   );
 }
 
+interface ErrorAlertProps {
+  message: string;
+}
+
+function ErrorAlert({ message }: ErrorAlertProps) {
+  return (
+    <div className="art-alert art-alert-error" style={{ marginBottom: "24px" }} role="alert">
+      {message}
+    </div>
+  );
+}
+
 /**
  * مكون شبكة الإضافات
  */
@@ -270,13 +290,70 @@ function Section({ title, children, style }: SectionProps) {
  * المكون الرئيسي للوحة التحكم
  */
 export default function Dashboard({ onNavigate }: DashboardProps) {
-  const { plugins, loading } = usePlugins();
+  const { plugins, loading, error: pluginsError } = usePlugins();
+  const [summary, setSummary] = useState<DashboardSummary>(EMPTY_SUMMARY);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
+
+  const loadSummary = useCallback(async () => {
+    setSummaryError(null);
+
+    try {
+      const response = await fetchArtDirectorJson<ApiResponse<{ summary: DashboardSummary }>>(
+        "/dashboard/summary"
+      );
+
+      if (response.success && response.data?.summary) {
+        setSummary(response.data.summary);
+        return;
+      }
+
+      setSummaryError(response.error ?? "تعذر تحميل ملخص لوحة التحكم");
+    } catch (error) {
+      setSummaryError(
+        error instanceof Error ? error.message : "تعذر تحميل ملخص لوحة التحكم"
+      );
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadSummary();
+  }, [loadSummary]);
 
   /**
    * التاريخ الحالي بالتنسيق العربي
    * يستخدم useMemo لتجنب إعادة الحساب
    */
   const formattedDate = useMemo(() => formatArabicDate(), []);
+
+  const stats = useMemo<Stat[]>(
+    () => [
+      {
+        icon: Sparkles,
+        label: "مشاريع نشطة",
+        value: String(summary.projectsActive),
+        color: "#e94560",
+      },
+      {
+        icon: MapPin,
+        label: "مواقع مسجلة",
+        value: String(summary.locationsCount),
+        color: "#4ade80",
+      },
+      {
+        icon: Boxes,
+        label: "ديكورات",
+        value: String(summary.setsCount),
+        color: "#fbbf24",
+      },
+      {
+        icon: CheckCircle2,
+        label: "مهام مكتملة",
+        value: String(summary.completedTasks),
+        color: "#60a5fa",
+      },
+    ],
+    [summary]
+  );
 
   return (
     <div className="art-director-page">
@@ -297,6 +374,11 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
           <p style={{ color: "var(--art-text-muted)", fontSize: "16px" }}>
             مساعدك الذكي لتصميم الديكورات السينمائية
           </p>
+          {summary.lastUpdated && (
+            <p style={{ color: "var(--art-text-muted)", fontSize: "13px", marginTop: "8px" }}>
+              آخر مزامنة: {new Date(summary.lastUpdated).toLocaleString("ar-EG")}
+            </p>
+          )}
         </div>
         <div 
           style={{ 
@@ -312,10 +394,13 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
         </div>
       </header>
 
+      {summaryError && <ErrorAlert message={summaryError} />}
+      {pluginsError && <ErrorAlert message={pluginsError} />}
+
       {/* قسم الإحصائيات */}
       <Section>
         <div className="art-grid-4">
-          {STATS.map((stat, index) => (
+          {stats.map((stat, index) => (
             <StatCard key={index} stat={stat} />
           ))}
         </div>

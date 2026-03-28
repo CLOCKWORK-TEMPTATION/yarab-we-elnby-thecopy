@@ -1,4 +1,4 @@
-import { TaskType } from "../../../../core/types";
+import { TaskType } from "../../core/types";
 import { BaseAgent } from "../shared/BaseAgent";
 import {
   StandardAgentInput,

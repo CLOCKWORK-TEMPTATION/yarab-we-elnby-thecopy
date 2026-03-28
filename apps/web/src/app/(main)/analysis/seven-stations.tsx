@@ -52,8 +52,10 @@ function LoadingFallback() {
  */
 export default function SevenStationsPage() {
   return (
-    <Suspense fallback={<LoadingFallback />}>
-      <SevenStationsComponent />
-    </Suspense>
+    <main>
+      <Suspense fallback={<LoadingFallback />}>
+        <SevenStationsComponent />
+      </Suspense>
+    </main>
   );
 }

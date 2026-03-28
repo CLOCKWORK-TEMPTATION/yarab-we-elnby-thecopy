@@ -2,19 +2,21 @@
 
 import dynamic from "next/dynamic";
 
+/**
+ * V2 shell — decomposed modular architecture
+ * Replaces monolith import from @the-copy/actorai
+ * Original: import("@the-copy/actorai").then(mod => mod.ActorAiArabicStudio)
+ */
 const ActorAiArabicStudio = dynamic(
-  () =>
-    import("@the-copy/actorai").then((mod) => ({
-      default: mod.ActorAiArabicStudio,
-    })),
+  () => import("./components/ActorAiArabicStudioV2"),
   {
     loading: () => (
-      <div className="min-h-screen flex items-center justify-center">
+      <main className="min-h-screen flex items-center justify-center" role="main">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">جاري تحميل استوديو الممثل...</p>
         </div>
-      </div>
+      </main>
     ),
     ssr: false,
   }

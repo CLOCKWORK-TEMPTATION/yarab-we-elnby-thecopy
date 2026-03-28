@@ -13,9 +13,9 @@ export type {
   AIRequest,
   AIResponse,
   AgentConfigMapping,
-} from "../../core/types";
+} from "./core/types";
 
-export { TaskType, TaskCategory } from "../../core/types";
+export { TaskType, TaskCategory } from "./core/types";
 
 /**
  * Processed file information

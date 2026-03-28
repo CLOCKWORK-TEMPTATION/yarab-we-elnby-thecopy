@@ -1,260 +1,283 @@
-/**
- * @fileoverview مخططات التحقق من البيانات باستخدام Zod
- * 
- * هذا الملف يحتوي على جميع مخططات التحقق (Validation Schemas) المستخدمة
- * في وحدة تفريغ السيناريو. الهدف من هذه المخططات هو ضمان صحة البيانات
- * الواردة من واجهات API والمدخلات المستخدم قبل معالجتها.
- * 
- * السبب: نحتاج للتحقق من صحة البيانات لمنع الأخطاء غير المتوقعة
- * وضمان تجربة مستخدم سلسة حتى في حالة وجود بيانات غير صالحة.
- */
+import { z } from "zod";
 
-import { z } from 'zod';
+const TimeOfDaySchema = z.enum([
+  "DAY",
+  "NIGHT",
+  "DAWN",
+  "DUSK",
+  "MORNING",
+  "EVENING",
+  "UNKNOWN",
+]);
 
-// ============================================
-// مخططات أعضاء فريق التمثيل
-// ============================================
+const SceneTypeSchema = z.enum(["INT", "EXT"]);
 
-/**
- * مخطط عضو فريق التمثيل الأساسي
- * يستخدم للتحقق من بيانات الشخصيات المستخرجة من المشاهد
- */
+export const SceneHeaderDataSchema = z.object({
+  sceneNumber: z.number().int().min(1),
+  sceneType: SceneTypeSchema,
+  location: z.string().min(1, "الموقع مطلوب"),
+  timeOfDay: TimeOfDaySchema.default("UNKNOWN"),
+  pageCount: z.number().min(0),
+  storyDay: z.number().int().min(1).default(1),
+  rawHeader: z.string().optional(),
+});
+
+export const BreakdownElementSchema = z.object({
+  id: z.string().min(1),
+  type: z.string().min(1),
+  category: z.string().min(1),
+  description: z.string().min(1),
+  color: z.string().min(1),
+  notes: z.string().optional(),
+});
+
+export const SceneStatsSchema = z.object({
+  cast: z.number().int().min(0).default(0),
+  extras: z.number().int().min(0).default(0),
+  extrasGroups: z.number().int().min(0).default(0),
+  silentBits: z.number().int().min(0).default(0),
+  props: z.number().int().min(0).default(0),
+  handProps: z.number().int().min(0).default(0),
+  setDressing: z.number().int().min(0).default(0),
+  costumes: z.number().int().min(0).default(0),
+  makeup: z.number().int().min(0).default(0),
+  sound: z.number().int().min(0).default(0),
+  soundRequirements: z.number().int().min(0).default(0),
+  equipment: z.number().int().min(0).default(0),
+  specialEquipment: z.number().int().min(0).default(0),
+  vehicles: z.number().int().min(0).default(0),
+  stunts: z.number().int().min(0).default(0),
+  animals: z.number().int().min(0).default(0),
+  spfx: z.number().int().min(0).default(0),
+  vfx: z.number().int().min(0).default(0),
+  graphics: z.number().int().min(0).default(0),
+  continuity: z.number().int().min(0).default(0),
+});
+
 export const CastMemberSchema = z.object({
-  name: z.string().min(1, 'اسم الشخصية مطلوب'),
-  role: z.string().default('Bit Part'),
-  age: z.string().default('Unknown'),
-  gender: z.enum(['Male', 'Female', 'Non-binary', 'Unknown']).default('Unknown'),
-  description: z.string().default(''),
-  motivation: z.string().default('')
+  name: z.string().min(1, "اسم الشخصية مطلوب"),
+  role: z.string().default("Bit Part"),
+  age: z.string().default("Unknown"),
+  gender: z.string().default("Unknown"),
+  description: z.string().default(""),
+  motivation: z.string().default(""),
 });
 
-/**
- * مخطط عضو فريق التمثيل الموسع
- * يحتوي على معلومات إضافية للتحليل المتقدم
- */
-export const ExtendedCastMemberSchema = CastMemberSchema.extend({
-  id: z.string().optional(),
-  nameArabic: z.string().optional(),
-  roleCategory: z.enum(['Lead', 'Supporting', 'Bit Part', 'Silent', 'Group', 'Mystery']).default('Bit Part'),
-  ageRange: z.string().default('Unknown'),
-  visualDescription: z.string().default(''),
-  personalityTraits: z.array(z.string()).optional(),
-  relationships: z.array(z.object({
-    character: z.string(),
-    type: z.string()
-  })).optional(),
-  scenePresence: z.object({
-    sceneNumbers: z.array(z.number()),
-    dialogueLines: z.number(),
-    silentAppearances: z.number()
-  }).optional()
+export const ExtrasGroupSchema = z.object({
+  description: z.string().min(1),
+  count: z.number().int().min(0).default(0),
 });
 
-// ============================================
-// مخططات تحليل المشهد
-// ============================================
-
-/**
- * مخطط تفريغ المشهد
- * يحتوي على جميع العناصر المستخرجة من المشهد
- */
 export const SceneBreakdownSchema = z.object({
+  headerData: SceneHeaderDataSchema.optional(),
   cast: z.array(CastMemberSchema).default([]),
   costumes: z.array(z.string()).default([]),
   makeup: z.array(z.string()).default([]),
   setDressing: z.array(z.string()).default([]),
   graphics: z.array(z.string()).default([]),
   sound: z.array(z.string()).default([]),
+  soundRequirements: z.array(z.string()).default([]),
   equipment: z.array(z.string()).default([]),
+  specialEquipment: z.array(z.string()).default([]),
   vehicles: z.array(z.string()).default([]),
   locations: z.array(z.string()).default([]),
   extras: z.array(z.string()).default([]),
+  extrasGroups: z.array(ExtrasGroupSchema).default([]),
   props: z.array(z.string()).default([]),
+  handProps: z.array(z.string()).default([]),
+  silentBits: z.array(z.string()).default([]),
   stunts: z.array(z.string()).default([]),
   animals: z.array(z.string()).default([]),
   spfx: z.array(z.string()).default([]),
   vfx: z.array(z.string()).default([]),
-  continuity: z.array(z.string()).default([])
+  continuity: z.array(z.string()).default([]),
+  continuityNotes: z.array(z.string()).default([]),
+  elements: z.array(BreakdownElementSchema).default([]),
+  stats: SceneStatsSchema.default({}),
+  warnings: z.array(z.string()).default([]),
+  summary: z.string().default(""),
+  source: z.enum(["ai", "fallback"]).optional(),
 });
 
-/**
- * مخطط المشهد الكامل
- * يمثل مشهداً واحداً مع جميع تحليلاته
- */
-export const SceneSchema = z.object({
-  id: z.number(),
-  header: z.string().min(1, 'عنوان المشهد مطلوب'),
-  content: z.string().min(1, 'محتوى المشهد مطلوب'),
-  isAnalyzed: z.boolean().default(false),
-  analysis: SceneBreakdownSchema.optional(),
-  scenarios: z.any().optional(),
-  versions: z.array(z.object({
-    id: z.string(),
-    timestamp: z.number(),
-    label: z.string(),
-    analysis: SceneBreakdownSchema.optional(),
-    scenarios: z.any().optional()
-  })).optional()
-});
-
-// ============================================
-// مخططات السيناريوهات الاستراتيجية
-// ============================================
-
-/**
- * مخطط مقاييس التأثير
- * يقيس تأثير كل سيناريو على مختلف جوانب الإنتاج
- */
 export const ImpactMetricsSchema = z.object({
   budget: z.number().min(0).max(100),
   schedule: z.number().min(0).max(100),
   risk: z.number().min(0).max(100),
-  creative: z.number().min(0).max(100)
+  creative: z.number().min(0).max(100),
 });
 
-/**
- * مخطط خيار السيناريو
- * يمثل سيناريو إنتاج واحد مع جميع تفاصيله
- */
 export const ScenarioOptionSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  description: z.string(),
+  id: z.string().min(1),
+  name: z.string().min(1),
+  description: z.string().min(1),
   metrics: ImpactMetricsSchema,
   agentInsights: z.object({
-    logistics: z.string(),
-    budget: z.string(),
-    schedule: z.string(),
-    creative: z.string(),
-    risk: z.string()
+    logistics: z.string().default(""),
+    budget: z.string().default(""),
+    schedule: z.string().default(""),
+    creative: z.string().default(""),
+    risk: z.string().default(""),
   }),
-  recommended: z.boolean().default(false)
+  recommended: z.boolean().default(false),
 });
 
-/**
- * مخطط تحليل السيناريوهات
- * يحتوي على جميع السيناريوهات المقترحة للمشهد
- */
 export const ScenarioAnalysisSchema = z.object({
-  scenarios: z.array(ScenarioOptionSchema)
+  scenarios: z.array(ScenarioOptionSchema).default([]),
 });
 
-// ============================================
-// مخططات استجابات API
-// ============================================
+export const VersionSchema = z.object({
+  id: z.string().min(1),
+  timestamp: z.number(),
+  label: z.string().min(1),
+  analysis: SceneBreakdownSchema.optional(),
+  scenarios: ScenarioAnalysisSchema.optional(),
+  headerData: SceneHeaderDataSchema.optional(),
+  stats: SceneStatsSchema.optional(),
+  warnings: z.array(z.string()).optional(),
+});
 
-/**
- * مخطط استجابة تقسيم السيناريو
- * يتحقق من صحة البيانات المرتجعة من خدمة التقسيم
- */
+export const SceneSchema = z.object({
+  id: z.number().int().min(1),
+  remoteId: z.string().optional(),
+  projectId: z.string().optional(),
+  reportId: z.string().optional(),
+  header: z.string().min(1, "عنوان المشهد مطلوب"),
+  content: z.string().min(1, "محتوى المشهد مطلوب"),
+  headerData: SceneHeaderDataSchema.optional(),
+  stats: SceneStatsSchema.optional(),
+  elements: z.array(BreakdownElementSchema).optional(),
+  warnings: z.array(z.string()).optional(),
+  source: z.enum(["ai", "fallback"]).optional(),
+  isAnalyzed: z.boolean().default(false),
+  analysis: SceneBreakdownSchema.optional(),
+  scenarios: ScenarioAnalysisSchema.optional(),
+  versions: z.array(VersionSchema).optional(),
+});
+
+export const ScriptSegmentSceneSchema = z.object({
+  header: z.string().min(1),
+  content: z.string().min(1),
+  headerData: SceneHeaderDataSchema.optional(),
+  sceneId: z.string().optional(),
+});
+
 export const ScriptSegmentResponseSchema = z.object({
-  scenes: z.array(z.object({
-    header: z.string(),
-    content: z.string()
-  }))
+  scenes: z.array(ScriptSegmentSceneSchema).default([]),
 });
 
-/**
- * مخطط تقرير التحليل
- * يستخدم في صفحة عرض التقرير النهائي
- */
-export const AnalysisReportSchema = z.object({
-  executiveSummary: z.string().default(''),
-  strengthsAnalysis: z.array(z.string()).default([]),
-  weaknessesIdentified: z.array(z.string()).default([]),
-  opportunitiesForImprovement: z.array(z.string()).default([]),
-  threatsToCohesion: z.array(z.string()).default([]),
-  overallAssessment: z.object({
-    narrativeQualityScore: z.number().default(0),
-    structuralIntegrityScore: z.number().default(0),
-    characterDevelopmentScore: z.number().default(0),
-    conflictEffectivenessScore: z.number().default(0),
-    overallScore: z.number().default(0),
-    rating: z.string().default('غير متاح')
-  }),
-  detailedFindings: z.record(z.unknown()).default({})
+export const ShootingScheduleItemSchema = z.object({
+  sceneId: z.string().min(1),
+  sceneNumber: z.number().int().min(1),
+  header: z.string().min(1),
+  location: z.string().min(1),
+  timeOfDay: TimeOfDaySchema,
+  estimatedHours: z.number().min(0),
+  pageCount: z.number().min(0),
 });
 
-// ============================================
-// أنواع TypeScript المشتقة من المخططات
-// ============================================
+export const ShootingScheduleDaySchema = z.object({
+  dayNumber: z.number().int().min(1),
+  location: z.string().min(1),
+  timeOfDay: TimeOfDaySchema,
+  scenes: z.array(ShootingScheduleItemSchema).default([]),
+  estimatedHours: z.number().min(0),
+  totalPages: z.number().min(0),
+});
+
+export const BreakdownReportSceneSchema = z.object({
+  reportSceneId: z.string().min(1),
+  sceneId: z.string().min(1),
+  header: z.string().min(1),
+  content: z.string().min(1),
+  headerData: SceneHeaderDataSchema,
+  analysis: SceneBreakdownSchema,
+  scenarios: ScenarioAnalysisSchema,
+});
+
+export const BreakdownReportSchema = z.object({
+  id: z.string().min(1),
+  projectId: z.string().min(1),
+  title: z.string().min(1),
+  generatedAt: z.string().min(1),
+  updatedAt: z.string().min(1),
+  source: z.literal("backend-breakdown"),
+  summary: z.string().default(""),
+  warnings: z.array(z.string()).default([]),
+  sceneCount: z.number().int().min(0),
+  totalPages: z.number().min(0),
+  totalEstimatedShootDays: z.number().int().min(0),
+  elementsByCategory: z.record(z.number()).default({}),
+  schedule: z.array(ShootingScheduleDaySchema).default([]),
+  scenes: z.array(BreakdownReportSceneSchema).default([]),
+});
+
+export const BreakdownBootstrapResponseSchema = z.object({
+  projectId: z.string().min(1),
+  title: z.string().min(1),
+  parsed: ScriptSegmentResponseSchema,
+});
+
+export const AnalysisReportSchema = BreakdownReportSchema;
 
 export type CastMemberInput = z.input<typeof CastMemberSchema>;
 export type CastMemberOutput = z.output<typeof CastMemberSchema>;
-
-export type ExtendedCastMemberInput = z.input<typeof ExtendedCastMemberSchema>;
-export type ExtendedCastMemberOutput = z.output<typeof ExtendedCastMemberSchema>;
-
 export type SceneBreakdownInput = z.input<typeof SceneBreakdownSchema>;
 export type SceneBreakdownOutput = z.output<typeof SceneBreakdownSchema>;
-
 export type SceneInput = z.input<typeof SceneSchema>;
 export type SceneOutput = z.output<typeof SceneSchema>;
-
 export type ScenarioAnalysisInput = z.input<typeof ScenarioAnalysisSchema>;
 export type ScenarioAnalysisOutput = z.output<typeof ScenarioAnalysisSchema>;
+export type BreakdownReportInput = z.input<typeof BreakdownReportSchema>;
+export type BreakdownReportOutput = z.output<typeof BreakdownReportSchema>;
+export type AnalysisReportInput = BreakdownReportInput;
+export type AnalysisReportOutput = BreakdownReportOutput;
 
-export type AnalysisReportInput = z.input<typeof AnalysisReportSchema>;
-export type AnalysisReportOutput = z.output<typeof AnalysisReportSchema>;
+function normalizeError(error: z.ZodError): string {
+  return error.issues.map((issue) => issue.message).join(", ");
+}
 
-// ============================================
-// دوال التحقق المساعدة
-// ============================================
-
-/**
- * يتحقق من صحة بيانات المشهد ويعيد النتيجة الآمنة
- * 
- * السبب: نستخدم safeParse لتجنب إلقاء الأخطاء ومعالجتها بشكل graceful
- */
-export function validateScene(data: unknown): { success: true; data: SceneOutput } | { success: false; error: string } {
+export function validateScene(data: unknown):
+  | { success: true; data: SceneOutput }
+  | { success: false; error: string } {
   const result = SceneSchema.safeParse(data);
   if (result.success) {
     return { success: true, data: result.data };
   }
-  return { 
-    success: false, 
-    error: result.error.issues.map(i => i.message).join(', ') 
-  };
+
+  return { success: false, error: normalizeError(result.error) };
 }
 
-/**
- * يتحقق من صحة بيانات تفريغ المشهد
- */
-export function validateSceneBreakdown(data: unknown): { success: true; data: SceneBreakdownOutput } | { success: false; error: string } {
+export function validateSceneBreakdown(data: unknown):
+  | { success: true; data: SceneBreakdownOutput }
+  | { success: false; error: string } {
   const result = SceneBreakdownSchema.safeParse(data);
   if (result.success) {
     return { success: true, data: result.data };
   }
-  return { 
-    success: false, 
-    error: result.error.issues.map(i => i.message).join(', ') 
-  };
+
+  return { success: false, error: normalizeError(result.error) };
 }
 
-/**
- * يتحقق من صحة استجابة تقسيم السيناريو
- */
-export function validateScriptSegmentResponse(data: unknown): { success: true; data: z.output<typeof ScriptSegmentResponseSchema> } | { success: false; error: string } {
+export function validateScriptSegmentResponse(data: unknown):
+  | { success: true; data: z.output<typeof ScriptSegmentResponseSchema> }
+  | { success: false; error: string } {
   const result = ScriptSegmentResponseSchema.safeParse(data);
   if (result.success) {
     return { success: true, data: result.data };
   }
-  return { 
-    success: false, 
-    error: result.error.issues.map(i => i.message).join(', ') 
-  };
+
+  return { success: false, error: normalizeError(result.error) };
 }
 
-/**
- * يتحقق من صحة تقرير التحليل
- */
-export function validateAnalysisReport(data: unknown): { success: true; data: AnalysisReportOutput } | { success: false; error: string } {
-  const result = AnalysisReportSchema.safeParse(data);
+export function validateBreakdownReport(data: unknown):
+  | { success: true; data: BreakdownReportOutput }
+  | { success: false; error: string } {
+  const result = BreakdownReportSchema.safeParse(data);
   if (result.success) {
     return { success: true, data: result.data };
   }
-  return { 
-    success: false, 
-    error: result.error.issues.map(i => i.message).join(', ') 
-  };
+
+  return { success: false, error: normalizeError(result.error) };
 }
+
+export const validateAnalysisReport = validateBreakdownReport;

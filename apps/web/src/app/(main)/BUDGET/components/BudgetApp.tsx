@@ -45,7 +45,7 @@ import { EnhancedChart } from './EnhancedChart';
 import { BudgetAnalytics } from './BudgetAnalytics';
 import { TemplateSelector } from './TemplateSelector';
 import { ExportModal } from './ExportModal';
-// import { ScriptAnalyzer } from './ScriptAnalyzer'; // Was missing in file list, commenting out
+import { ScriptAnalyzer } from './ScriptAnalyzer';
 
 // Utility functions
 const formatCurrency = (value: number) =>
@@ -184,7 +184,9 @@ const BudgetApp: React.FC<BudgetAppProps> = ({ initialBudget, initialScript }) =
     const savePreferences = (newPrefs: Partial<UserPreferences>) => {
         const updated = { ...preferences, ...newPrefs };
         setPreferences(updated);
-        localStorage.setItem('filmbudgetai-preferences', JSON.stringify(updated));
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('filmbudgetai-preferences', JSON.stringify(updated));
+        }
     };
 
     const handleGenerate = async () => {
@@ -338,7 +340,9 @@ stunt work, visual effects, and a large cast.`);
 
         const updatedSaved = [...savedBudgets.filter(b => b.name !== budgetName), newSaved];
         setSavedBudgets(updatedSaved);
-        localStorage.setItem('filmbudgetai-saved-v3', JSON.stringify(updatedSaved));
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('filmbudgetai-saved-v3', JSON.stringify(updatedSaved));
+        }
 
         if (!isAutoSave) {
             toast.success('Budget saved successfully!');
@@ -356,7 +360,9 @@ stunt work, visual effects, and a large cast.`);
     const deleteSavedBudget = (id: string) => {
         const updatedSaved = savedBudgets.filter(b => b.id !== id);
         setSavedBudgets(updatedSaved);
-        localStorage.setItem('filmbudgetai-saved-v3', JSON.stringify(updatedSaved));
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('filmbudgetai-saved-v3', JSON.stringify(updatedSaved));
+        }
         toast.success('Budget deleted');
     };
 
@@ -373,7 +379,9 @@ stunt work, visual effects, and a large cast.`);
 
         const updatedSaved = [...savedBudgets, newSaved];
         setSavedBudgets(updatedSaved);
-        localStorage.setItem('filmbudgetai-saved-v3', JSON.stringify(updatedSaved));
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('filmbudgetai-saved-v3', JSON.stringify(updatedSaved));
+        }
         toast.success('Budget duplicated!');
     };
 

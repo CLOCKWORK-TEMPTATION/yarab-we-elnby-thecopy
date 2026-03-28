@@ -15,6 +15,7 @@
 import { useState, useCallback } from "react";
 import { Palette, Sparkles, Image, Wand2 } from "lucide-react";
 import type { ColorPaletteInspiration, MoodBoard, ApiResponse } from "../types";
+import { fetchArtDirectorJson } from "../lib/api-client";
 
 /**
  * واجهة نتيجة التحليل من API
@@ -167,7 +168,7 @@ export default function Inspiration() {
     setError(null);
 
     try {
-      const response = await fetch("/api/inspiration/analyze", {
+      const data = await fetchArtDirectorJson<AnalysisApiResponse>("/inspiration/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -176,8 +177,6 @@ export default function Inspiration() {
           era: era || undefined,
         }),
       });
-      
-      const data: AnalysisApiResponse = await response.json();
       
       if (data.success && data.data) {
         setResult(data.data);
@@ -202,13 +201,11 @@ export default function Inspiration() {
     setError(null);
 
     try {
-      const response = await fetch("/api/inspiration/palette", {
+      const data = await fetchArtDirectorJson<PaletteApiResponse>("/inspiration/palette", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ mood, count: 3 }),
       });
-      
-      const data: PaletteApiResponse = await response.json();
       
       if (data.success && data.data?.palettes) {
         setPalettes(data.data.palettes);

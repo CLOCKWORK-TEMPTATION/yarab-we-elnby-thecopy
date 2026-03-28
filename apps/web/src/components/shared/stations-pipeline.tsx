@@ -20,10 +20,10 @@ import {
 import { runFullPipeline } from "@/lib/actions/analysis";
 import { useToast } from "@/hooks/use-toast";
 // import { textChunker, type ContextMap } from "@/lib/ai/text-chunking";
-import { Button } from "./ui/button";
-import { Progress } from "./ui/progress";
-import { Textarea } from "./ui/textarea";
-import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 // Minimal ContextMap type to avoid missing type errors when chunking is disabled
 type ContextMap = {
@@ -31,7 +31,7 @@ type ContextMap = {
   totalTokens: number;
 };
 // Dynamically import heavy components
-const FileUpload = dynamic(() => import("./file-upload"), {
+const FileUpload = dynamic(() => import("@/components/file-upload"), {
   loading: () => (
     <div className="flex items-center justify-center p-4">
       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
@@ -39,7 +39,7 @@ const FileUpload = dynamic(() => import("./file-upload"), {
   ),
 });
 
-const StationCard = dynamic(() => import("./station-card"), {
+const StationCard = dynamic(() => import("@/components/station-card"), {
   loading: () => (
     <div className="flex items-center justify-center p-4">
       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
@@ -102,8 +102,8 @@ const StationsPipeline = () => {
   const [activeStation, setActiveStation] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const [contextMap, setContextMap] = useState<ContextMap | null>(null);
-  const [isLongText, setIsLongText] = useState<boolean>(false);
+  const [contextMap] = useState<ContextMap | null>(null);
+  const [isLongText] = useState<boolean>(false);
   const { toast } = useToast();
 
   const progress =
@@ -146,15 +146,19 @@ const StationsPipeline = () => {
           projectName: "تحليل درامي شامل",
         });
 
-        const formattedResults = {
-          station1: pipelineResult?.stationOutputs?.station1,
-          station2: pipelineResult?.stationOutputs?.station2,
-          station3: pipelineResult?.stationOutputs?.station3,
-          station4: pipelineResult?.stationOutputs?.station4,
-          station5: pipelineResult?.stationOutputs?.station5,
-          station6: pipelineResult?.stationOutputs?.station6,
-          station7: pipelineResult?.stationOutputs?.station7,
+        const formattedResults: Record<number, unknown> = {
+          1: pipelineResult?.stationOutputs?.station1,
+          2: pipelineResult?.stationOutputs?.station2,
+          3: pipelineResult?.stationOutputs?.station3,
+          4: pipelineResult?.stationOutputs?.station4,
+          5: pipelineResult?.stationOutputs?.station5,
+          6: pipelineResult?.stationOutputs?.station6,
+          7: pipelineResult?.stationOutputs?.station7,
         };
+
+        const nextStatuses = stations.map((station) =>
+          formattedResults[station.id] ? "completed" : "failed"
+        );
 
         // Save to session storage for development pipeline
         const analysisId = `analysis_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -174,7 +178,7 @@ const StationsPipeline = () => {
         sessionStorage.setItem("contextMap", JSON.stringify(contextMap));
 
         setResults(formattedResults);
-        setStatuses(Array(stations.length).fill("completed"));
+        setStatuses(nextStatuses);
         setActiveStation(null);
         toast({
           title: "اكتمل التحليل",
@@ -182,6 +186,13 @@ const StationsPipeline = () => {
             ? `تم تحليل النص الطويل (${contextMap?.chunks.length ?? 0} أجزاء) وحفظ النتائج لقسم التطوير الإبداعي.`
             : "تم حفظ النتائج لقسم التطوير الإبداعي. يمكنك الآن الانتقال لصفحة التطوير.",
         });
+
+        if (pipelineResult.mode === "fallback" && pipelineResult.warnings.length > 0) {
+          toast({
+            title: "تم تفعيل المسار الاحتياطي",
+            description: pipelineResult.warnings[0],
+          });
+        }
       } catch (error: any) {
         setErrorMessage(`فشل التحليل: ${error?.message || "خطأ غير معروف"}`);
         toast({
@@ -265,7 +276,7 @@ const StationsPipeline = () => {
           placeholder="ألصق النص الدرامي هنا لبدء التحليل ..."
           className="min-h-48 w-full rounded-lg border-2 bg-card p-4 shadow-sm"
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setText(e.target.value)}
           disabled={isPending}
         />
         <div className="flex flex-col gap-2 sm:flex-row sm:justify-between">

@@ -17,6 +17,8 @@ describe("domain schemas", () => {
       expect(result.data.sound).toEqual([]);
       expect(result.data.equipment).toEqual([]);
       expect(result.data.continuity).toEqual([]);
+      expect(result.data.elements).toEqual([]);
+      expect(result.data.stats.cast).toBe(0);
     }
   });
 
@@ -28,19 +30,22 @@ describe("domain schemas", () => {
 
   it("يقبل تقرير تحليل صحيح", () => {
     const result = validateAnalysisReport({
-      executiveSummary: "ملخص",
-      strengthsAnalysis: [],
-      weaknessesIdentified: [],
-      opportunitiesForImprovement: [],
-      threatsToCohesion: [],
-      overallAssessment: {
-        narrativeQualityScore: 1,
-        structuralIntegrityScore: 1,
-        characterDevelopmentScore: 1,
-        conflictEffectivenessScore: 1,
-        overallScore: 1,
-        rating: "جيد",
+      id: "report-1",
+      projectId: "project-1",
+      title: "تقرير بريك دون",
+      generatedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      source: "backend-breakdown",
+      summary: "ملخص",
+      warnings: [],
+      sceneCount: 1,
+      totalPages: 1,
+      totalEstimatedShootDays: 1,
+      elementsByCategory: {
+        الشخصيات: 2,
       },
+      schedule: [],
+      scenes: [],
     });
 
     expect(result.success).toBe(true);

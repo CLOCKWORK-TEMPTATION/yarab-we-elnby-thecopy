@@ -12,7 +12,7 @@
  */
 "use client";
 
-import { memo, useMemo, useCallback } from "react";
+import { memo, useMemo, type ReactElement } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -52,7 +52,7 @@ interface CharacterTrackerProps {
  * خريطة أيقونات حالات الاتساق
  * السبب: توحيد المظهر البصري لكل حالة
  */
-const STATUS_ICONS: Record<ConsistencyStatus, JSX.Element> = {
+const STATUS_ICONS: Record<ConsistencyStatus, ReactElement> = {
   good: <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" />,
   warning: (
     <AlertCircle className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />

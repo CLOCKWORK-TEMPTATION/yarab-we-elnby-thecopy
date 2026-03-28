@@ -1,16 +1,25 @@
 import { useCallback, useMemo, useState } from "react";
 import type {
+  BreakdownReport,
   Scene,
   SceneBreakdown,
   ScenarioAnalysis,
   Version,
 } from "../../domain/models";
-import { validateScriptSegmentResponse } from "../../domain/schemas";
 import { logError } from "../../domain/errors";
 import { MOCK_SCRIPT } from "../../domain/constants";
+import { validateScriptSegmentResponse } from "../../domain/schemas";
 import { AGENTS } from "../../constants";
-import { segmentScript } from "../../infrastructure/gemini/segment-script";
+import {
+  analyzeBreakdownProject,
+  bootstrapBreakdownProject,
+  mapReportSceneToWorkspaceScene,
+} from "../../infrastructure/platform-client";
 import { useToastQueue } from "./use-toast-queue";
+import {
+  clearStoredAnalysisReport,
+  writeAnalysisReportToStorage,
+} from "../report/report-storage";
 
 export interface ScriptError {
   message: string;
@@ -25,6 +34,8 @@ export interface ScriptError {
 export function useScriptWorkspace() {
   const [scriptText, setScriptText] = useState(MOCK_SCRIPT);
   const [scenes, setScenes] = useState<Scene[]>([]);
+  const [report, setReport] = useState<BreakdownReport | null>(null);
+  const [projectId, setProjectId] = useState<string | null>(null);
   const [isSegmenting, setIsSegmenting] = useState(false);
   const [error, setError] = useState<ScriptError | null>(null);
   const [view, setView] = useState<"input" | "results">("input");
@@ -45,8 +56,8 @@ export function useScriptWorkspace() {
     setError(null);
 
     try {
-      const response = await segmentScript(scriptText);
-      const validationResult = validateScriptSegmentResponse(response);
+      const bootstrap = await bootstrapBreakdownProject(scriptText);
+      const validationResult = validateScriptSegmentResponse(bootstrap.parsed);
 
       if (!validationResult.success) {
         const nextError: ScriptError = {
@@ -58,17 +69,7 @@ export function useScriptWorkspace() {
         return false;
       }
 
-      const nextScenes: Scene[] = validationResult.data.scenes.map(
-        (scene, index) => ({
-          id: index + 1,
-          header: scene.header,
-          content: scene.content,
-          isAnalyzed: false,
-          versions: [],
-        })
-      );
-
-      if (nextScenes.length === 0) {
+      if (validationResult.data.scenes.length === 0) {
         const nextError: ScriptError = {
           message:
             "لم يتم اكتشاف أي مشاهد في السيناريو. تأكد من تنسيق السيناريو.",
@@ -79,8 +80,21 @@ export function useScriptWorkspace() {
         return false;
       }
 
+      const nextReport = await analyzeBreakdownProject(bootstrap.projectId);
+      const nextScenes = nextReport.scenes.map((scene, index) =>
+        mapReportSceneToWorkspaceScene(
+          scene,
+          nextReport.projectId,
+          nextReport.id,
+          index
+        )
+      );
+
+      setProjectId(nextReport.projectId);
+      setReport(nextReport);
       setScenes(nextScenes);
       setView("results");
+      writeAnalysisReportToStorage(nextReport);
       return true;
     } catch (err) {
       logError("useScriptWorkspace.processScript", err);
@@ -102,11 +116,14 @@ export function useScriptWorkspace() {
     (
       id: number,
       breakdown?: SceneBreakdown,
-      scenarios?: ScenarioAnalysis
+      scenarios?: ScenarioAnalysis,
+      scenePatch: Partial<Scene> = {}
     ) => {
       setScenes((prev) =>
         prev.map((scene) => {
-          if (scene.id !== id) return scene;
+          if (scene.id !== id) {
+            return scene;
+          }
 
           const oldVersions = scene.versions || [];
           const newVersions = [...oldVersions];
@@ -120,32 +137,81 @@ export function useScriptWorkspace() {
               )}`,
               analysis: scene.analysis,
               scenarios: scene.scenarios,
+              headerData: scene.headerData,
+              stats: scene.stats,
+              warnings: scene.warnings,
             };
             newVersions.unshift(newVersion);
           }
 
-          return {
+          const nextScene: Scene = {
             ...scene,
+            ...scenePatch,
             isAnalyzed: !!breakdown || !!scene.analysis,
             analysis: breakdown || scene.analysis,
             scenarios: scenarios || scene.scenarios,
+            headerData:
+              scenePatch.headerData || breakdown?.headerData || scene.headerData,
+            stats: scenePatch.stats || breakdown?.stats || scene.stats,
+            elements:
+              scenePatch.elements || breakdown?.elements || scene.elements,
+            warnings:
+              scenePatch.warnings || breakdown?.warnings || scene.warnings,
+            source: scenePatch.source || breakdown?.source || scene.source,
             versions: newVersions,
           };
+
+          return nextScene;
         })
       );
+
+      setReport((prevReport) => {
+        if (!prevReport || !breakdown) {
+          return prevReport;
+        }
+
+        const nextScenes = prevReport.scenes.map((scene) =>
+          scene.sceneId === scenePatch.remoteId
+            ? {
+                ...scene,
+                analysis: breakdown,
+                scenarios: scenarios || scene.scenarios,
+                headerData:
+                  scenePatch.headerData || breakdown.headerData || scene.headerData,
+                header: scenePatch.header || scene.header,
+                content: scenePatch.content || scene.content,
+              }
+            : scene
+        );
+
+        const nextReport = {
+          ...prevReport,
+          updatedAt: new Date().toISOString(),
+          scenes: nextScenes,
+        };
+
+        writeAnalysisReportToStorage(nextReport);
+        return nextReport;
+      });
     },
     []
   );
 
   const restoreVersion = useCallback((sceneId: number, versionId: string) => {
+    let restoredScene: Scene | null = null;
+
     setScenes((prev) =>
       prev.map((scene) => {
-        if (scene.id !== sceneId || !scene.versions) return scene;
+        if (scene.id !== sceneId || !scene.versions) {
+          return scene;
+        }
 
         const versionToRestore = scene.versions.find(
           (version) => version.id === versionId
         );
-        if (!versionToRestore) return scene;
+        if (!versionToRestore) {
+          return scene;
+        }
 
         const currentVersion: Version = {
           id: Date.now().toString(),
@@ -155,22 +221,67 @@ export function useScriptWorkspace() {
           )})`,
           analysis: scene.analysis,
           scenarios: scene.scenarios,
+          headerData: scene.headerData,
+          stats: scene.stats,
+          warnings: scene.warnings,
         };
 
-        return {
+        restoredScene = {
           ...scene,
-          analysis: versionToRestore.analysis,
-          scenarios: versionToRestore.scenarios,
+          analysis: versionToRestore.analysis || scene.analysis,
+          scenarios: versionToRestore.scenarios || scene.scenarios,
+          headerData: versionToRestore.headerData || scene.headerData,
+          stats: versionToRestore.stats || scene.stats,
+          warnings: versionToRestore.warnings || scene.warnings,
           versions: [currentVersion, ...scene.versions],
         };
+
+        return restoredScene;
       })
     );
+
+    setReport((prevReport) => {
+      if (!prevReport || !restoredScene?.remoteId) {
+        return prevReport;
+      }
+
+      const restoredAnalysis = restoredScene.analysis;
+      const restoredHeaderData = restoredScene.headerData;
+      if (!restoredAnalysis || !restoredHeaderData) {
+        return prevReport;
+      }
+
+      const nextScenes = prevReport.scenes.map((scene) =>
+        scene.sceneId === restoredScene?.remoteId
+          ? {
+              ...scene,
+              analysis: restoredAnalysis,
+              scenarios: restoredScene.scenarios || scene.scenarios,
+              headerData: restoredHeaderData,
+              header: restoredScene.header,
+              content: restoredScene.content,
+            }
+          : scene
+      );
+
+      const nextReport = {
+        ...prevReport,
+        updatedAt: new Date().toISOString(),
+        scenes: nextScenes,
+      };
+
+      writeAnalysisReportToStorage(nextReport);
+      return nextReport;
+    });
   }, []);
 
   const resetWorkspace = useCallback(() => {
     setView("input");
     setScenes([]);
+    setReport(null);
+    setProjectId(null);
     setError(null);
+    clearStoredAnalysisReport();
   }, []);
 
   const previewAgents = useMemo(
@@ -183,6 +294,8 @@ export function useScriptWorkspace() {
     setScriptText,
     scenes,
     setScenes,
+    report,
+    projectId,
     isSegmenting,
     error,
     view,

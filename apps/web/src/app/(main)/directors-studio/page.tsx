@@ -15,14 +15,14 @@
 import { useMemo } from "react";
 import dynamic from "next/dynamic";
 import {
-  PageLayout,
-  LoadingSection,
   hasActiveProject,
   prepareCharacterList,
   type CharacterTrackerProps,
   type ProjectCharacterInput,
   type SceneCardProps,
-} from "@the-copy/directors-studio";
+} from "./helpers/projectSummary";
+import { PageLayout } from "./components/PageLayout";
+import { LoadingSection } from "./components/LoadingSection";
 import {
   useProjectScenes,
   useProjectCharacters,
@@ -47,7 +47,7 @@ const DEFAULT_SCENE_STATUS: ValidSceneStatus = "planned";
  */
 const NoProjectSection = dynamic(
   () =>
-    import("@the-copy/directors-studio").then(
+    import("./components/NoProjectSection").then(
       (mod) => ({ default: mod.NoProjectSection })
     ),
   {
@@ -61,7 +61,7 @@ const NoProjectSection = dynamic(
  */
 const ProjectContent = dynamic(
   () =>
-    import("@the-copy/directors-studio").then(
+    import("./components/ProjectContent").then(
       (mod) => ({ default: mod.ProjectContent })
     ),
   {

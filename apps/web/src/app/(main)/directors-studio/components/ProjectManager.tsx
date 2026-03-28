@@ -212,7 +212,10 @@ export default function ProjectManager() {
    * معالج اختيار المشروع
    */
   const handleSelectProject = useCallback((project: Project) => {
-    setCurrentProject(project);
+    setCurrentProject({
+      ...project,
+      scriptContent: project.scriptContent ?? null,
+    });
     window.location.reload();
   }, []);
 

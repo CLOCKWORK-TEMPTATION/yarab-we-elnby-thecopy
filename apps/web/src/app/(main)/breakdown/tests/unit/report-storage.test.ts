@@ -2,32 +2,30 @@ import { describe, expect, it, vi } from "vitest";
 import {
   breakdownReportErrors,
   readAnalysisReportFromStorage,
+  readStoredProjectId,
+  readStoredReportId,
+  writeAnalysisReportToStorage,
 } from "../../breakdown-report";
 
-const validStoredResults = {
-  stationOutputs: {
-    station7: {
-      finalReport: {
-        executiveSummary: "ملخص تنفيذي",
-        strengthsAnalysis: ["قوة 1"],
-        weaknessesIdentified: ["ضعف 1"],
-        opportunitiesForImprovement: ["فرصة 1"],
-        threatsToCoherence: ["تهديد 1"],
-        overallAssessment: {
-          narrativeQualityScore: 8,
-          structuralIntegrityScore: 7,
-          characterDevelopmentScore: 9,
-          conflictEffectivenessScore: 6,
-          overallScore: 8,
-          rating: "جيد جدًا",
-        },
-      },
-    },
-  },
+const validReport = {
+  id: "report-1",
+  projectId: "project-1",
+  title: "تقرير بريك دون",
+  generatedAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  source: "backend-breakdown" as const,
+  summary: "ملخص تنفيذي",
+  warnings: ["تحذير 1"],
+  sceneCount: 1,
+  totalPages: 1.25,
+  totalEstimatedShootDays: 1,
+  elementsByCategory: { الشخصيات: 2 },
+  schedule: [],
+  scenes: [],
 };
 
 describe("readAnalysisReportFromStorage", () => {
-  it("يعيد خطأ واضحًا عند عدم وجود نتائج محفوظة", () => {
+  it("يعيد خطأ واضحًا عند عدم وجود تقرير محفوظ", () => {
     const storage = {
       getItem: vi.fn().mockReturnValue(null),
     };
@@ -38,9 +36,9 @@ describe("readAnalysisReportFromStorage", () => {
     });
   });
 
-  it("يحوّل threatsToCoherence إلى threatsToCohesion قبل التحقق من الصحة", () => {
+  it("يقرأ تقرير البريك دون الحديث من التخزين", () => {
     const storage = {
-      getItem: vi.fn().mockReturnValue(JSON.stringify(validStoredResults)),
+      getItem: vi.fn().mockReturnValue(JSON.stringify(validReport)),
     };
 
     const result = readAnalysisReportFromStorage(storage);
@@ -48,42 +46,37 @@ describe("readAnalysisReportFromStorage", () => {
     expect(result.success).toBe(true);
 
     if (result.success) {
-      expect(result.data.threatsToCohesion).toEqual(["تهديد 1"]);
-      expect(result.data.overallAssessment.rating).toBe("جيد جدًا");
+      expect(result.data.projectId).toBe("project-1");
+      expect(result.data.elementsByCategory.الشخصيات).toBe(2);
     }
   });
 
-  it("يعيد خطأ واضحًا عند غياب التقرير النهائي", () => {
+  it("يحفظ معرفي المشروع والتقرير مع اللقطة الكاملة", () => {
     const storage = {
-      getItem: vi.fn().mockReturnValue(
-        JSON.stringify({
-          stationOutputs: {
-            station7: {},
-          },
-        })
-      ),
+      getItem: vi.fn((key: string) => store[key] ?? null),
+      setItem: vi.fn((key: string, value: string) => {
+        store[key] = value;
+      }),
+      removeItem: vi.fn(),
     };
+    const store: Record<string, string> = {};
 
+    writeAnalysisReportToStorage(validReport, storage);
+
+    expect(readStoredProjectId(storage)).toBe("project-1");
+    expect(readStoredReportId(storage)).toBe("report-1");
     expect(readAnalysisReportFromStorage(storage)).toEqual({
-      success: false,
-      error: breakdownReportErrors.missingReport,
+      success: true,
+      data: validReport,
     });
   });
 
-  it("يعيد خطأ تنسيق عند وجود بيانات غير صالحة", () => {
+  it("يعيد خطأ تنسيق عند وجود تقرير غير صالح", () => {
     const storage = {
       getItem: vi.fn().mockReturnValue(
         JSON.stringify({
-          stationOutputs: {
-            station7: {
-              finalReport: {
-                executiveSummary: "ملخص غير مكتمل",
-                overallAssessment: {
-                  narrativeQualityScore: "bad-value",
-                },
-              },
-            },
-          },
+          id: "broken-report",
+          projectId: "project-1",
         })
       ),
     };

@@ -24,6 +24,7 @@ import { scenesController } from '@/controllers/scenes.controller';
 import { charactersController } from '@/controllers/characters.controller';
 import { shotsController } from '@/controllers/shots.controller';
 import { aiController } from '@/controllers/ai.controller';
+import { breakdownController } from '@/controllers/breakdown.controller';
 import { authMiddleware } from '@/middleware/auth.middleware';
 import { logger } from '@/utils/logger';
 import { closeDatabase } from '@/db';
@@ -157,7 +158,7 @@ app.use((req, res, next): void => {
         });
         return;
       }
-    } catch (err) {
+    } catch {
       logger.warn('CSRF: Invalid Referer URL');
       res.status(403).json({
         success: false,
@@ -187,7 +188,7 @@ try {
 
 
 // Initialize background job workers (BullMQ)
-(async () => {
+void (async (): Promise<void> => {
   try {
     await initializeWorkers();
     logger.info('Background job workers initialized');
@@ -303,6 +304,18 @@ app.post('/api/shots/suggestion', authMiddleware, csrfProtection, shotsControlle
 // AI endpoints (protected)
 app.post('/api/ai/chat', authMiddleware, csrfProtection, aiController.chat.bind(aiController));
 app.post('/api/ai/shot-suggestion', authMiddleware, csrfProtection, aiController.getShotSuggestion.bind(aiController));
+
+// Breakdown endpoints
+app.get('/api/breakdown/health', breakdownController.health.bind(breakdownController));
+app.post('/api/breakdown/projects/bootstrap', authMiddleware, csrfProtection, breakdownController.bootstrapProject.bind(breakdownController));
+app.post('/api/breakdown/projects/:projectId/parse', authMiddleware, csrfProtection, breakdownController.parseProject.bind(breakdownController));
+app.post('/api/breakdown/projects/:projectId/analyze', authMiddleware, csrfProtection, breakdownController.analyzeProject.bind(breakdownController));
+app.get('/api/breakdown/projects/:projectId/report', authMiddleware, breakdownController.getProjectReport.bind(breakdownController));
+app.get('/api/breakdown/projects/:projectId/schedule', authMiddleware, breakdownController.getProjectSchedule.bind(breakdownController));
+app.get('/api/breakdown/scenes/:sceneId', authMiddleware, breakdownController.getSceneBreakdown.bind(breakdownController));
+app.post('/api/breakdown/scenes/:sceneId/reanalyze', authMiddleware, csrfProtection, breakdownController.reanalyzeScene.bind(breakdownController));
+app.get('/api/breakdown/reports/:reportId/export', authMiddleware, breakdownController.exportReport.bind(breakdownController));
+app.post('/api/breakdown/chat', authMiddleware, csrfProtection, breakdownController.chat.bind(breakdownController));
 
 // Queue Management endpoints (protected)
 app.get('/api/queue/jobs/:jobId', authMiddleware, queueController.getJobStatus.bind(queueController));

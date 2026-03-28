@@ -12,7 +12,8 @@
 
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   LayoutDashboard,
   Palette,
@@ -54,6 +55,18 @@ interface NavItem {
  * يضمن Type Safety عند التعامل مع التنقل
  */
 type TabId = "dashboard" | "tools" | "inspiration" | "locations" | "sets" | "productivity" | "documentation";
+
+function isTabId(value: string | null): value is TabId {
+  return (
+    value === "dashboard" ||
+    value === "tools" ||
+    value === "inspiration" ||
+    value === "locations" ||
+    value === "sets" ||
+    value === "productivity" ||
+    value === "documentation"
+  );
+}
 
 /**
  * قائمة عناصر التنقل الجانبي
@@ -140,7 +153,12 @@ function Navigation({ activeTab, onTabChange }: NavigationProps) {
  * يدير حالة التنقل ويعرض المحتوى المناسب
  */
 export default function ArtDirectorStudio() {
-  const [activeTab, setActiveTab] = useState<TabId>("dashboard");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const requestedTab = searchParams.get("tab");
+  const initialTab: TabId = isTabId(requestedTab) ? requestedTab : "dashboard";
+  const [activeTab, setActiveTab] = useState<TabId>(initialTab);
 
   /**
    * معالج تغيير التبويب
@@ -149,6 +167,31 @@ export default function ArtDirectorStudio() {
   const handleTabChange = useCallback((tab: TabId) => {
     setActiveTab(tab);
   }, []);
+
+  useEffect(() => {
+    const nextTab = searchParams.get("tab");
+    if (isTabId(nextTab) && nextTab !== activeTab) {
+      setActiveTab(nextTab);
+      return;
+    }
+
+    if (!nextTab && activeTab !== "dashboard") {
+      setActiveTab("dashboard");
+    }
+  }, [activeTab, searchParams]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (activeTab === "dashboard") {
+      params.delete("tab");
+    } else {
+      params.set("tab", activeTab);
+    }
+
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }, [activeTab, pathname, router, searchParams]);
 
   /**
    * عرض المحتوى بناءً على التبويب النشط

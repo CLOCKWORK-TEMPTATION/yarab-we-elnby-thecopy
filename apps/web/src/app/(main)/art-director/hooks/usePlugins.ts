@@ -9,6 +9,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { PluginInfo, PluginsApiResponseSchema } from "../types";
+import { fetchArtDirectorJson } from "../lib/api-client";
 
 /**
  * الإضافات الافتراضية المستخدمة عند فشل الاتصال بـ API
@@ -60,7 +61,7 @@ interface UsePluginsReturn extends UsePluginsState {
  */
 export function usePlugins(): UsePluginsReturn {
   const [state, setState] = useState<UsePluginsState>({
-    plugins: DEFAULT_PLUGINS,
+    plugins: [],
     loading: true,
     error: null,
   });
@@ -72,23 +73,16 @@ export function usePlugins(): UsePluginsReturn {
     setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      const response = await fetch("/api/plugins");
-      
-      if (!response.ok) {
-        throw new Error(`فشل في جلب الإضافات: ${response.status}`);
-      }
-
-      const rawData: unknown = await response.json();
+      const rawData = await fetchArtDirectorJson<unknown>("/plugins");
       
       // التحقق من صحة البيانات باستخدام Zod
       const validationResult = PluginsApiResponseSchema.safeParse(rawData);
       
       if (!validationResult.success) {
-        // استخدام البيانات الافتراضية عند فشل التحقق
         setState({
           plugins: DEFAULT_PLUGINS,
           loading: false,
-          error: null,
+          error: "تم تحميل قائمة احتياطية لأن استجابة الخادم لم تطابق البنية المتوقعة",
         });
         return;
       }
@@ -101,11 +95,10 @@ export function usePlugins(): UsePluginsReturn {
         error: null,
       });
     } catch (err) {
-      // معالجة الأخطاء مع الحفاظ على البيانات الافتراضية
       setState({
         plugins: DEFAULT_PLUGINS,
         loading: false,
-        error: err instanceof Error ? err.message : "حدث خطأ غير متوقع",
+        error: err instanceof Error ? err.message : "تعذر تحميل الأدوات من الخادم",
       });
     }
   }, []);

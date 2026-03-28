@@ -1,88 +1,105 @@
-/**
- * Server actions for analysis pipeline
- *
- * DEV STUB: This file contains mock implementations
- * TODO PRODUCTION: Replace with actual pipeline orchestrator integration
- */
-
 "use server";
 
-// Development mode flag - set to false to use real pipeline
-const USE_MOCK_PIPELINE = process.env.USE_MOCK_PIPELINE !== "false";
+import { z } from "zod";
 
-export interface PipelineInput {
-  fullText: string;
-  projectName: string;
-  contextMap?: any;
+import { getApiKey } from "@/env";
+import {
+  buildFallbackSevenStationsResult,
+  serializeAnalysisValue,
+  type AnalysisPipelinePayload,
+} from "@/lib/analysis/seven-stations-fallback";
+
+const pipelineRequestSchema = z.object({
+  fullText: z.string().min(1, "النص مطلوب"),
+  projectName: z.string().min(1).default("تحليل درامي شامل"),
+});
+
+export type PipelineInput = z.infer<typeof pipelineRequestSchema>;
+export type PipelineResult = AnalysisPipelinePayload;
+
+function safeReadApiKey(): string | null {
+  try {
+    const apiKey = getApiKey();
+    return apiKey || null;
+  } catch {
+    return (
+      process.env.GEMINI_API_KEY_PROD ||
+      process.env.GEMINI_API_KEY_STAGING ||
+      null
+    );
+  }
 }
 
-export interface StationOutput {
-  stationId: number;
-  result: any;
-  status: "success" | "error";
-  error?: string;
-}
+function normalizePipelineResult(
+  result: Record<string, unknown>,
+  request: PipelineInput
+): AnalysisPipelinePayload {
+  const stationOutputs = serializeAnalysisValue(
+    (result.stationOutputs || {}) as Record<string, unknown>
+  ) as AnalysisPipelinePayload["stationOutputs"];
 
-export interface PipelineResult {
-  success: boolean;
-  stationOutputs?: Record<string, any>;
-  errors?: string[];
-  metadata?: {
-    totalDuration: number;
-    stationsCompleted: number;
+  const metadata = serializeAnalysisValue(
+    (result.metadata || {}) as Record<string, unknown>
+  ) as Record<string, unknown>;
+
+  const hasStations = Object.keys(stationOutputs || {}).length > 0;
+
+  if (!hasStations) {
+    throw new Error("لم تُنتج المحطات أي مخرجات قابلة للعرض");
+  }
+
+  return {
+    success: Boolean(result.success),
+    mode: "ai",
+    warnings: [],
+    stationOutputs,
+    metadata: {
+      ...metadata,
+      analysisMode: "ai",
+      projectName: request.projectName,
+      textLength: request.fullText.length,
+    },
   };
 }
 
-/**
- * Run the full analysis pipeline
- *
- * DEV STUB: Currently returns mock data for development/testing
- * TODO PRODUCTION: Integrate with actual pipeline orchestrator
- *
- * Implementation steps for production:
- * 1. Import pipeline orchestrator from @/orchestration
- * 2. Initialize with proper configuration
- * 3. Execute stations sequentially/parallel as per design
- * 4. Aggregate results from all stations
- * 5. Handle errors and retries
- * 6. Return actual pipeline results
- */
-export async function runFullPipeline(
-  _input: PipelineInput
-): Promise<PipelineResult> {
+export async function runFullPipeline(input: PipelineInput): Promise<PipelineResult> {
+  const request = pipelineRequestSchema.parse(input);
+  const apiKey = safeReadApiKey();
+
+  if (!apiKey || process.env.NODE_ENV === "test") {
+    return buildFallbackSevenStationsResult({
+      fullText: request.fullText,
+      projectName: request.projectName,
+      warning: !apiKey
+        ? "تم استخدام المسار الاحتياطي لأن مفاتيح التحليل الذكي غير متاحة."
+        : "تم استخدام المسار الاحتياطي لأن بيئة الاختبار لا تشغّل تحليلًا شبكيًا حيًا.",
+    });
+  }
+
   try {
-    if (USE_MOCK_PIPELINE) {
-      // DEV MODE: Return mock response for UI development
-      console.warn("[DEV MODE] Using mock pipeline response");
-      return {
-        success: true,
-        stationOutputs: {
-          station1: { status: "completed", data: {} },
-          station2: { status: "completed", data: {} },
-          station3: { status: "completed", data: {} },
-          station4: { status: "completed", data: {} },
-          station5: { status: "completed", data: {} },
-          station6: { status: "completed", data: {} },
-          station7: { status: "completed", data: {} },
-        },
-        metadata: {
-          totalDuration: 0,
-          stationsCompleted: 7,
-        },
-      };
-    }
+    const { createQuickPipeline } = await import(
+      "@/lib/ai/stations/run-all-stations"
+    );
+    const pipeline = createQuickPipeline(apiKey);
+    const result = await pipeline.runFullAnalysis({
+      text: request.fullText,
+      options: {
+        title: request.projectName,
+      },
+    });
 
-    // TODO PRODUCTION: Implement actual pipeline execution
-    // Example:
-    // const orchestrator = new PipelineOrchestrator();
-    // const result = await orchestrator.execute(input);
-    // return result;
-
-    throw new Error("Real pipeline not implemented yet");
+    return normalizePipelineResult(
+      result as unknown as Record<string, unknown>,
+      request
+    );
   } catch (error) {
-    return {
-      success: false,
-      errors: [error instanceof Error ? error.message : "Unknown error"],
-    };
+    const message =
+      error instanceof Error ? error.message : "فشل غير معروف في تنفيذ التحليل";
+
+    return buildFallbackSevenStationsResult({
+      fullText: request.fullText,
+      projectName: request.projectName,
+      warning: `تم التحويل إلى المسار الاحتياطي بعد فشل التنفيذ الذكي: ${message}`,
+    });
   }
 }

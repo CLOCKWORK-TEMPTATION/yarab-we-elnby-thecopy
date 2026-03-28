@@ -1,5 +1,5 @@
-import { TaskCategory, TaskType } from "../../../../core/types";
-import { AIAgentConfig } from "../../../../core/types";
+import { TaskCategory, TaskType } from "../../core/types";
+import type { AIAgentConfig } from "../../core/types";
 
 export const PLATFORM_ADAPTER_AGENT_CONFIG: AIAgentConfig = {
   id: TaskType.PLATFORM_ADAPTER,

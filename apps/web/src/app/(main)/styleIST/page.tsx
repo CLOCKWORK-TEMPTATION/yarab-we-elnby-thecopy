@@ -1,8 +1,8 @@
 "use client";
 
+import React, { Component, type ErrorInfo, type ReactNode } from "react";
 import dynamic from 'next/dynamic';
 import './cinefit.css';
-import { WebGLErrorBoundary } from '@the-copy/cinefit';
 
 const CineFitApp = dynamic(() => import('./cinefit-app'), {
   ssr: false,
@@ -12,6 +12,41 @@ const CineFitApp = dynamic(() => import('./cinefit-app'), {
     </div>
   ),
 });
+
+interface WebGLErrorBoundaryProps {
+  children: ReactNode;
+  fallback?: ReactNode;
+}
+
+interface WebGLErrorBoundaryState {
+  hasError: boolean;
+}
+
+class WebGLErrorBoundary extends Component<
+  WebGLErrorBoundaryProps,
+  WebGLErrorBoundaryState
+> {
+  public constructor(props: WebGLErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  public static getDerivedStateFromError(): WebGLErrorBoundaryState {
+    return { hasError: true };
+  }
+
+  public override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("WebGL Error caught:", error, errorInfo);
+  }
+
+  public override render() {
+    if (this.state.hasError) {
+      return this.props.fallback ?? null;
+    }
+
+    return this.props.children;
+  }
+}
 
 export default function NewPage() {
   return (

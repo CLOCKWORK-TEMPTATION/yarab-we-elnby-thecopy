@@ -197,10 +197,26 @@ export default function AIChatPanel() {
         content: m.content,
       }));
 
-      await chatMutation.mutateAsync({
+      const result = await chatMutation.mutateAsync({
         message: currentInput,
         history,
       });
+
+      // تحديث الرسالة المؤقتة بالرد الفعلي من الذكاء الاصطناعي
+      const aiResponse = typeof result === 'string' 
+        ? result 
+        : (result as { response?: string; content?: string; message?: string })?.response 
+          || (result as { response?: string; content?: string; message?: string })?.content 
+          || (result as { response?: string; content?: string; message?: string })?.message 
+          || 'تم استلام الرد بنجاح.';
+
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === streamingMessageId
+            ? { ...msg, content: aiResponse }
+            : msg
+        )
+      );
     } catch (error) {
       // تسجيل الخطأ وعرض رسالة للمستخدم
       const errorMessage =

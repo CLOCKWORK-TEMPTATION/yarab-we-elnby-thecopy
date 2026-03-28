@@ -12,6 +12,7 @@ import {
   VALIDATION_CONSTANTS,
   SAMPLE_MEMORIZATION_SCRIPT,
 } from "../types/constants";
+import { createDeterministicMemorizationMask } from "../lib/studio-engines";
 
 /**
  * مستوى حذف الكلمات
@@ -357,20 +358,7 @@ export function useMemorization(): UseMemorizationReturn {
    * معالجة النص للعرض (حذف كلمات)
    */
   const processTextForDisplay = useCallback((): string => {
-    const words = script.split(/\s+/);
-    const totalWords = words.length;
-    const wordsToDelete = Math.floor(totalWords * (deletionLevel / 100));
-
-    // اختيار كلمات عشوائية للحذف
-    const indicesToDelete = new Set<number>();
-    while (indicesToDelete.size < wordsToDelete) {
-      const randomIndex = Math.floor(Math.random() * totalWords);
-      indicesToDelete.add(randomIndex);
-    }
-
-    return words
-      .map((word, index) => (indicesToDelete.has(index) ? "____" : word))
-      .join(" ");
+    return createDeterministicMemorizationMask(script, deletionLevel);
   }, [script, deletionLevel]);
 
   /**

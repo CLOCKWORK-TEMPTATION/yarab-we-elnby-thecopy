@@ -1,4 +1,4 @@
-import type { SceneBreakdown } from "../../domain/models";
+import type { TechnicalBreakdownKey } from "../../domain/models";
 
 export interface AgentConfig {
   role: string;
@@ -6,7 +6,7 @@ export interface AgentConfig {
   extractionRules: string;
 }
 
-export const AGENT_PERSONAS: Record<keyof Omit<SceneBreakdown, 'cast'>, AgentConfig> = {
+export const AGENT_PERSONAS: Record<TechnicalBreakdownKey, AgentConfig> = {
   costumes: {
     role: "Costume Designer Agent",
     focus: "Wardrobe, clothing, accessories, and fabric states",

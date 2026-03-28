@@ -12,9 +12,10 @@
 
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { MapPin, Plus, Search, Building, Trees, Mountain, type LucideIcon } from "lucide-react";
 import type { LocationSimple, ApiResponse } from "../types";
+import { fetchArtDirectorJson } from "../lib/api-client";
 
 /**
  * واجهة بيانات نموذج الموقع
@@ -258,13 +259,14 @@ export default function Locations() {
     setError(null);
     
     try {
-      const response = await fetch("/api/locations/search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: searchQuery || undefined }),
-      });
-      
-      const data: ApiResponse<{ locations: LocationSimple[] }> = await response.json();
+      const data = await fetchArtDirectorJson<ApiResponse<{ locations: LocationSimple[] }>>(
+        "/locations/search",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: searchQuery || undefined }),
+        }
+      );
       
       if (data.success && data.data?.locations) {
         setLocations(data.data.locations);
@@ -286,7 +288,7 @@ export default function Locations() {
     setError(null);
     
     try {
-      const response = await fetch("/api/locations/add", {
+      const data = await fetchArtDirectorJson<ApiResponse>("/locations/add", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -298,12 +300,10 @@ export default function Locations() {
         }),
       });
       
-      const data: ApiResponse = await response.json();
-      
       if (data.success) {
         setShowAddForm(false);
         setFormData(DEFAULT_FORM_DATA);
-        handleSearch();
+        void handleSearch();
       } else {
         setError(data.error ?? "فشل في إضافة الموقع");
       }
@@ -340,6 +340,10 @@ export default function Locations() {
       <LocationCard key={location.id} location={location} />
     ));
   }, [locations]);
+
+  useEffect(() => {
+    void handleSearch();
+  }, [handleSearch]);
 
   return (
     <div className="art-director-page">

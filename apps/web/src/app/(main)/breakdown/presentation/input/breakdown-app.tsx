@@ -10,6 +10,7 @@ function BreakdownApp() {
     scriptText,
     setScriptText,
     scenes,
+    report,
     isSegmenting,
     error,
     view,
@@ -122,6 +123,7 @@ function BreakdownApp() {
           </div>
         ) : (
           <ResultsView
+            report={report}
             scenes={scenes}
             onUpdateScene={updateScene}
             onRestoreVersion={restoreVersion}

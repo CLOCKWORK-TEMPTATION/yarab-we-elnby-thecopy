@@ -102,8 +102,8 @@ const StationsPipeline = () => {
   const [activeStation, setActiveStation] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const [contextMap, setContextMap] = useState<ContextMap | null>(null);
-  const [isLongText, setIsLongText] = useState<boolean>(false);
+  const [contextMap] = useState<ContextMap | null>(null);
+  const [isLongText] = useState<boolean>(false);
   const { toast } = useToast();
 
   const progress =
@@ -146,15 +146,19 @@ const StationsPipeline = () => {
           projectName: "تحليل درامي شامل",
         });
 
-        const formattedResults = {
-          station1: pipelineResult?.stationOutputs?.station1,
-          station2: pipelineResult?.stationOutputs?.station2,
-          station3: pipelineResult?.stationOutputs?.station3,
-          station4: pipelineResult?.stationOutputs?.station4,
-          station5: pipelineResult?.stationOutputs?.station5,
-          station6: pipelineResult?.stationOutputs?.station6,
-          station7: pipelineResult?.stationOutputs?.station7,
+        const formattedResults: Record<number, unknown> = {
+          1: pipelineResult?.stationOutputs?.station1,
+          2: pipelineResult?.stationOutputs?.station2,
+          3: pipelineResult?.stationOutputs?.station3,
+          4: pipelineResult?.stationOutputs?.station4,
+          5: pipelineResult?.stationOutputs?.station5,
+          6: pipelineResult?.stationOutputs?.station6,
+          7: pipelineResult?.stationOutputs?.station7,
         };
+
+        const nextStatuses = stations.map((station) =>
+          formattedResults[station.id] ? "completed" : "failed"
+        );
 
         // Save to session storage for development pipeline
         const analysisId = `analysis_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -174,7 +178,7 @@ const StationsPipeline = () => {
         sessionStorage.setItem("contextMap", JSON.stringify(contextMap));
 
         setResults(formattedResults);
-        setStatuses(Array(stations.length).fill("completed"));
+        setStatuses(nextStatuses);
         setActiveStation(null);
         toast({
           title: "اكتمل التحليل",
@@ -182,6 +186,13 @@ const StationsPipeline = () => {
             ? `تم تحليل النص الطويل (${contextMap?.chunks.length ?? 0} أجزاء) وحفظ النتائج لقسم التطوير الإبداعي.`
             : "تم حفظ النتائج لقسم التطوير الإبداعي. يمكنك الآن الانتقال لصفحة التطوير.",
         });
+
+        if (pipelineResult.mode === "fallback" && pipelineResult.warnings.length > 0) {
+          toast({
+            title: "تم تفعيل المسار الاحتياطي",
+            description: pipelineResult.warnings[0],
+          });
+        }
       } catch (error: any) {
         setErrorMessage(`فشل التحليل: ${error?.message || "خطأ غير معروف"}`);
         toast({

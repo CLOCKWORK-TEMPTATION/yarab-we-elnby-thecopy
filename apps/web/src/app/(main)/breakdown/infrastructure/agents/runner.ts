@@ -1,12 +1,12 @@
 import { Schema, Type } from "@google/genai";
-import type { SceneBreakdown } from "../../domain/models";
+import type { SceneBreakdown, TechnicalBreakdownKey } from "../../domain/models";
 import { GEMINI_MODELS, TECHNICAL_AGENT_KEYS } from "../../domain/constants";
 import { logError } from "../../domain/errors";
 import { getGeminiClient } from "../gemini/client";
 import { AGENT_PERSONAS } from "./configs";
 
-export type BreakdownAgentResult = Omit<SceneBreakdown, "cast">;
-export type BreakdownAgentKey = keyof BreakdownAgentResult;
+export type BreakdownAgentResult = Pick<SceneBreakdown, TechnicalBreakdownKey>;
+export type BreakdownAgentKey = TechnicalBreakdownKey;
 
 const itemsSchema: Schema = {
   type: Type.OBJECT,

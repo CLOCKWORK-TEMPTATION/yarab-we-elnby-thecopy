@@ -66,7 +66,7 @@ const ChatHeader: React.FC = () => (
     </div>
     <div>
       <h3 className="font-bold text-white text-sm">المساعد الذكي</h3>
-      <p className="text-xs text-slate-400">مدعوم بواسطة Gemini 3</p>
+      <p className="text-xs text-slate-400">مدعوم بخدمة البريك دون على الخادم</p>
     </div>
   </div>
 );

@@ -2,15 +2,23 @@ import React from "react";
 import {
   BarChart3,
   BrainCircuit,
+  CalendarClock,
   CheckCircle,
   ChevronDown,
   ChevronUp,
   Clock,
   History,
   Loader2,
+  MapPin,
   RotateCcw,
 } from "lucide-react";
-import type { Scene, SceneBreakdown, ScenarioAnalysis } from "../../domain/models";
+import type {
+  BreakdownReport,
+  Scene,
+  SceneBreakdown,
+  ScenarioAnalysis,
+  TechnicalBreakdownKey,
+} from "../../domain/models";
 import { useToastQueue } from "../../application/workspace/use-toast-queue";
 import { useSceneAnalysis } from "../../application/workspace/use-scene-analysis";
 import CastBreakdownView from "../cast/cast-breakdown-view";
@@ -19,16 +27,19 @@ import ScenarioNavigator from "./scenario-navigator";
 import ToastContainer from "../shared/toast-container";
 
 interface ResultsViewProps {
+  report: BreakdownReport | null;
   scenes: Scene[];
   onUpdateScene: (
     id: number,
     breakdown: SceneBreakdown | undefined,
-    scenarios?: ScenarioAnalysis
+    scenarios?: ScenarioAnalysis,
+    scenePatch?: Partial<Scene>
   ) => void;
   onRestoreVersion: (sceneId: number, versionId: string) => void;
 }
 
 const ResultsView: React.FC<ResultsViewProps> = ({
+  report,
   scenes,
   onUpdateScene,
   onRestoreVersion,
@@ -42,8 +53,99 @@ const ResultsView: React.FC<ResultsViewProps> = ({
     error: toast.error,
   });
 
+  const resolveAgentItems = (
+    analysis: SceneBreakdown | undefined,
+    key: TechnicalBreakdownKey
+  ): string[] => {
+    if (!analysis) {
+      return [];
+    }
+
+    return analysis[key] as string[];
+  };
+
   return (
     <div className="space-y-6">
+      {report && (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+          <div className="rounded-xl border border-slate-700 bg-slate-800 p-4">
+            <p className="text-xs text-slate-400">عدد المشاهد</p>
+            <p className="mt-2 text-2xl font-bold text-white">{report.sceneCount}</p>
+          </div>
+          <div className="rounded-xl border border-slate-700 bg-slate-800 p-4">
+            <p className="text-xs text-slate-400">إجمالي الصفحات</p>
+            <p className="mt-2 text-2xl font-bold text-white">{report.totalPages}</p>
+          </div>
+          <div className="rounded-xl border border-slate-700 bg-slate-800 p-4">
+            <p className="text-xs text-slate-400">أيام التصوير المقدرة</p>
+            <p className="mt-2 text-2xl font-bold text-white">
+              {report.totalEstimatedShootDays}
+            </p>
+          </div>
+          <div className="rounded-xl border border-slate-700 bg-slate-800 p-4">
+            <p className="text-xs text-slate-400">آخر تحديث</p>
+            <p className="mt-2 text-sm font-medium text-white">
+              {new Date(report.updatedAt).toLocaleString("ar-EG")}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {report?.warnings.length ? (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-100">
+          <p className="mb-2 text-sm font-semibold">تحذيرات التقرير</p>
+          <ul className="space-y-1 text-sm">
+            {report.warnings.map((warning) => (
+              <li key={warning}>{warning}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {report?.schedule.length ? (
+        <div className="rounded-xl border border-slate-700 bg-slate-800 p-5">
+          <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-white">
+            <CalendarClock className="h-5 w-5 text-cyan-400" />
+            الجدولة الأولية
+          </h3>
+          <div className="grid gap-3 md:grid-cols-2">
+            {report.schedule.map((day) => (
+              <div
+                key={`${day.dayNumber}-${day.location}-${day.timeOfDay}`}
+                className="rounded-lg border border-slate-700 bg-slate-900/50 p-4"
+              >
+                <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-slate-400">
+                  <span className="rounded-full bg-slate-800 px-2 py-1">
+                    اليوم {day.dayNumber}
+                  </span>
+                  <span className="rounded-full bg-slate-800 px-2 py-1">
+                    {day.timeOfDay}
+                  </span>
+                  <span className="rounded-full bg-slate-800 px-2 py-1">
+                    {day.estimatedHours} ساعة
+                  </span>
+                </div>
+                <p className="mb-3 flex items-center gap-2 text-sm font-medium text-white">
+                  <MapPin className="h-4 w-4 text-emerald-400" />
+                  {day.location}
+                </p>
+                <div className="space-y-1 text-sm text-slate-300">
+                  {day.scenes.map((scheduleScene) => (
+                    <div key={`${day.dayNumber}-${scheduleScene.sceneId}`}>
+                      المشهد {scheduleScene.sceneNumber}
+                      {" "}
+                      -
+                      {" "}
+                      {scheduleScene.header}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
       <div className="flex items-center justify-between">
         <h2 className="flex items-center gap-2 text-2xl font-bold text-white">
           <BrainCircuit className="text-blue-500" />
@@ -92,6 +194,15 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                       {scene.content.substring(0, 100)}...
                     </p>
                   )}
+                  {scene.headerData && (
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                      <span>{scene.headerData.sceneType}</span>
+                      <span>{scene.headerData.location}</span>
+                      <span>{scene.headerData.timeOfDay}</span>
+                      <span>{scene.headerData.pageCount} صفحة</span>
+                      <span>اليوم {scene.headerData.storyDay}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-3">
@@ -124,10 +235,26 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                   )}
 
                   {scene.isAnalyzed ? (
-                    <span className="flex items-center gap-1 px-3 text-sm font-medium text-green-400">
-                      <CheckCircle className="h-4 w-4" />
-                      <span className="hidden md:inline">تم التحليل</span>
-                    </span>
+                    <>
+                      <button
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          void sceneAnalysis.handleAnalyzeScene(scene);
+                        }}
+                        disabled={isProcessing}
+                        className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+                          isProcessing
+                            ? "cursor-not-allowed bg-slate-700 text-slate-400"
+                            : "bg-slate-700 text-white hover:bg-slate-600"
+                        }`}
+                      >
+                        {isProcessing ? "جاري العمل..." : "إعادة التحليل"}
+                      </button>
+                      <span className="flex items-center gap-1 px-3 text-sm font-medium text-green-400">
+                        <CheckCircle className="h-4 w-4" />
+                        <span className="hidden md:inline">تم التحليل</span>
+                      </span>
+                    </>
                   ) : (
                     <button
                       onClick={(event) => {
@@ -221,6 +348,17 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                     </p>
                   </div>
 
+                  {displayAnalysis?.warnings.length ? (
+                    <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-100">
+                      <p className="mb-2 font-semibold">تحذيرات المشهد</p>
+                      <ul className="space-y-1">
+                        {displayAnalysis.warnings.map((warning) => (
+                          <li key={`${scene.id}-${warning}`}>{warning}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+
                   <CastBreakdownView cast={displayAnalysis ? displayAnalysis.cast : []} isProcessing={isProcessing} />
 
                   <div>
@@ -237,11 +375,10 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                         <AgentCard
                           key={agent.key}
                           agent={agent}
-                          items={
-                            displayAnalysis && agent.key !== "cast" && agent.key in displayAnalysis
-                              ? displayAnalysis[agent.key as Exclude<keyof SceneBreakdown, "cast">]
-                              : []
-                          }
+                          items={resolveAgentItems(
+                            displayAnalysis,
+                            agent.key as TechnicalBreakdownKey
+                          )}
                           isProcessing={isProcessing}
                         />
                       ))}

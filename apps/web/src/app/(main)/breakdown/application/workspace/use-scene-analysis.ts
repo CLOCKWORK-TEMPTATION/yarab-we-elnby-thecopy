@@ -2,15 +2,18 @@ import { useCallback, useMemo, useState } from "react";
 import type { Scene, SceneBreakdown, ScenarioAnalysis, Version } from "../../domain/models";
 import { AGENTS } from "../../constants";
 import { logError } from "../../domain/errors";
-import { analyzeScene } from "../../infrastructure/gemini/analyze-scene";
-import { analyzeProductionScenarios } from "../../infrastructure/gemini/analyze-scenarios";
+import {
+  getBreakdownScene,
+  reanalyzeBreakdownScene,
+} from "../../infrastructure/platform-client";
 
 interface UseSceneAnalysisOptions {
   scenes: Scene[];
   onUpdateScene: (
     id: number,
     breakdown: SceneBreakdown | undefined,
-    scenarios?: ScenarioAnalysis
+    scenarios?: ScenarioAnalysis,
+    scenePatch?: Partial<Scene>
   ) => void;
   onRestoreVersion: (sceneId: number, versionId: string) => void;
   success: (message: string) => void;
@@ -46,14 +49,30 @@ export function useSceneAnalysis({
         return;
       }
 
+      if (!scene.remoteId) {
+        error("معرف المشهد غير متاح لإعادة التحليل.");
+        return;
+      }
+
       setAnalyzingIds((prev) => new Set(prev).add(scene.id));
       setExpandedSceneId(scene.id);
       setPreviewVersion((prev) => ({ ...prev, [scene.id]: null }));
 
       try {
-        const breakdown = await analyzeScene(scene.content);
-        onUpdateScene(scene.id, breakdown, scene.scenarios);
-        success("تم تحليل المشهد بنجاح");
+        const nextScene = await reanalyzeBreakdownScene(scene.remoteId);
+        onUpdateScene(scene.id, nextScene.analysis, nextScene.scenarios, {
+          remoteId: nextScene.sceneId,
+          reportId: scene.reportId,
+          projectId: scene.projectId,
+          header: nextScene.header,
+          content: nextScene.content,
+          headerData: nextScene.headerData,
+          stats: nextScene.analysis.stats,
+          elements: nextScene.analysis.elements,
+          warnings: nextScene.analysis.warnings,
+          source: nextScene.analysis.source,
+        });
+        success("تمت إعادة تحليل المشهد بنجاح");
       } catch (err) {
         logError("useSceneAnalysis.handleAnalyzeScene", err);
         const errorMessage = err instanceof Error ? err.message : "خطأ غير معروف";
@@ -75,13 +94,34 @@ export function useSceneAnalysis({
         return;
       }
 
+      if (scene.scenarios?.scenarios?.length) {
+        setShowNavigatorForScene(scene.id);
+        return;
+      }
+
+      if (!scene.remoteId) {
+        error("معرف المشهد غير متاح لعرض السيناريوهات.");
+        return;
+      }
+
       setStrategizingIds((prev) => new Set(prev).add(scene.id));
 
       try {
-        const scenarios = await analyzeProductionScenarios(scene.content);
-        onUpdateScene(scene.id, scene.analysis, scenarios);
+        const nextScene = await getBreakdownScene(scene.remoteId);
+        onUpdateScene(scene.id, nextScene.analysis, nextScene.scenarios, {
+          remoteId: nextScene.sceneId,
+          reportId: scene.reportId,
+          projectId: scene.projectId,
+          header: nextScene.header,
+          content: nextScene.content,
+          headerData: nextScene.headerData,
+          stats: nextScene.analysis.stats,
+          elements: nextScene.analysis.elements,
+          warnings: nextScene.analysis.warnings,
+          source: nextScene.analysis.source,
+        });
         setShowNavigatorForScene(scene.id);
-        success("تم توليد السيناريوهات بنجاح");
+        success("تم تحميل السيناريوهات الإنتاجية بنجاح");
       } catch (err) {
         logError("useSceneAnalysis.handleRunStrategy", err);
         const errorMessage = err instanceof Error ? err.message : "خطأ غير معروف";

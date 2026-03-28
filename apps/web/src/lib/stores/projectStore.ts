@@ -3,7 +3,7 @@
  */
 
 import React, { useState, useCallback } from "react";
-import type { Project, Scene, Character, Shot } from "@/constants";
+import type { Project, Scene, Character, Shot } from "@/types/api";
 
 // Simple state management without zustand
 type SetState<T> = (

@@ -10,7 +10,6 @@ import {
   Recycle,
   BarChart3,
   FileText,
-  Play,
   Box,
   Clapperboard,
   GraduationCap,
@@ -18,6 +17,7 @@ import {
   Video,
   LucideIcon
 } from 'lucide-react';
+import { artDirectorApiPath } from "../lib/api-client";
 
 export interface ToolInputOption {
   value: string;
@@ -44,7 +44,7 @@ export const toolConfigs: Record<string, ToolConfig> = {
   'visual-analyzer': {
     icon: Eye,
     color: '#e94560',
-    endpoint: '/api/analyze/visual-consistency',
+    endpoint: artDirectorApiPath('/analyze/visual-consistency'),
     requestType: 'analyze',
     inputs: [
       { name: 'sceneId', label: 'رقم المشهد', type: 'text', placeholder: 'مثال: scene-001' },
@@ -65,7 +65,7 @@ export const toolConfigs: Record<string, ToolConfig> = {
   'terminology-translator': {
     icon: Languages,
     color: '#4ade80',
-    endpoint: '/api/translate/cinema-terms',
+    endpoint: artDirectorApiPath('/translate/cinema-terms'),
     requestType: 'translate',
     inputs: [
       { name: 'term', label: 'المصطلح', type: 'text', placeholder: 'مثال: Key Light' },
@@ -92,7 +92,7 @@ export const toolConfigs: Record<string, ToolConfig> = {
   'budget-optimizer': {
     icon: DollarSign,
     color: '#fbbf24',
-    endpoint: '/api/optimize/budget',
+    endpoint: artDirectorApiPath('/optimize/budget'),
     requestType: 'optimize',
     inputs: [
       { name: 'totalBudget', label: 'الميزانية الإجمالية', type: 'number', placeholder: '100000' },
@@ -112,7 +112,7 @@ export const toolConfigs: Record<string, ToolConfig> = {
   'lighting-simulator': {
     icon: Sun,
     color: '#60a5fa',
-    endpoint: '/api/simulate/lighting',
+    endpoint: artDirectorApiPath('/simulate/lighting'),
     requestType: 'simulate',
     inputs: [
       {
@@ -143,7 +143,7 @@ export const toolConfigs: Record<string, ToolConfig> = {
   'risk-analyzer': {
     icon: AlertTriangle,
     color: '#ef4444',
-    endpoint: '/api/analyze/risks',
+    endpoint: artDirectorApiPath('/analyze/risks'),
     requestType: 'analyze',
     inputs: [
       {
@@ -163,7 +163,7 @@ export const toolConfigs: Record<string, ToolConfig> = {
   'production-readiness-report': {
     icon: FileCheck,
     color: '#a78bfa',
-    endpoint: '/api/analyze/production-readiness',
+    endpoint: artDirectorApiPath('/analyze/production-readiness'),
     requestType: 'build-prompt',
     inputs: [
       { name: 'projectName', label: 'اسم المشروع', type: 'text', placeholder: 'اسم الفيلم أو المسلسل' },
@@ -192,7 +192,7 @@ export const toolConfigs: Record<string, ToolConfig> = {
   'creative-inspiration': {
     icon: Palette,
     color: '#ec4899',
-    endpoint: '/api/inspiration/analyze',
+    endpoint: artDirectorApiPath('/inspiration/analyze'),
     requestType: 'analyze',
     inputs: [
       { name: 'sceneDescription', label: 'وصف المشهد', type: 'textarea', placeholder: 'صف المشهد بالتفصيل...' },
@@ -213,7 +213,7 @@ export const toolConfigs: Record<string, ToolConfig> = {
   'location-coordinator': {
     icon: MapPin,
     color: '#14b8a6',
-    endpoint: '/api/locations/search',
+    endpoint: artDirectorApiPath('/locations/search'),
     requestType: 'search',
     inputs: [
       { name: 'query', label: 'البحث', type: 'text', placeholder: 'ابحث عن موقع...' },
@@ -233,7 +233,7 @@ export const toolConfigs: Record<string, ToolConfig> = {
   'set-reusability': {
     icon: Recycle,
     color: '#22c55e',
-    endpoint: '/api/sets/reusability',
+    endpoint: artDirectorApiPath('/sets/reusability'),
     requestType: 'analyze',
     inputs: [
       { name: 'setName', label: 'اسم الديكور', type: 'text', placeholder: 'اسم قطعة الديكور' },
@@ -263,7 +263,7 @@ export const toolConfigs: Record<string, ToolConfig> = {
   'productivity-analyzer': {
     icon: BarChart3,
     color: '#f97316',
-    endpoint: '/api/analyze/productivity',
+    endpoint: artDirectorApiPath('/analyze/productivity'),
     requestType: 'analyze',
     inputs: [
       {
@@ -282,7 +282,7 @@ export const toolConfigs: Record<string, ToolConfig> = {
   'documentation-generator': {
     icon: FileText,
     color: '#8b5cf6',
-    endpoint: '/api/documentation/generate',
+    endpoint: artDirectorApiPath('/documentation/generate'),
     requestType: 'generate-book',
     inputs: [
       { name: 'projectName', label: 'اسم المشروع', type: 'text', placeholder: 'اسم الفيلم' },
@@ -294,7 +294,7 @@ export const toolConfigs: Record<string, ToolConfig> = {
   'mr-previz-studio': {
     icon: Box,
     color: '#06b6d4',
-    endpoint: '/api/xr/previz/create-scene',
+    endpoint: artDirectorApiPath('/xr/previz/create-scene'),
     requestType: 'create-scene',
     inputs: [
       { name: 'name', label: 'اسم المشهد', type: 'text', placeholder: 'مثال: المشهد الافتتاحي' },
@@ -318,7 +318,7 @@ export const toolConfigs: Record<string, ToolConfig> = {
   'virtual-set-editor': {
     icon: Clapperboard,
     color: '#f43f5e',
-    endpoint: '/api/xr/set-editor/create',
+    endpoint: artDirectorApiPath('/xr/set-editor/create'),
     requestType: 'create-set',
     inputs: [
       { name: 'name', label: 'اسم الديكور', type: 'text', placeholder: 'مثال: غرفة المعيشة' },
@@ -337,7 +337,7 @@ export const toolConfigs: Record<string, ToolConfig> = {
   'cinema-skills-trainer': {
     icon: GraduationCap,
     color: '#10b981',
-    endpoint: '/api/training/scenarios',
+    endpoint: artDirectorApiPath('/training/scenarios'),
     requestType: 'list-scenarios',
     inputs: [
       {
@@ -368,7 +368,7 @@ export const toolConfigs: Record<string, ToolConfig> = {
   'immersive-concept-art': {
     icon: Cuboid,
     color: '#f59e0b',
-    endpoint: '/api/concept-art/create-project',
+    endpoint: artDirectorApiPath('/concept-art/create-project'),
     requestType: 'create-project',
     inputs: [
       { name: 'name', label: 'اسم المشروع', type: 'text', placeholder: 'مثال: التصميم المفاهيمي للفيلم' },
@@ -400,7 +400,7 @@ export const toolConfigs: Record<string, ToolConfig> = {
   'virtual-production-engine': {
     icon: Video,
     color: '#8b5cf6',
-    endpoint: '/api/virtual-production/create',
+    endpoint: artDirectorApiPath('/virtual-production/create'),
     requestType: 'create-production',
     inputs: [
       { name: 'name', label: 'اسم الإنتاج', type: 'text', placeholder: 'مثال: مشروع LED Wall' },

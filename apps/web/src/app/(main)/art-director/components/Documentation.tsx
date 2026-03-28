@@ -13,9 +13,10 @@
 
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { FileText, Book, PenTool, Download, Plus } from "lucide-react";
 import type { ProductionBook, StyleGuide, ApiResponse } from "../types";
+import { fetchArtDirectorJson } from "../lib/api-client";
 
 /**
  * واجهة بيانات نموذج كتاب الإنتاج
@@ -35,6 +36,27 @@ interface DecisionFormData {
   description: string;
   category: string;
   rationale: string;
+}
+
+interface ProductionBookState extends ProductionBook {
+  id?: string;
+}
+
+interface StyleGuideState extends StyleGuide {
+  id?: string;
+}
+
+interface DocumentationStatePayload {
+  productionBook: ProductionBookState | null;
+  styleGuide: StyleGuideState | null;
+  decisionsCount: number;
+}
+
+interface DocumentationExportPayload {
+  content: string;
+  filename: string;
+  mimeType: string;
+  format: string;
 }
 
 /**
@@ -61,8 +83,8 @@ const DEFAULT_DECISION_FORM: DecisionFormData = {
  * مكون بطاقة كتاب الإنتاج
  */
 interface ProductionBookCardProps {
-  book: ProductionBook;
-  onExport: (format: string) => void;
+  book: ProductionBookState;
+  onExport: (format: "markdown" | "json") => void;
 }
 
 function ProductionBookCard({ book, onExport }: ProductionBookCardProps) {
@@ -100,17 +122,17 @@ function ProductionBookCard({ book, onExport }: ProductionBookCardProps) {
       <div style={{ display: "flex", gap: "12px" }}>
         <button 
           className="art-btn art-btn-secondary" 
-          onClick={() => onExport("pdf")}
-          aria-label="تصدير بصيغة PDF"
+          onClick={() => onExport("markdown")}
+          aria-label="تصدير بصيغة Markdown"
         >
-          <Download size={16} aria-hidden="true" /> PDF
+          <Download size={16} aria-hidden="true" /> Markdown
         </button>
         <button 
           className="art-btn art-btn-secondary" 
-          onClick={() => onExport("docx")}
-          aria-label="تصدير بصيغة Word"
+          onClick={() => onExport("json")}
+          aria-label="تصدير بصيغة JSON"
         >
-          <Download size={16} aria-hidden="true" /> Word
+          <Download size={16} aria-hidden="true" /> JSON
         </button>
       </div>
     </div>
@@ -121,7 +143,7 @@ function ProductionBookCard({ book, onExport }: ProductionBookCardProps) {
  * مكون بطاقة دليل الأسلوب
  */
 interface StyleGuideCardProps {
-  guide: StyleGuide;
+  guide: StyleGuideState;
 }
 
 function StyleGuideCard({ guide }: StyleGuideCardProps) {
@@ -309,13 +331,37 @@ function DecisionForm({ formData, loading, onFormChange, onSubmit, onCancel }: D
 export default function Documentation() {
   const [showBookForm, setShowBookForm] = useState(false);
   const [showDecisionForm, setShowDecisionForm] = useState(false);
-  const [productionBook, setProductionBook] = useState<ProductionBook | null>(null);
-  const [styleGuide, setStyleGuide] = useState<StyleGuide | null>(null);
+  const [productionBook, setProductionBook] = useState<ProductionBookState | null>(null);
+  const [styleGuide, setStyleGuide] = useState<StyleGuideState | null>(null);
+  const [decisionsCount, setDecisionsCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const [bookForm, setBookForm] = useState<BookFormData>(DEFAULT_BOOK_FORM);
   const [decisionForm, setDecisionForm] = useState<DecisionFormData>(DEFAULT_DECISION_FORM);
+
+  const loadState = useCallback(async () => {
+    setError(null);
+
+    try {
+      const response = await fetchArtDirectorJson<ApiResponse<DocumentationStatePayload>>(
+        "/documentation/state"
+      );
+
+      if (response.success && response.data) {
+        setProductionBook(response.data.productionBook);
+        setStyleGuide(response.data.styleGuide);
+        setDecisionsCount(response.data.decisionsCount);
+        return;
+      }
+
+      setError(response.error ?? "تعذر تحميل حالة التوثيق الحالية");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "تعذر تحميل حالة التوثيق الحالية";
+      setError(errorMessage);
+    }
+  }, []);
 
   /**
    * إنشاء كتاب الإنتاج
@@ -323,20 +369,23 @@ export default function Documentation() {
   const handleGenerateBook = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setSuccessMessage(null);
     
     try {
-      const response = await fetch("/api/documentation/generate", {
+      const data = await fetchArtDirectorJson<ApiResponse<ProductionBookState>>(
+        "/documentation/generate",
+        {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(bookForm),
-      });
-      
-      const data: ApiResponse<ProductionBook> = await response.json();
+        }
+      );
       
       if (data.success && data.data) {
-        setProductionBook(data.data);
+        await loadState();
         setShowBookForm(false);
         setBookForm(DEFAULT_BOOK_FORM);
+        setSuccessMessage("تم إنشاء كتاب الإنتاج وتحديث الحالة المخزنة");
       } else {
         setError(data.error ?? "فشل في إنشاء الكتاب");
       }
@@ -354,18 +403,23 @@ export default function Documentation() {
   const handleGenerateStyleGuide = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setSuccessMessage(null);
     
     try {
-      const response = await fetch("/api/documentation/style-guide", {
+      const data = await fetchArtDirectorJson<ApiResponse<StyleGuideState>>(
+        "/documentation/style-guide",
+        {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectName: bookForm.projectName || "مشروع جديد" }),
-      });
-      
-      const data: ApiResponse<StyleGuide> = await response.json();
+        body: JSON.stringify({
+          projectName: productionBook?.title || bookForm.projectName || "مشروع جديد",
+        }),
+        }
+      );
       
       if (data.success && data.data) {
-        setStyleGuide(data.data);
+        await loadState();
+        setSuccessMessage("تم إنشاء دليل الأسلوب وحفظه");
       } else {
         setError(data.error ?? "فشل في إنشاء دليل الأسلوب");
       }
@@ -375,7 +429,7 @@ export default function Documentation() {
     } finally {
       setLoading(false);
     }
-  }, [bookForm.projectName]);
+  }, [bookForm.projectName, loadState, productionBook?.title]);
 
   /**
    * توثيق قرار إبداعي
@@ -383,19 +437,27 @@ export default function Documentation() {
   const handleLogDecision = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setSuccessMessage(null);
     
     try {
-      const response = await fetch("/api/documentation/log-decision", {
+      const data = await fetchArtDirectorJson<ApiResponse>("/documentation/log-decision", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(decisionForm),
+        body: JSON.stringify({
+          ...decisionForm,
+          projectName:
+            productionBook?.title ||
+            bookForm.projectName ||
+            bookForm.projectNameAr ||
+            "art-director-default",
+        }),
       });
-      
-      const data: ApiResponse = await response.json();
       
       if (data.success) {
         setShowDecisionForm(false);
         setDecisionForm(DEFAULT_DECISION_FORM);
+        await loadState();
+        setSuccessMessage("تم توثيق القرار الإبداعي");
       } else {
         setError(data.error ?? "فشل في توثيق القرار");
       }
@@ -405,26 +467,34 @@ export default function Documentation() {
     } finally {
       setLoading(false);
     }
-  }, [decisionForm]);
+  }, [bookForm.projectName, bookForm.projectNameAr, decisionForm, loadState, productionBook?.title]);
 
   /**
    * تصدير المستند
    */
-  const handleExport = useCallback(async (format: string) => {
+  const handleExport = useCallback(async (format: "markdown" | "json") => {
     setError(null);
+    setSuccessMessage(null);
     
     try {
-      const response = await fetch("/api/documentation/export", {
+      const data = await fetchArtDirectorJson<ApiResponse<DocumentationExportPayload>>(
+        "/documentation/export",
+        {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ format }),
-      });
+        body: JSON.stringify({ format, bookId: productionBook?.id }),
+        }
+      );
       
-      const data: ApiResponse = await response.json();
-      
-      if (data.success) {
-        // عرض رسالة نجاح بدلاً من alert
-        // يمكن استخدام Toast notification هنا
+      if (data.success && data.data) {
+        const blob = new Blob([data.data.content], { type: data.data.mimeType });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = data.data.filename;
+        link.click();
+        URL.revokeObjectURL(url);
+        setSuccessMessage(`تم تنزيل ملف التوثيق بصيغة ${data.data.format}`);
       } else {
         setError(data.error ?? "فشل في التصدير");
       }
@@ -432,7 +502,7 @@ export default function Documentation() {
       const errorMessage = err instanceof Error ? err.message : "حدث خطأ أثناء التصدير";
       setError(errorMessage);
     }
-  }, []);
+  }, [productionBook?.id]);
 
   /**
    * تحديث بيانات نموذج الكتاب
@@ -447,6 +517,10 @@ export default function Documentation() {
   const handleDecisionFormChange = useCallback((data: Partial<DecisionFormData>) => {
     setDecisionForm((prev) => ({ ...prev, ...data }));
   }, []);
+
+  useEffect(() => {
+    void loadState();
+  }, [loadState]);
 
   return (
     <div className="art-director-page">
@@ -485,6 +559,33 @@ export default function Documentation() {
           {error}
         </div>
       )}
+
+      {successMessage && (
+        <div className="art-alert art-alert-success" style={{ marginBottom: "24px" }} role="status">
+          {successMessage}
+        </div>
+      )}
+
+      <div className="art-card" style={{ marginBottom: "24px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: "16px", flexWrap: "wrap" }}>
+          <div>
+            <div style={{ color: "var(--art-text-muted)", fontSize: "13px" }}>آخر كتاب محفوظ</div>
+            <div style={{ fontSize: "18px", fontWeight: 700 }}>
+              {productionBook?.titleAr ?? "لا يوجد بعد"}
+            </div>
+          </div>
+          <div>
+            <div style={{ color: "var(--art-text-muted)", fontSize: "13px" }}>آخر دليل أسلوب</div>
+            <div style={{ fontSize: "18px", fontWeight: 700 }}>
+              {styleGuide?.nameAr ?? "لا يوجد بعد"}
+            </div>
+          </div>
+          <div>
+            <div style={{ color: "var(--art-text-muted)", fontSize: "13px" }}>القرارات الموثقة</div>
+            <div style={{ fontSize: "18px", fontWeight: 700 }}>{decisionsCount}</div>
+          </div>
+        </div>
+      </div>
 
       {/* نموذج إنشاء كتاب الإنتاج */}
       {showBookForm && (

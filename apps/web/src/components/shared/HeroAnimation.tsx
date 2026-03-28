@@ -5,9 +5,13 @@ import { useRef, useState, type CSSProperties } from "react"
 import Link from "next/link"
 import { VideoTextMask } from "./VideoTextMask"
 import { useHeroAnimation } from "@/hooks/use-hero-animation"
-import { ImageWithFallback } from "./figma/ImageWithFallback"
+import { ImageWithFallback } from "@/components/figma/ImageWithFallback"
 import { IntroVideoModal } from "./IntroVideoModal"
 import images from "@/lib/images"
+
+interface HeroAnimationProps {
+  onContinue?: () => void
+}
 
 const HERO_CARD_IMAGE_STYLES: Record<string, CSSProperties> = {
   "/assets/v-shape/V-Shape-3.jpeg": {
@@ -16,7 +20,7 @@ const HERO_CARD_IMAGE_STYLES: Record<string, CSSProperties> = {
   },
 }
 
-export const HeroAnimation = () => {
+export const HeroAnimation = ({ onContinue: _onContinue }: HeroAnimationProps) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLDivElement>(null)
   const [introOpen, setIntroOpen] = useState(false)

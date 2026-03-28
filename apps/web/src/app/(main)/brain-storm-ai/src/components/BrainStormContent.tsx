@@ -8,11 +8,11 @@
 import { useCallback } from "react";
 import { useAgentStates } from "../hooks/useAgentStates";
 import { useSession } from "../hooks/useSession";
-import BrainStormHeader from "./BrainStormHeader";
-import ControlPanel from "./ControlPanel";
-import DebatePanel from "./DebatePanel";
-import AgentsSidebar from "./AgentsSidebar";
-import FeaturesGrid from "./FeaturesGrid";
+import BrainStormHeader from "./layout/BrainStormHeader";
+import ControlPanel from "./features/ControlPanel";
+import DebatePanel from "./features/DebatePanel";
+import AgentsSidebar from "./layout/AgentsSidebar";
+import FeaturesGrid from "./features/FeaturesGrid";
 import type { BrainstormPhase } from "../types";
 
 export default function BrainStormContent() {
